@@ -41,10 +41,8 @@ class Player (QObject):
             self.media.setCurrentSource (Phonon.MediaSource (file))
             self.media.play ()
         except IndexError:
+            print "playlist empty; bailing out"
             self.finished.emit ()
-
-    def next (self):
-        pass
 
 #########################################
 # all the bureaucratic init of a KDE App
@@ -77,11 +75,12 @@ args= KCmdLineArgs.parsedArgs ()
 # the app itself!
 
 player= Player (app)
-player.append (args.arg (0))
-player.append (args.arg (1))
-player.play ()
-
 player.finished.connect (app.quit)
+
+for index in xrange (args.count ()):
+    player.append (args.arg (index))
+
+player.play ()
 app.exec_ ()
 
 # end
