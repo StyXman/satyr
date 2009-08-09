@@ -8,12 +8,43 @@ from PyKDE4.kdecore import KCmdLineArgs, KAboutData, i18n, ki18n, KCmdLineOption
 from PyKDE4.kdeui import KApplication
 # from PyKDE4.phonon import Phonon
 from PyQt4.phonon import Phonon
-from PyQt4.QtCore import SIGNAL
+from PyQt4.QtCore import SIGNAL, pyqtSignal, QObject
 
 # std python
 import sys
 
 # local
+
+class Player (QObject):
+    finished= pyqtSignal ()
+
+    def __init__ (self, parent):
+        QObject.__init__ (self, parent)
+        # TypeError: too many arguments to PyKDE4.phonon.MediaObject(), 0 at most expected
+        # self.media= Phonon.MediaObject (parent)
+        self.media= Phonon.MediaObject ()
+        self.ao= Phonon.AudioOutput (Phonon.MusicCategory, parent)
+        print self.ao.name ()
+        print self.ao.outputDevice ().name ()
+        Phonon.createPath (self.media, self.ao)
+        # player= Phonon.createPlayer (Phonon.MusicCategory, self.media.currentSource ())
+        self.files= []
+        self.connect (self.media, SIGNAL("finished ()"), self.play)
+
+    def append (self, path):
+        self.files.append (path)
+
+    def play (self):
+        try:
+            file= self.files.pop (0)
+            print "playing", file
+            self.media.setCurrentSource (Phonon.MediaSource (file))
+            self.media.play ()
+        except IndexError:
+            self.finished.emit ()
+
+    def next (self):
+        pass
 
 #########################################
 # all the bureaucratic init of a KDE App
@@ -45,21 +76,12 @@ args= KCmdLineArgs.parsedArgs ()
 #########################################
 # the app itself!
 
-# TypeError: too many arguments to PyKDE4.phonon.MediaObject(), 0 at most expected
-# media= Phonon.MediaObject (app)
-media= Phonon.MediaObject ()
-ao= Phonon.AudioOutput (Phonon.MusicCategory, app)
-print ao.name ()
-print ao.outputDevice ().name ()
-Phonon.createPath (media, ao)
-# player= Phonon.createPlayer (Phonon.MusicCategory, media.currentSource ())
+player= Player (app)
+player.append (args.arg (0))
+player.append (args.arg (1))
+player.play ()
 
-media.setCurrentSource (Phonon.MediaSource (args.arg (0)))
-media.play ()
-
-# I whish it were this easy
-# app.connect (media.finish, app.quit)
-app.connect (media, SIGNAL("finished ()"), app.quit)
+player.finished.connect (app.quit)
 app.exec_ ()
 
 # end
