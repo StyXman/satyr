@@ -8,7 +8,7 @@ from PyKDE4.kdecore import KCmdLineArgs, KAboutData, i18n, ki18n, KCmdLineOption
 from PyKDE4.kdeui import KApplication
 # from PyKDE4.phonon import Phonon
 from PyQt4.phonon import Phonon
-from PyQt4.QtCore import SIGNAL, pyqtSignal, QObject
+from PyQt4.QtCore import SIGNAL, pyqtSignal, QObject, QUrl
 
 # std python
 import sys
@@ -18,31 +18,44 @@ import sys
 class Player (QObject):
     finished= pyqtSignal ()
 
-    def __init__ (self, parent):
+    def __init__ (self, parent, playlist):
         QObject.__init__ (self, parent)
+        self.playlist= playlist
+
         # TypeError: too many arguments to PyKDE4.phonon.MediaObject(), 0 at most expected
         # self.media= Phonon.MediaObject (parent)
         self.media= Phonon.MediaObject ()
-        self.ao= Phonon.AudioOutput (Phonon.MusicCategory, parent)
-        print self.ao.name ()
-        print self.ao.outputDevice ().name ()
-        Phonon.createPath (self.media, self.ao)
-        # player= Phonon.createPlayer (Phonon.MusicCategory, self.media.currentSource ())
-        self.files= []
         self.connect (self.media, SIGNAL("finished ()"), self.play)
+
+        self.ao= Phonon.AudioOutput (Phonon.MusicCategory, parent)
+        Phonon.createPath (self.media, self.ao)
+
+    def play (self):
+        try:
+            filename= self.playlist.next ()
+            print "playing", filename
+            self.media.setCurrentSource (Phonon.MediaSource (filename))
+            self.media.play ()
+        except IndexError:
+            print "playlist empty"
+            self.finished.emit ()
+
+class PlayList (QObject):
+    finished= pyqtSignal ()
+
+    def __init__ (self, parent, collection):
+        QObject.__init__ (self, parent)
+        self.collection= collection
+        self.files= []
 
     def append (self, path):
         self.files.append (path)
 
-    def play (self):
-        try:
-            file= self.files.pop (0)
-            print "playing", file
-            self.media.setCurrentSource (Phonon.MediaSource (file))
-            self.media.play ()
-        except IndexError:
-            print "playlist empty; bailing out"
-            self.finished.emit ()
+    def next (self):
+        print "next!",
+        filename= self.files.pop (0)
+        return filename
+
 
 #########################################
 # all the bureaucratic init of a KDE App
@@ -74,11 +87,12 @@ args= KCmdLineArgs.parsedArgs ()
 #########################################
 # the app itself!
 
-player= Player (app)
+playlist= PlayList (app, None)
+player= Player (app, playlist)
 player.finished.connect (app.quit)
 
 for index in xrange (args.count ()):
-    player.append (args.arg (index))
+    playlist.append (args.arg (index))
 
 player.play ()
 app.exec_ ()
