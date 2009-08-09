@@ -11,7 +11,7 @@ from PyQt4.phonon import Phonon
 from PyQt4.QtCore import SIGNAL, pyqtSignal, QObject, QUrl
 
 # std python
-import sys
+import sys, os, os.path
 
 # local
 
@@ -46,22 +46,51 @@ class PlayList (QObject):
     def __init__ (self, parent, collection):
         QObject.__init__ (self, parent)
         self.collection= collection
-        self.files= []
-
-    def append (self, path):
-        self.files.append (path)
 
     def next (self):
         print "next!",
-        filename= self.files.pop (0)
+        filename= self.collection.nextSong ()
         return filename
+
+class ErrorNoDatabase (Exception):
+    pass
+
+class Collection (QObject):
+    """A Collection of Albums"""
+
+    def __init__ (self, parent, path):
+        QObject.__init__ (self, parent)
+        self.path= path
+        self.filepaths= []
+
+        try:
+            self.load ()
+        except ErrorNoDatabase:
+            print "no database!"
+            self.scan ()
+
+    def load (self):
+        raise ErrorNoDatabase
+
+    def scan (self):
+        print "scanning >%s<" % self.path
+        # args.arg (index) is returning something that ois not precisely a str
+        for root, dirs, files in os.walk (str (self.path)):
+            for filename in files:
+                filepath= os.path.join (root, filename)
+                print "adding %s to the colection" % filepath
+                self.filepaths.append (filepath)
+        print "scan finished"
+
+    def nextSong (self):
+        return self.filepaths.pop (0)
 
 
 #########################################
 # all the bureaucratic init of a KDE App
-appName     = "aulos.py"
+appName     = "satyr.py"
 catalog     = ""
-programName = ki18n ("aulos")                 #ki18n required here
+programName = ki18n ("satyr")                 #ki18n required here
 version     = "0.1a"
 description = ki18n ("I need a media player that thinks about music the way I think about it. This is such a program.")         #ki18n required here
 license     = KAboutData.License_GPL
@@ -87,12 +116,14 @@ args= KCmdLineArgs.parsedArgs ()
 #########################################
 # the app itself!
 
-playlist= PlayList (app, None)
+collections= []
+for index in xrange (args.count ()):
+    collections.append (Collection (app, args.arg (index)))
+
+# TODO: really implement several collections
+playlist= PlayList (app, collections[0])
 player= Player (app, playlist)
 player.finished.connect (app.quit)
-
-for index in xrange (args.count ()):
-    playlist.append (args.arg (index))
 
 player.play ()
 app.exec_ ()
