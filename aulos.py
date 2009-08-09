@@ -4,7 +4,7 @@
 # a.k.a. Marsyas
 
 # qt/kde related
-from PyKDE4.kdecore import KCmdLineArgs, KAboutData, i18n, ki18n
+from PyKDE4.kdecore import KCmdLineArgs, KAboutData, i18n, ki18n, KCmdLineOptions
 from PyKDE4.kdeui import KApplication
 # from PyKDE4.phonon import Phonon
 from PyQt4.phonon import Phonon
@@ -35,7 +35,12 @@ aboutData   = KAboutData (appName, catalog, programName, version, description,
 aboutData.addAuthor (ki18n ("Marcos Dione"), ki18n ("design and implementation"))
 
 KCmdLineArgs.init (sys.argv, aboutData)
-app = KApplication ()
+options= KCmdLineOptions ()
+options.add ("+file", ki18n ("file to play"))
+KCmdLineArgs.addCmdLineOptions (options)
+
+app= KApplication ()
+args= KCmdLineArgs.parsedArgs ()
 
 #########################################
 # the app itself!
@@ -49,7 +54,7 @@ print ao.outputDevice ().name ()
 Phonon.createPath (media, ao)
 # player= Phonon.createPlayer (Phonon.MusicCategory, media.currentSource ())
 
-media.setCurrentSource (Phonon.MediaSource (sys.argv[1]))
+media.setCurrentSource (Phonon.MediaSource (args.arg (0)))
 media.play ()
 
 # I whish it were this easy
