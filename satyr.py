@@ -10,15 +10,36 @@ from PyKDE4.kdeui import KApplication
 from PyQt4.phonon import Phonon
 from PyQt4.QtCore import SIGNAL, pyqtSignal, QObject, QUrl
 
+# dbus
+import dbus
+import dbus.mainloop.qt
+import dbus.service
+
 # std python
-import sys, os, os.path
+import sys, os, os.path, time
 
 # local
 
-class Player (QObject):
+# globals :|
+BUS_NAME= 'org.kde.satyr'
+
+MetaQObject= type (QObject)
+MetaObject= type (dbus.service.Object)
+
+class MetaPlayer (MetaQObject, MetaObject):
+    """Dummy metaclass that allows us to inherit from both QObject and d.s.Object"""
+    def __init__(cls, name, bases, dct):
+        MetaObject.__init__ (cls, name, bases, dct)
+        MetaQObject.__init__ (cls, name, bases, dct)
+
+class Player (dbus.service.Object, QObject):
+    __metaclass__= MetaPlayer
+
     finished= pyqtSignal ()
 
-    def __init__ (self, parent, playlist):
+    def __init__ (self, parent, bus, playlist):
+        bus_name= dbus.service.BusName (BUS_NAME, bus=bus)
+        dbus.service.Object.__init__ (self, bus_name, "/player")
         QObject.__init__ (self, parent)
         self.playlist= playlist
 
@@ -30,8 +51,10 @@ class Player (QObject):
         self.ao= Phonon.AudioOutput (Phonon.MusicCategory, parent)
         Phonon.createPath (self.media, self.ao)
 
+    @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def play (self):
         try:
+            time.sleep (0.2)
             filename= self.playlist.next ()
             print "playing", filename
             self.media.setCurrentSource (Phonon.MediaSource (filename))
@@ -39,6 +62,10 @@ class Player (QObject):
         except IndexError:
             print "playlist empty"
             self.finished.emit ()
+
+    @dbus.service.method(BUS_NAME, in_signature='', out_signature='')
+    def quit (self):
+        self.finished.emit ()
 
 class PlayList (QObject):
     finished= pyqtSignal ()
@@ -113,6 +140,10 @@ KCmdLineArgs.addCmdLineOptions (options)
 app= KApplication ()
 args= KCmdLineArgs.parsedArgs ()
 
+dbus.mainloop.qt.DBusQtMainLoop (set_as_default=True)
+bus= dbus.SessionBus ()
+
+
 #########################################
 # the app itself!
 
@@ -122,7 +153,7 @@ for index in xrange (args.count ()):
 
 # TODO: really implement several collections
 playlist= PlayList (app, collections[0])
-player= Player (app, playlist)
+player= Player (app, bus, playlist)
 player.finished.connect (app.quit)
 
 player.play ()
