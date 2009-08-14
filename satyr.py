@@ -41,12 +41,14 @@ class Player (dbus.service.Object, QObject):
         bus_name= dbus.service.BusName (BUS_NAME, bus=bus)
         dbus.service.Object.__init__ (self, bus_name, "/player")
         QObject.__init__ (self, parent)
+
         self.playlist= playlist
+        self.filename= None
 
         # TypeError: too many arguments to PyKDE4.phonon.MediaObject(), 0 at most expected
         # self.media= Phonon.MediaObject (parent)
         self.media= Phonon.MediaObject ()
-        self.connect (self.media, SIGNAL("finished ()"), self.play)
+        self.connect (self.media, SIGNAL("finished ()"), self.next)
 
         self.ao= Phonon.AudioOutput (Phonon.MusicCategory, parent)
         Phonon.createPath (self.media, self.ao)
@@ -55,15 +57,22 @@ class Player (dbus.service.Object, QObject):
     def play (self):
         try:
             time.sleep (0.2)
-            filename= self.playlist.next ()
-            print "playing", filename
-            self.media.setCurrentSource (Phonon.MediaSource (filename))
-            self.media.play ()
+            if self.filename is None:
+                self.filename= self.playlist.next ()
+            print "playing", self.filename
+            # self.media.setCurrentSource (Phonon.MediaSource (filename))
+            # self.media.play ()
+
         except IndexError:
             print "playlist empty"
             self.finished.emit ()
 
-    @dbus.service.method(BUS_NAME, in_signature='', out_signature='')
+    @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
+    def next (self):
+        self.filename= self.playlist.next ()
+        self.play ()
+
+    @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def quit (self):
         self.finished.emit ()
 
