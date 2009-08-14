@@ -1,7 +1,7 @@
 #! /usr/bin/python
+# vim: set fileencoding=utf-8 :
 # (c) 2009 Marcos Dione <mdione@grulic.org.ar>
 # distributed under the terms of the GPLv2.1
-# a.k.a. Marsyas
 
 # qt/kde related
 from PyKDE4.kdecore import KCmdLineArgs, KAboutData, i18n, ki18n, KCmdLineOptions
@@ -54,6 +54,12 @@ class Player (dbus.service.Object, QObject):
 
         self.ao= Phonon.AudioOutput (Phonon.MusicCategory, parent)
         Phonon.createPath (self.media, self.ao)
+
+    @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
+    def prev (self):
+        self.filename= self.playlist.prev ()
+        if self.playing:
+            self.play ()
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def play (self):
@@ -110,6 +116,10 @@ class PlayList (QObject):
         QObject.__init__ (self, parent)
         self.collection= collection
 
+    def prev (self):
+        print "¡prev",
+        return self.collection.prevSong ()
+
     def next (self):
         print "next!",
         return self.collection.nextSong ()
@@ -124,7 +134,7 @@ class Collection (QObject):
         QObject.__init__ (self, parent)
         self.path= path
         self.filepaths= []
-        self.index= 0
+        self.index= -1
 
         try:
             self.load ()
@@ -145,9 +155,14 @@ class Collection (QObject):
                 self.filepaths.append (filepath)
         print "scan finished"
 
-    def nextSong (self):
+    def prevSong (self):
+        self.index-= 1
         filepath= self.filepaths[self.index]
+        return filepath
+
+    def nextSong (self):
         self.index+= 1
+        filepath= self.filepaths[self.index]
         return filepath
 
 
