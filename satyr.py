@@ -45,6 +45,7 @@ class Player (dbus.service.Object, QObject):
         self.playlist= playlist
         self.filename= None
         self.playing= False
+        self.paused= False
 
         # TypeError: too many arguments to PyKDE4.phonon.MediaObject(), 0 at most expected
         # self.media= Phonon.MediaObject (parent)
@@ -56,30 +57,46 @@ class Player (dbus.service.Object, QObject):
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def play (self):
-        self.playing= True
-        try:
-            time.sleep (0.2)
-            if self.filename is None:
-                self.filename= self.playlist.next ()
-            print "playing", self.filename
-            # self.media.setCurrentSource (Phonon.MediaSource (filename))
-            # self.media.play ()
+        if self.paused:
+            self.pause ()
+        else:
+            self.playing= True
+            try:
+                time.sleep (0.2)
+                if self.filename is None:
+                    self.filename= self.playlist.next ()
+                print "playing", self.filename
+                self.media.setCurrentSource (Phonon.MediaSource (self.filename))
+                self.media.play ()
 
-        except IndexError:
-            print "playlist empty"
-            self.finished.emit ()
+            except IndexError:
+                print "playlist empty"
+                self.finished.emit ()
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
-    def next (self):
-        self.filename= self.playlist.next ()
+    def pause (self):
+        """toggle"""
         if self.playing:
-            self.play ()
+            if not self.paused:
+                print "pa!..."
+                self.media.pause ()
+                self.paused= True
+            else:
+                print "...use!"
+                self.media.play ()
+                self.paused= False
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def stop (self):
         print "*screeeech*! stoping!"
         self.media.stop ()
         self.playing= False
+
+    @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
+    def next (self):
+        self.filename= self.playlist.next ()
+        if self.playing:
+            self.play ()
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def quit (self):
