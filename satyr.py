@@ -44,6 +44,7 @@ class Player (dbus.service.Object, QObject):
 
         self.playlist= playlist
         self.filename= None
+        self.playing= False
 
         # TypeError: too many arguments to PyKDE4.phonon.MediaObject(), 0 at most expected
         # self.media= Phonon.MediaObject (parent)
@@ -55,6 +56,7 @@ class Player (dbus.service.Object, QObject):
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def play (self):
+        self.playing= True
         try:
             time.sleep (0.2)
             if self.filename is None:
@@ -70,10 +72,18 @@ class Player (dbus.service.Object, QObject):
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def next (self):
         self.filename= self.playlist.next ()
-        self.play ()
+        if self.playing:
+            self.play ()
+
+    @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
+    def stop (self):
+        print "*screeeech*! stoping!"
+        self.media.stop ()
+        self.playing= False
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def quit (self):
+        print "bye!"
         self.finished.emit ()
 
 class PlayList (QObject):
@@ -85,8 +95,7 @@ class PlayList (QObject):
 
     def next (self):
         print "next!",
-        filename= self.collection.nextSong ()
-        return filename
+        return self.collection.nextSong ()
 
 class ErrorNoDatabase (Exception):
     pass
@@ -98,6 +107,7 @@ class Collection (QObject):
         QObject.__init__ (self, parent)
         self.path= path
         self.filepaths= []
+        self.index= 0
 
         try:
             self.load ()
@@ -119,7 +129,9 @@ class Collection (QObject):
         print "scan finished"
 
     def nextSong (self):
-        return self.filepaths.pop (0)
+        filepath= self.filepaths[self.index]
+        self.index+= 1
+        return filepath
 
 
 #########################################
