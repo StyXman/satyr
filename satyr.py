@@ -17,7 +17,7 @@ import dbus.mainloop.qt
 import dbus.service
 
 # std python
-import sys, os, os.path, time
+import sys, os, os.path, time, bisect, stat
 
 # local
 
@@ -135,10 +135,12 @@ class PlayList (dbus.service.Object, QObject):
 class ErrorNoDatabase (Exception):
     pass
 
-class Collection (QObject):
+class Collection (dbus.service.Object, QObject):
+    __metaclass__= MetaObject
     """A Collection of Albums"""
 
     def __init__ (self, parent, path):
+        dbus.service.Object.__init__ (self, busName, "/collection")
         QObject.__init__ (self, parent)
         self.path= path
         self.filepaths= []
@@ -161,15 +163,31 @@ class Collection (QObject):
     def scan (self, path=None):
         if path is None:
             path= self.path
-        print "scanning >%s<" % path
-        print type (path)
         # args.arg (index) is returning something that is not precisely a str
-        for root, dirs, files in os.walk (str (path)):
-            for filename in files:
-                filepath= os.path.join (root, filename)
-                print "adding %s to the colection" % filepath
-                self.filepaths.append (filepath)
+        path= unicode (path)
+        print "scanning >%s<" % repr (path)
+        mode= os.stat (path).st_mode
+        if stat.S_ISDIR (mode):
+            for root, dirs, files in os.walk (path):
+                for filename in files:
+                    filepath= os.path.join (root, filename)
+                    self.add (filepath)
+        elif stat.S_ISREG (mode):
+            self.add (path)
+
         print "scan finished"
+
+    def add (self, filepath):
+        index= bisect.bisect (self.filepaths, filepath)
+        # test if it's not already there
+        if index==0 or self.filepaths[index-1]!= filepath:
+            print "adding %s to the colection" % filepath
+            self.filepaths.insert (index, filepath)
+
+    @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
+    def dump (self):
+        for filepath in self.filepaths:
+            print filepath
 
     def prevSong (self):
         self.index-= 1
@@ -226,7 +244,7 @@ playlist= PlayList (app, busName, collections[0])
 player= Player (app, busName, playlist)
 player.finished.connect (app.quit)
 
-player.play ()
+# player.play ()
 app.exec_ ()
 
 # end
