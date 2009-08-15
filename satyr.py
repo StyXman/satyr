@@ -20,6 +20,7 @@ import dbus.service
 import sys, os, os.path, time, bisect, stat
 
 # local
+from primes import primes
 
 # globals :|
 BUS_NAME= 'org.kde.satyr'
@@ -122,15 +123,30 @@ class PlayList (dbus.service.Object, QObject):
     def __init__ (self, parent, busName, collection):
         dbus.service.Object.__init__ (self, busName, "/playlist")
         QObject.__init__ (self, parent)
+        # TODO: support more collections
         self.collection= collection
+        self.random= False
+
+    @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
+    def toggleRandom (self):
+        """toggle"""
+        self.random= not self.random
 
     def prev (self):
         print "¡prev",
-        return self.collection.prevSong ()
+        if self.random:
+            filepath= self.collection.prevRandomSong ()
+        else:
+            filepath= self.collection.prevSong ()
+        return filepath
 
     def next (self):
         print "next!",
-        return self.collection.nextSong ()
+        if self.random:
+            filepath= self.collection.nextRandomSong ()
+        else:
+            filepath= self.collection.nextSong ()
+        return filepath
 
 class ErrorNoDatabase (Exception):
     pass
@@ -145,6 +161,9 @@ class Collection (dbus.service.Object, QObject):
         self.path= path
         self.filepaths= []
         self.index= -1
+        self.count= 0
+        self.seed= 0
+        self.prime= 17
 
         self.watch= KDirWatch (self)
         self.watch.addDir (self.path,
@@ -183,6 +202,7 @@ class Collection (dbus.service.Object, QObject):
         if index==0 or self.filepaths[index-1]!= filepath:
             print "adding %s to the colection" % filepath
             self.filepaths.insert (index, filepath)
+            self.count+= 1
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def dump (self):
@@ -196,6 +216,22 @@ class Collection (dbus.service.Object, QObject):
 
     def nextSong (self):
         self.index+= 1
+        filepath= self.filepaths[self.index]
+        return filepath
+
+    def nextRandomSong (self):
+        # TODO: FIX this ugliness
+        if self.index==-1:
+            self.index= 0
+        else:
+            self.index= (self.seed+self.prime)%self.count
+        self.seed= self.index
+        filepath= self.filepaths[self.index]
+        return filepath
+
+    def prevRandomSong (self):
+        self.index= (self.seed-self.prime)%self.count
+        self.seed= self.index
         filepath= self.filepaths[self.index]
         return filepath
 
