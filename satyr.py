@@ -6,6 +6,7 @@
 # qt/kde related
 from PyKDE4.kdecore import KCmdLineArgs, KAboutData, i18n, ki18n, KCmdLineOptions
 from PyKDE4.kdeui import KApplication
+from PyKDE4.kio import KDirWatch
 # from PyKDE4.phonon import Phonon
 from PyQt4.phonon import Phonon
 from PyQt4.QtCore import SIGNAL, pyqtSignal, QObject, QUrl
@@ -23,17 +24,17 @@ import sys, os, os.path, time
 # globals :|
 BUS_NAME= 'org.kde.satyr'
 
+MetaDBusObject= type (dbus.service.Object)
 MetaQObject= type (QObject)
-MetaObject= type (dbus.service.Object)
 
-class MetaPlayer (MetaQObject, MetaObject):
+class MetaObject (MetaQObject, MetaDBusObject):
     """Dummy metaclass that allows us to inherit from both QObject and d.s.Object"""
     def __init__(cls, name, bases, dct):
-        MetaObject.__init__ (cls, name, bases, dct)
+        MetaDBusObject.__init__ (cls, name, bases, dct)
         MetaQObject.__init__ (cls, name, bases, dct)
 
 class Player (dbus.service.Object, QObject):
-    __metaclass__= MetaPlayer
+    __metaclass__= MetaObject
 
     finished= pyqtSignal ()
 
@@ -43,6 +44,8 @@ class Player (dbus.service.Object, QObject):
         QObject.__init__ (self, parent)
 
         self.playlist= playlist
+        # TODO: fix when not UTI
+        # self.connect (self.media, SIGNAL("finished ()"), self.next)
         self.filename= None
         self.playing= False
         self.paused= False
@@ -57,9 +60,13 @@ class Player (dbus.service.Object, QObject):
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def prev (self):
-        self.filename= self.playlist.prev ()
-        if self.playing:
-            self.play ()
+        try:
+            self.filename= self.playlist.prev ()
+            if self.playing:
+                self.play ()
+        except IndexError:
+            print "playlist empty"
+            self.stop ()
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def play (self):
@@ -67,17 +74,12 @@ class Player (dbus.service.Object, QObject):
             self.pause ()
         else:
             self.playing= True
-            try:
-                time.sleep (0.2)
-                if self.filename is None:
-                    self.filename= self.playlist.next ()
-                print "playing", self.filename
-                self.media.setCurrentSource (Phonon.MediaSource (self.filename))
-                self.media.play ()
-
-            except IndexError:
-                print "playlist empty"
-                self.finished.emit ()
+            time.sleep (0.2)
+            if self.filename is None:
+                self.next ()
+            print "playing", self.filename
+            self.media.setCurrentSource (Phonon.MediaSource (self.filename))
+            # self.media.play ()
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def pause (self):
@@ -100,9 +102,13 @@ class Player (dbus.service.Object, QObject):
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def next (self):
-        self.filename= self.playlist.next ()
-        if self.playing:
-            self.play ()
+        try:
+            self.filename= self.playlist.next ()
+            if self.playing:
+                self.play ()
+        except IndexError:
+           print "playlist empty"
+           self.stop ()
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def quit (self):
@@ -136,6 +142,11 @@ class Collection (QObject):
         self.filepaths= []
         self.index= -1
 
+        self.watch= KDirWatch (self)
+        self.watch.addDir (self.path,
+            KDirWatch.WatchMode (KDirWatch.WatchFiles|KDirWatch.WatchSubDirs))
+        self.connect (self.watch, SIGNAL("created (const QString &)"), self.scan)
+
         try:
             self.load ()
         except ErrorNoDatabase:
@@ -145,10 +156,13 @@ class Collection (QObject):
     def load (self):
         raise ErrorNoDatabase
 
-    def scan (self):
-        print "scanning >%s<" % self.path
-        # args.arg (index) is returning something that ois not precisely a str
-        for root, dirs, files in os.walk (str (self.path)):
+    def scan (self, path=None):
+        if path is None:
+            path= self.path
+        print "scanning >%s<" % path
+        print type (path)
+        # args.arg (index) is returning something that is not precisely a str
+        for root, dirs, files in os.walk (str (path)):
             for filename in files:
                 filepath= os.path.join (root, filename)
                 print "adding %s to the colection" % filepath
