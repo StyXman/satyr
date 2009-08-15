@@ -38,13 +38,12 @@ class Player (dbus.service.Object, QObject):
 
     finished= pyqtSignal ()
 
-    def __init__ (self, parent, bus, playlist):
-        bus_name= dbus.service.BusName (BUS_NAME, bus=bus)
-        dbus.service.Object.__init__ (self, bus_name, "/player")
+    def __init__ (self, parent, busName, playlist):
+        dbus.service.Object.__init__ (self, busName, "/player")
         QObject.__init__ (self, parent)
 
         self.playlist= playlist
-        # TODO: fix when not UTI
+        # TODO: fix when not DUI
         # self.connect (self.media, SIGNAL("finished ()"), self.next)
         self.filename= None
         self.playing= False
@@ -115,10 +114,13 @@ class Player (dbus.service.Object, QObject):
         print "bye!"
         self.finished.emit ()
 
-class PlayList (QObject):
+class PlayList (dbus.service.Object, QObject):
+    __metaclass__= MetaObject
+
     finished= pyqtSignal ()
 
-    def __init__ (self, parent, collection):
+    def __init__ (self, parent, busName, collection):
+        dbus.service.Object.__init__ (self, busName, "/playlist")
         QObject.__init__ (self, parent)
         self.collection= collection
 
@@ -209,6 +211,7 @@ args= KCmdLineArgs.parsedArgs ()
 
 dbus.mainloop.qt.DBusQtMainLoop (set_as_default=True)
 bus= dbus.SessionBus ()
+busName= dbus.service.BusName (BUS_NAME, bus=bus)
 
 
 #########################################
@@ -219,8 +222,8 @@ for index in xrange (args.count ()):
     collections.append (Collection (app, args.arg (index)))
 
 # TODO: really implement several collections
-playlist= PlayList (app, collections[0])
-player= Player (app, bus, playlist)
+playlist= PlayList (app, busName, collections[0])
+player= Player (app, busName, playlist)
 player.finished.connect (app.quit)
 
 player.play ()
