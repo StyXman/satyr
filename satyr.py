@@ -18,6 +18,7 @@ import dbus.service
 
 # std python
 import sys, os, os.path, time, bisect, stat, random
+import magic
 
 # local
 from primes import primes
@@ -58,6 +59,19 @@ class Player (dbus.service.Object, QObject):
         self.ao= Phonon.AudioOutput (Phonon.MusicCategory, parent)
         Phonon.createPath (self.media, self.ao)
 
+        self.mimetypes= [ str (mimetype)
+            for mimetype in Phonon.BackendCapabilities.availableMimeTypes ()
+                if self.validMimetype (str (mimetype)) ]
+        self.magic= magic.open (magic.MAGIC_MIME)
+        self.magic.load ()
+
+    def validMimetype (self, mimetype):
+        valid= False
+        valid= valid or mimetype.startswith ('audio')
+        valid= valid or mimetype=='application/ogg'
+
+        return valid
+
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def prev (self):
         try:
@@ -77,6 +91,16 @@ class Player (dbus.service.Object, QObject):
             time.sleep (0.2)
             if self.filename is None:
                 self.next ()
+
+            mimetype= self.magic.file (self.filename).split (';')[0]
+            # detect mimetype and play only if it's suppourted
+            while mimetype not in self.mimetypes:
+                # TODO: remove it from the collection?
+                # or should the collection filter them while scaning?
+                print "skipping %s; mimetype %s not supported" % (self.filename, mimetype)
+                self.next ()
+                mimetype= self.magic.file (self.filename).split (';')[0]
+
             print "playing", self.filename
             self.media.setCurrentSource (Phonon.MediaSource (self.filename))
             self.media.play ()
@@ -145,7 +169,7 @@ class PlayList (dbus.service.Object, QObject):
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def toggleStopAfter (self):
         """toggle"""
-        print "toggle: random"
+        print "toggle: stopAfter"
         self.stopAfter= not self.stopAfter
 
     def prev (self):
@@ -235,7 +259,9 @@ class Collection (dbus.service.Object, QObject):
     def randomPrime (self):
         # select a random prime based on the amount of songs in the collection
         top= bisect.bisect (primes, self.count)
-        self.prime= random.choice (primes[:top])
+        # select from the upper 2/3,
+        # so in large collections the same artist is not picked consecutively
+        self.prime= random.choice (primes[top/3:top])
         print "prime selected:", self.prime
 
     def scan (self, path=None):
