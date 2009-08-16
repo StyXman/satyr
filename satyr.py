@@ -17,7 +17,7 @@ import dbus.mainloop.qt
 import dbus.service
 
 # std python
-import sys, os, os.path, time, bisect, stat
+import sys, os, os.path, time, bisect, stat, random
 
 # local
 from primes import primes
@@ -232,6 +232,12 @@ class Collection (dbus.service.Object, QObject):
                     for x in self.walk(path):
                         yield x
 
+    def randomPrime (self):
+        # select a random prime based on the amount of songs in the collection
+        top= bisect.bisect (primes, self.count)
+        self.prime= random.choice (primes[:top])
+        print "prime selected:", self.prime
+
     def scan (self, path=None):
         if path is None:
             path= self.path
@@ -248,16 +254,14 @@ class Collection (dbus.service.Object, QObject):
         elif stat.S_ISREG (mode):
             self.add (path)
 
-        print "scan finished"
-
-    def error (self):
-        pass
+        self.randomPrime ()
+        print "scan finished, found %d songs" % self.count
 
     def add (self, filepath):
         index= bisect.bisect (self.filepaths, filepath)
         # test if it's not already there
         if index==0 or self.filepaths[index-1]!= filepath:
-            print "adding %s to the colection" % filepath
+            # print "adding %s to the colection" % filepath
             self.filepaths.insert (index, filepath)
             self.count+= 1
 
