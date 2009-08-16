@@ -79,7 +79,7 @@ class Player (dbus.service.Object, QObject):
                 self.next ()
             print "playing", self.filename
             self.media.setCurrentSource (Phonon.MediaSource (self.filename))
-            # self.media.play ()
+            self.media.play ()
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def pause (self):
@@ -107,13 +107,21 @@ class Player (dbus.service.Object, QObject):
             if self.playing:
                 self.play ()
         except IndexError:
-           print "playlist empty"
-           self.stop ()
+            print "playlist empty"
+            self.stop ()
+        except StopAfter:
+            print "stopping after!"
+            # stopAfter is one time only
+            self.playlist.toggleStopAfter ()
+            self.stop ()
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def quit (self):
         print "bye!"
         self.finished.emit ()
+
+class StopAfter (Exception):
+    pass
 
 class PlayList (dbus.service.Object, QObject):
     __metaclass__= MetaObject
@@ -126,11 +134,19 @@ class PlayList (dbus.service.Object, QObject):
         # TODO: support more collections
         self.collection= collection
         self.random= False
+        self.stopAfter= False
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def toggleRandom (self):
         """toggle"""
+        print "toggle: random"
         self.random= not self.random
+
+    @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
+    def toggleStopAfter (self):
+        """toggle"""
+        print "toggle: random"
+        self.stopAfter= not self.stopAfter
 
     def prev (self):
         print "¡prev",
@@ -146,6 +162,8 @@ class PlayList (dbus.service.Object, QObject):
             filepath= self.collection.nextRandomSong ()
         else:
             filepath= self.collection.nextSong ()
+        if self.stopAfter:
+            raise StopAfter
         return filepath
 
 class ErrorNoDatabase (Exception):
@@ -179,6 +197,41 @@ class Collection (dbus.service.Object, QObject):
     def load (self):
         raise ErrorNoDatabase
 
+    def walk (self, top):
+        # TODO: support single filenames
+        # if not os.path.isdir (top):
+        #     return top
+        try:
+            # Note that listdir and error are globals in this module due
+            # to earlier import-*.
+            names = os.listdir(top)
+        except Exception, err:
+            print err
+            return
+
+        dirs, nondirs = [], []
+        for name in names:
+            try:
+                path= top+u'/'+name
+            except UnicodeDecodeError:
+                print name, "skipped: bad encoding"
+            else:
+                if os.path.isdir(path):
+                    dirs.append(name)
+                else:
+                    nondirs.append(name)
+
+        yield top, dirs, nondirs
+        for name in dirs:
+            try:
+                path = top+u'/'+name
+            except UnicodeDecodeError:
+                print name, "skipped: bad encoding"
+            else:
+                if not os.path.islink(path):
+                    for x in self.walk(path):
+                        yield x
+
     def scan (self, path=None):
         if path is None:
             path= self.path
@@ -187,7 +240,8 @@ class Collection (dbus.service.Object, QObject):
         print "scanning >%s<" % repr (path)
         mode= os.stat (path).st_mode
         if stat.S_ISDIR (mode):
-            for root, dirs, files in os.walk (path):
+            # http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=481795
+            for root, dirs, files in self.walk (path):
                 for filename in files:
                     filepath= os.path.join (root, filename)
                     self.add (filepath)
@@ -195,6 +249,9 @@ class Collection (dbus.service.Object, QObject):
             self.add (path)
 
         print "scan finished"
+
+    def error (self):
+        pass
 
     def add (self, filepath):
         index= bisect.bisect (self.filepaths, filepath)
