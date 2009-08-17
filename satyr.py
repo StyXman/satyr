@@ -9,7 +9,7 @@ from PyKDE4.kdeui import KApplication
 from PyKDE4.kio import KDirWatch
 # from PyKDE4.phonon import Phonon
 from PyQt4.phonon import Phonon
-from PyQt4.QtCore import SIGNAL, pyqtSignal, QObject, QUrl
+from PyQt4.QtCore import SIGNAL, pyqtSignal, QObject, QUrl, QByteArray
 
 # dbus
 import dbus
@@ -40,8 +40,8 @@ class Player (dbus.service.Object, QObject):
 
     finished= pyqtSignal ()
 
-    def __init__ (self, parent, busName, playlist):
-        dbus.service.Object.__init__ (self, busName, "/player")
+    def __init__ (self, parent, playlist, busName, busPath):
+        dbus.service.Object.__init__ (self, busName, busPath)
         QObject.__init__ (self, parent)
 
         self.playlist= playlist
@@ -107,8 +107,9 @@ class Player (dbus.service.Object, QObject):
                 self.next ()
                 mimetype= self.magic.file (self.filename).split (';')[0]
 
-            print "playing", self.filename
+            print "playing", self.filename,
             self.media.setCurrentSource (Phonon.MediaSource (self.filename))
+            print "!"
             self.media.play ()
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
@@ -139,6 +140,7 @@ class Player (dbus.service.Object, QObject):
                 # stopAfter is one time only
                 self.toggleStopAfter ()
                 self.stop ()
+            # BUG: this should not be here
             elif self.playing:
                 self.play ()
         except IndexError:
@@ -164,11 +166,11 @@ class PlayList (dbus.service.Object, QObject):
 
     finished= pyqtSignal ()
 
-    def __init__ (self, parent, busName, collection):
-        dbus.service.Object.__init__ (self, busName, "/playlist")
+    def __init__ (self, parent, collections, busName=None, busPath=None):
+        dbus.service.Object.__init__ (self, busName, busPath)
         QObject.__init__ (self, parent)
         # TODO: support more collections
-        self.collection= collection
+        self.collection= collections[0]
         self.random= False
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
@@ -200,8 +202,8 @@ class Collection (dbus.service.Object, QObject):
     __metaclass__= MetaObject
     """A Collection of Albums"""
 
-    def __init__ (self, parent, path):
-        dbus.service.Object.__init__ (self, busName, "/collection")
+    def __init__ (self, parent, path, busName=None, busPath=None):
+        dbus.service.Object.__init__ (self, busName, busPath)
         QObject.__init__ (self, parent)
         self.path= path
         self.filepaths= []
@@ -229,9 +231,8 @@ class Collection (dbus.service.Object, QObject):
         # if not os.path.isdir (top):
         #     return top
         try:
-            # Note that listdir and error are globals in this module due
-            # to earlier import-*.
-            names = os.listdir(top)
+            # names= [ str (x) for x in os.listdir (top)]
+            names= os.listdir (top)
         except Exception, err:
             print err
             return
@@ -239,8 +240,9 @@ class Collection (dbus.service.Object, QObject):
         dirs, nondirs = [], []
         for name in names:
             try:
-                path= top+'/'+name
+                path= top+u'/'+name
             except UnicodeDecodeError:
+                print repr (top), repr (name)
                 print name, "skipped: bad encoding"
             else:
                 if os.path.isdir(path):
@@ -267,11 +269,16 @@ class Collection (dbus.service.Object, QObject):
         self.prime= random.choice (primes[top/3:top])
         print "prime selected:", self.prime
 
+    def newFiles (self, path):
+        # BUG: this is ugly
+        qba= QByteArray ()
+        qba.append (path)
+        path= str (qba)
+        self.scan (path)
+
     def scan (self, path=None):
         if path is None:
             path= self.path
-        # args.arg (index) is returning something that is not precisely a str
-        path= unicode (path)
         print "scanning >%s<" % repr (path)
         mode= os.stat (path).st_mode
         if stat.S_ISDIR (mode):
@@ -326,51 +333,58 @@ class Collection (dbus.service.Object, QObject):
         return filepath
 
 
-#########################################
-# all the bureaucratic init of a KDE App
-appName     = "satyr.py"
-catalog     = ""
-programName = ki18n ("satyr")                 #ki18n required here
-version     = "0.1a"
-description = ki18n ("I need a media player that thinks about music the way I think about it. This is such a program.")         #ki18n required here
-license     = KAboutData.License_GPL
-copyright   = ki18n ("(c) 2009 Marcos Dione")    #ki18n required here
-text        = ki18n ("none")                    #ki18n required here
-homePage    = ""
-bugEmail    = "mdione@grulic.org.ar"
+if __name__=='__main__':
+    #########################################
+    # all the bureaucratic init of a KDE App
+    appName     = "satyr.py"
+    catalog     = ""
+    programName = ki18n ("satyr")                 #ki18n required here
+    version     = "0.1a"
+    description = ki18n ("I need a media player that thinks about music the way I think about it. This is such a program.")         #ki18n required here
+    license     = KAboutData.License_GPL
+    copyright   = ki18n ("(c) 2009 Marcos Dione")    #ki18n required here
+    text        = ki18n ("none")                    #ki18n required here
+    homePage    = ""
+    bugEmail    = "mdione@grulic.org.ar"
 
-aboutData   = KAboutData (appName, catalog, programName, version, description,
-                            license, copyright, text, homePage, bugEmail)
+    aboutData   = KAboutData (appName, catalog, programName, version, description,
+                                license, copyright, text, homePage, bugEmail)
 
-# ki18n required for first two addAuthor () arguments
-aboutData.addAuthor (ki18n ("Marcos Dione"), ki18n ("design and implementation"))
+    # ki18n required for first two addAuthor () arguments
+    aboutData.addAuthor (ki18n ("Marcos Dione"), ki18n ("design and implementation"))
 
-KCmdLineArgs.init (sys.argv, aboutData)
-options= KCmdLineOptions ()
-options.add ("+file", ki18n ("file to play"))
-KCmdLineArgs.addCmdLineOptions (options)
+    KCmdLineArgs.init (sys.argv, aboutData)
+    options= KCmdLineOptions ()
+    options.add ("+file", ki18n ("file to play"))
+    KCmdLineArgs.addCmdLineOptions (options)
 
-app= KApplication ()
-args= KCmdLineArgs.parsedArgs ()
+    app= KApplication ()
+    args= KCmdLineArgs.parsedArgs ()
 
-dbus.mainloop.qt.DBusQtMainLoop (set_as_default=True)
-bus= dbus.SessionBus ()
-busName= dbus.service.BusName (BUS_NAME, bus=bus)
+    dbus.mainloop.qt.DBusQtMainLoop (set_as_default=True)
+    bus= dbus.SessionBus ()
+    busName= dbus.service.BusName (BUS_NAME, bus=bus)
 
 
-#########################################
-# the app itself!
+    #########################################
+    # the app itself!
 
-collections= []
-for index in xrange (args.count ()):
-    collections.append (Collection (app, args.arg (index)))
+    collections= []
+    for index in xrange (args.count ()):
+        # paths must be bytes, nos ascii or utf-8
+        path= args.arg (index)
+        # BUG: this is ugly
+        # qba= QByteArray ()
+        # qba.append (path)
+        # path= str (qba)
+        # convert QString to unicode
+        path= unicode (path)
+        collections.append (Collection (app, path, busName, "/collection_%04d" % index))
 
-# TODO: really implement several collections
-playlist= PlayList (app, busName, collections[0])
-player= Player (app, busName, playlist)
-player.finished.connect (app.quit)
+    playlist= PlayList (app, collections, busName, '/playlist')
+    player= Player (app, playlist, busName, '/player')
+    player.finished.connect (app.quit)
 
-# player.play ()
-app.exec_ ()
+    app.exec_ ()
 
 # end
