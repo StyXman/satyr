@@ -271,9 +271,12 @@ class Collection (dbus.service.Object, QObject):
 
     def newFiles (self, path):
         # BUG: this is ugly
-        qba= QByteArray ()
-        qba.append (path)
-        path= str (qba)
+        # qba= QByteArray ()
+        # qba.append (path)
+        # path= str (qba)
+
+        # convert QString to unicode
+        path= unicode (path)
         self.scan (path)
 
     def scan (self, path=None):
@@ -332,8 +335,7 @@ class Collection (dbus.service.Object, QObject):
         filepath= self.filepaths[self.index]
         return filepath
 
-
-if __name__=='__main__':
+def main ():
     #########################################
     # all the bureaucratic init of a KDE App
     appName     = "satyr.py"
@@ -373,10 +375,12 @@ if __name__=='__main__':
     for index in xrange (args.count ()):
         # paths must be bytes, nos ascii or utf-8
         path= args.arg (index)
+
         # BUG: this is ugly
         # qba= QByteArray ()
         # qba.append (path)
         # path= str (qba)
+
         # convert QString to unicode
         path= unicode (path)
         collections.append (Collection (app, path, busName, "/collection_%04d" % index))
@@ -386,5 +390,8 @@ if __name__=='__main__':
     player.finished.connect (app.quit)
 
     app.exec_ ()
+
+if __name__=='__main__':
+    main ()
 
 # end
