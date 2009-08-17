@@ -50,6 +50,7 @@ class Player (dbus.service.Object, QObject):
         self.filename= None
         self.playing= False
         self.paused= False
+        self.stopAfter= False
 
         # TypeError: too many arguments to PyKDE4.phonon.MediaObject(), 0 at most expected
         # self.media= Phonon.MediaObject (parent)
@@ -66,6 +67,9 @@ class Player (dbus.service.Object, QObject):
         self.magic.load ()
 
     def validMimetype (self, mimetype):
+        """Phonon.BackendCapabilities.availableMimeTypes() returns a lot of nonsense,
+        like image/png or so.
+        Filter only interesting mimetypes."""
         valid= False
         valid= valid or mimetype.startswith ('audio')
         valid= valid or mimetype=='application/ogg'
@@ -92,7 +96,9 @@ class Player (dbus.service.Object, QObject):
             if self.filename is None:
                 self.next ()
 
-            mimetype= self.magic.file (self.filename).split (';')[0]
+            print repr (self.filename)
+            mimetype_enc= self.magic.file (self.filename)
+            mimetype= mimetype_enc.split (';')[0]
             # detect mimetype and play only if it's suppourted
             while mimetype not in self.mimetypes:
                 # TODO: remove it from the collection?
@@ -128,16 +134,22 @@ class Player (dbus.service.Object, QObject):
     def next (self):
         try:
             self.filename= self.playlist.next ()
-            if self.playing:
+            if self.stopAfter:
+                print "stopping after!"
+                # stopAfter is one time only
+                self.toggleStopAfter ()
+                self.stop ()
+            elif self.playing:
                 self.play ()
         except IndexError:
             print "playlist empty"
             self.stop ()
-        except StopAfter:
-            print "stopping after!"
-            # stopAfter is one time only
-            self.playlist.toggleStopAfter ()
-            self.stop ()
+
+    @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
+    def toggleStopAfter (self):
+        """toggle"""
+        print "toggle: stopAfter"
+        self.stopAfter= not self.stopAfter
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def quit (self):
@@ -158,19 +170,12 @@ class PlayList (dbus.service.Object, QObject):
         # TODO: support more collections
         self.collection= collection
         self.random= False
-        self.stopAfter= False
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def toggleRandom (self):
         """toggle"""
         print "toggle: random"
         self.random= not self.random
-
-    @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
-    def toggleStopAfter (self):
-        """toggle"""
-        print "toggle: stopAfter"
-        self.stopAfter= not self.stopAfter
 
     def prev (self):
         print "¡prev",
@@ -186,8 +191,6 @@ class PlayList (dbus.service.Object, QObject):
             filepath= self.collection.nextRandomSong ()
         else:
             filepath= self.collection.nextSong ()
-        if self.stopAfter:
-            raise StopAfter
         return filepath
 
 class ErrorNoDatabase (Exception):
@@ -236,7 +239,7 @@ class Collection (dbus.service.Object, QObject):
         dirs, nondirs = [], []
         for name in names:
             try:
-                path= top+u'/'+name
+                path= top+'/'+name
             except UnicodeDecodeError:
                 print name, "skipped: bad encoding"
             else:
