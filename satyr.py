@@ -4,7 +4,7 @@
 # distributed under the terms of the GPLv2.1
 
 # qt/kde related
-from PyKDE4.kdecore import KCmdLineArgs, KAboutData, i18n, ki18n, KCmdLineOptions
+from PyKDE4.kdecore import KCmdLineArgs, KAboutData, i18n, ki18n, KCmdLineOptions, KSharedConfig
 from PyKDE4.kdeui import KApplication
 from PyKDE4.kio import KDirWatch
 # from PyKDE4.phonon import Phonon
@@ -25,6 +25,22 @@ from primes import primes
 
 # globals :|
 BUS_NAME= 'org.kde.satyr'
+
+class ConfigObject (object):
+    pass
+
+class Config (ConfigObject):
+    def __init__ (self):
+        self.__config__= KSharedConfig ('satyrrc')
+
+    def load (self):
+        for groupName in self.__config__.groupList ():
+            # atributes can only be ascii!
+            setattr (self, str (groupName), ConfigObject ())
+            # group= self.__config__.group (groupName)
+            group= dict (self.__config__.entryMap (groupName))
+            for k, v in group:
+                setattr (getattr (self, str (groupName)), str (k), v)
 
 MetaDBusObject= type (dbus.service.Object)
 MetaQObject= type (QObject)
@@ -72,7 +88,19 @@ class Player (dbus.service.Object, QObject):
         Filter only interesting mimetypes."""
         valid= False
         valid= valid or mimetype.startswith ('audio')
+        # we can play the sound of video files :|
+        # also some wma files are detected as video :|
+        # skipping /home/mdione/media/music//N/Noir Desir/Album inconnu (13-07-2004 01:59:07)/10 - Piste 10.wma;
+        # mimetype video/x-ms-asf not supported
+        # skipping /home/mdione/media/music//Spinetta Y Los Socios Del Desierto/Spinetta y Los Socios Del Desierto/01-Cheques.mp3;
+        # mimetype application/octet-stream not supported
+        # skipping /home/mdione/media/music//Z/Zen Guerrilla/Shadows on the sun/05 - Graffiti hustle.mp3;
+        # mimetype application/octet-stream not supported
+        valid= valid or mimetype.startswith ('video')
         valid= valid or mimetype=='application/ogg'
+        # BUG?
+        # skipping /home/mdione/media/music//N/Nirvana/Bleach/05 - Love buzz.mp3;
+        # mimetype application/octet-stream not supported
 
         return valid
 
@@ -322,16 +350,22 @@ class Collection (dbus.service.Object, QObject):
     def nextRandomSong (self):
         # TODO: FIX this ugliness
         if self.index==-1:
-            self.index= 0
+            # HACK: ugly
+            random= 1
         else:
-            self.index= (self.seed+self.prime)%self.count
-        self.seed= self.index
+            random= (self.seed+self.prime)%self.count
+        self.index= (self.index+random)%self.count
+        print random, self.index
+        self.seed= random
         filepath= self.filepaths[self.index]
         return filepath
 
     def prevRandomSong (self):
-        self.index= (self.seed-self.prime)%self.count
-        self.seed= self.index
+        random= self.seed
+        self.index= (self.index-random)%self.count
+        random= (self.seed-self.prime)%self.count
+        print random, self.index
+        self.seed= random
         filepath= self.filepaths[self.index]
         return filepath
 
