@@ -125,7 +125,9 @@ class Player (dbus.service.Object, QObject):
                 self.next ()
 
             print repr (self.filename)
-            mimetype_enc= self.magic.file (self.filename)
+            f= file (self.filename)
+            data= f.read (4096)
+            mimetype_enc= self.magic.buffer (data)
             mimetype= mimetype_enc.split (';')[0]
             # detect mimetype and play only if it's suppourted
             while mimetype not in self.mimetypes:
