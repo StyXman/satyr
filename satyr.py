@@ -67,11 +67,14 @@ class Player (dbus.service.Object, QObject):
         self.playing= False
         self.paused= False
         self.stopAfter= False
+        self.quitAfter= False
 
         # TypeError: too many arguments to PyKDE4.phonon.MediaObject(), 0 at most expected
         # self.media= Phonon.MediaObject (parent)
         self.media= Phonon.MediaObject ()
-        self.connect (self.media, SIGNAL("finished ()"), self.next)
+        # god bless PyQt4.5
+        self.media.finished.connect (self.next)
+        self.media.stateChanged.connect (self.stateChanged)
 
         self.ao= Phonon.AudioOutput (Phonon.MusicCategory, parent)
         Phonon.createPath (self.media, self.ao)
@@ -86,6 +89,7 @@ class Player (dbus.service.Object, QObject):
         """Phonon.BackendCapabilities.availableMimeTypes() returns a lot of nonsense,
         like image/png or so.
         Filter only interesting mimetypes."""
+
         valid= False
         valid= valid or mimetype.startswith ('audio')
         # we can play the sound of video files :|
@@ -103,6 +107,15 @@ class Player (dbus.service.Object, QObject):
         # mimetype application/octet-stream not supported
 
         return valid
+
+    def stateChanged (self, new, old):
+        print "state changed from %d to %d" % (old, new)
+        if new==Phonon.StoppedState:
+            print 'stopped!'
+        elif new==Phonon.ErrorState:
+            print "%d: %s" % (self.media.errorType (), self.media.errorString ())
+            # just skip it
+            self.next ()
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def prev (self):
@@ -124,9 +137,10 @@ class Player (dbus.service.Object, QObject):
             if self.filename is None:
                 self.next ()
 
-            print repr (self.filename)
+            # print repr (self.filename)
             f= file (self.filename)
             data= f.read (4096)
+            f.close ()
             mimetype_enc= self.magic.buffer (data)
             mimetype= mimetype_enc.split (';')[0]
             # detect mimetype and play only if it's suppourted
@@ -134,12 +148,17 @@ class Player (dbus.service.Object, QObject):
                 # TODO: remove it from the collection?
                 # or should the collection filter them while scaning?
                 print "skipping %s; mimetype %s not supported" % (self.filename, mimetype)
-                self.next ()
-                mimetype= self.magic.file (self.filename).split (';')[0]
 
-            print "playing", self.filename,
+                self.next ()
+                f= file (self.filename)
+                data= f.read (4096)
+                f.close ()
+                mimetype_enc= self.magic.buffer (data)
+                mimetype= mimetype_enc.split (';')[0]
+
+            print "playing", self.filename
             self.media.setCurrentSource (Phonon.MediaSource (self.filename))
-            print "!"
+            # print "!"
             self.media.play ()
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
@@ -165,11 +184,16 @@ class Player (dbus.service.Object, QObject):
     def next (self):
         try:
             self.filename= self.playlist.next ()
+            # BUG: this should not be here
             if self.stopAfter:
                 print "stopping after!"
                 # stopAfter is one time only
                 self.toggleStopAfter ()
                 self.stop ()
+            # BUG: this should not be here
+            if self.quitAfter:
+                print "quiting after!"
+                self.quit ()
             # BUG: this should not be here
             elif self.playing:
                 self.play ()
@@ -182,6 +206,12 @@ class Player (dbus.service.Object, QObject):
         """toggle"""
         print "toggle: stopAfter"
         self.stopAfter= not self.stopAfter
+
+    @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
+    def toggleQuitAfter (self):
+        """I need this for debugging"""
+        print "toggle: quitAfter"
+        self.quitAfter= not self.quitAfter
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def quit (self):
@@ -245,7 +275,7 @@ class Collection (dbus.service.Object, QObject):
         self.watch= KDirWatch (self)
         self.watch.addDir (self.path,
             KDirWatch.WatchMode (KDirWatch.WatchFiles|KDirWatch.WatchSubDirs))
-        self.connect (self.watch, SIGNAL("created (const QString &)"), self.scan)
+        self.watch.created.connect (self.scan)
 
         try:
             self.load ()
@@ -357,7 +387,7 @@ class Collection (dbus.service.Object, QObject):
         else:
             random= (self.seed+self.prime)%self.count
         self.index= (self.index+random)%self.count
-        print random, self.index
+        # print random, self.index
         self.seed= random
         filepath= self.filepaths[self.index]
         return filepath
@@ -366,12 +396,12 @@ class Collection (dbus.service.Object, QObject):
         random= self.seed
         self.index= (self.index-random)%self.count
         random= (self.seed-self.prime)%self.count
-        print random, self.index
+        # print random, self.index
         self.seed= random
         filepath= self.filepaths[self.index]
         return filepath
 
-def main ():
+def createApp ():
     #########################################
     # all the bureaucratic init of a KDE App
     appName     = "satyr.py"
@@ -399,10 +429,14 @@ def main ():
     app= KApplication ()
     args= KCmdLineArgs.parsedArgs ()
 
+    return app, args
+
+def main ():
+    app, args= createApp ()
+
     dbus.mainloop.qt.DBusQtMainLoop (set_as_default=True)
     bus= dbus.SessionBus ()
     busName= dbus.service.BusName (BUS_NAME, bus=bus)
-
 
     #########################################
     # the app itself!
