@@ -4,7 +4,8 @@
 # distributed under the terms of the GPLv2.1
 
 # qt/kde related
-from PyKDE4.kdecore import KCmdLineArgs, KAboutData, i18n, ki18n, KCmdLineOptions, KSharedConfig
+from PyKDE4.kdecore import KCmdLineArgs, KAboutData, i18n, ki18n
+from PyKDE4.kdecore import KCmdLineOptions, KSharedConfig, KMimeType, KUrl
 from PyKDE4.kdeui import KApplication
 from PyKDE4.kio import KDirWatch
 # from PyKDE4.phonon import Phonon
@@ -18,7 +19,6 @@ import dbus.service
 
 # std python
 import sys, os, os.path, time, bisect, stat, random
-import magic
 
 # local
 from primes import primes
@@ -82,8 +82,6 @@ class Player (dbus.service.Object, QObject):
         self.mimetypes= [ str (mimetype)
             for mimetype in Phonon.BackendCapabilities.availableMimeTypes ()
                 if self.validMimetype (str (mimetype)) ]
-        self.magic= magic.open (magic.MAGIC_MIME)
-        self.magic.load ()
 
     def validMimetype (self, mimetype):
         """Phonon.BackendCapabilities.availableMimeTypes() returns a lot of nonsense,
@@ -96,23 +94,14 @@ class Player (dbus.service.Object, QObject):
         # also some wma files are detected as video :|
         # skipping /home/mdione/media/music//N/Noir Desir/Album inconnu (13-07-2004 01:59:07)/10 - Piste 10.wma;
         # mimetype video/x-ms-asf not supported
-        # skipping /home/mdione/media/music//Spinetta Y Los Socios Del Desierto/Spinetta y Los Socios Del Desierto/01-Cheques.mp3;
-        # mimetype application/octet-stream not supported
-        # skipping /home/mdione/media/music//Z/Zen Guerrilla/Shadows on the sun/05 - Graffiti hustle.mp3;
-        # mimetype application/octet-stream not supported
         valid= valid or mimetype.startswith ('video')
         valid= valid or mimetype=='application/ogg'
-        # BUG?
-        # skipping /home/mdione/media/music//N/Nirvana/Bleach/05 - Love buzz.mp3;
-        # mimetype application/octet-stream not supported
 
         return valid
 
     def stateChanged (self, new, old):
         print "state changed from %d to %d" % (old, new)
-        if new==Phonon.StoppedState:
-            print 'stopped!'
-        elif new==Phonon.ErrorState:
+        if new==Phonon.ErrorState:
             print "%d: %s" % (self.media.errorType (), self.media.errorString ())
             # just skip it
             self.next ()
@@ -127,6 +116,16 @@ class Player (dbus.service.Object, QObject):
             print "playlist empty"
             self.stop ()
 
+    def getMimeType (self, filename):
+        mimetype, accuracy= KMimeType.findByFileContent (filename)
+        print mimetype.name (), accuracy,
+        if accuracy<50:
+            # try harder?
+            mimetype, accuracy= KMimeType.findByUrl (KUrl (filename))
+            print mimetype.name (), accuracy,
+        print
+        return str (mimetype.name ())
+
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def play (self):
         if self.paused:
@@ -137,12 +136,7 @@ class Player (dbus.service.Object, QObject):
             if self.filename is None:
                 self.next ()
 
-            # print repr (self.filename)
-            f= file (self.filename)
-            data= f.read (4096)
-            f.close ()
-            mimetype_enc= self.magic.buffer (data)
-            mimetype= mimetype_enc.split (';')[0]
+            mimetype= self.getMimeType (self.filename)
             # detect mimetype and play only if it's suppourted
             while mimetype not in self.mimetypes:
                 # TODO: remove it from the collection?
@@ -150,11 +144,7 @@ class Player (dbus.service.Object, QObject):
                 print "skipping %s; mimetype %s not supported" % (self.filename, mimetype)
 
                 self.next ()
-                f= file (self.filename)
-                data= f.read (4096)
-                f.close ()
-                mimetype_enc= self.magic.buffer (data)
-                mimetype= mimetype_enc.split (';')[0]
+                mimetype= self.getMimeType (self.filename)
 
             print "playing", self.filename
             self.media.setCurrentSource (Phonon.MediaSource (self.filename))
