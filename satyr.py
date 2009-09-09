@@ -10,7 +10,7 @@ from PyKDE4.kdeui import KApplication
 from PyKDE4.kio import KDirWatch
 # from PyKDE4.phonon import Phonon
 from PyQt4.phonon import Phonon
-from PyQt4.QtCore import SIGNAL, pyqtSignal, QObject, QUrl, QByteArray
+from PyQt4.QtCore import pyqtSignal, QObject, QUrl, QByteArray, QVariant
 
 # dbus
 import dbus
@@ -26,21 +26,8 @@ from primes import primes
 # globals :|
 BUS_NAME= 'org.kde.satyr'
 
-class ConfigObject (object):
-    pass
-
-class Config (ConfigObject):
-    def __init__ (self):
-        self.__config__= KSharedConfig ('satyrrc')
-
-    def load (self):
-        for groupName in self.__config__.groupList ():
-            # atributes can only be ascii!
-            setattr (self, str (groupName), ConfigObject ())
-            # group= self.__config__.group (groupName)
-            group= dict (self.__config__.entryMap (groupName))
-            for k, v in group:
-                setattr (getattr (self, str (groupName)), str (k), v)
+def configBoolToBool (s):
+    return s!='false'
 
 MetaDBusObject= type (dbus.service.Object)
 MetaQObject= type (QObject)
@@ -60,14 +47,22 @@ class Player (dbus.service.Object, QObject):
         dbus.service.Object.__init__ (self, busName, busPath)
         QObject.__init__ (self, parent)
 
+        self.config= KSharedConfig.openConfig ('satyrrc').group (busPath[1:].replace ('/', '-'))
+        self.configValues= (
+            ('playing', configBoolToBool, False),
+            ('paused', configBoolToBool, False),
+            ('stopAfter', configBoolToBool, False),
+            ('quitAfter', configBoolToBool, False))
+
         self.playlist= playlist
         # TODO: fix when not DUI
         # self.connect (self.media, SIGNAL("finished ()"), self.next)
         self.filename= None
-        self.playing= False
-        self.paused= False
-        self.stopAfter= False
-        self.quitAfter= False
+        # self.playing= False
+        # self.paused= False
+        # self.stopAfter= False
+        # self.quitAfter= False
+        self.loadConfig ()
 
         # TypeError: too many arguments to PyKDE4.phonon.MediaObject(), 0 at most expected
         # self.media= Phonon.MediaObject (parent)
@@ -82,6 +77,21 @@ class Player (dbus.service.Object, QObject):
         self.mimetypes= [ str (mimetype)
             for mimetype in Phonon.BackendCapabilities.availableMimeTypes ()
                 if self.validMimetype (str (mimetype)) ]
+
+    def saveConfig (self):
+        for k, t, v in self.configValues:
+            v= getattr (self, k)
+            print 'writing config entry %s= %s' % (k, v)
+            self.config.writeEntry (k, QVariant (v))
+        self.config.config ().sync ()
+
+    def loadConfig (self):
+        for k, t, v in self.configValues:
+            print 'reading config entry %s [%s]' % (k, v),
+            s= self.config.readEntry (k, QVariant (v)).toString ()
+            v= t (s)
+            print s, v
+            setattr (self, k, v)
 
     def validMimetype (self, mimetype):
         """Phonon.BackendCapabilities.availableMimeTypes() returns a lot of nonsense,
@@ -100,9 +110,9 @@ class Player (dbus.service.Object, QObject):
         return valid
 
     def stateChanged (self, new, old):
-        print "state changed from %d to %d" % (old, new)
+        # print "state changed from %d to %d" % (old, new)
         if new==Phonon.ErrorState:
-            print "%d: %s" % (self.media.errorType (), self.media.errorString ())
+            print "ERROR: %d: %s" % (self.media.errorType (), self.media.errorString ())
             # just skip it
             self.next ()
 
@@ -173,6 +183,7 @@ class Player (dbus.service.Object, QObject):
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def next (self):
         try:
+            # BUG: it should be pl.next()/pl.current()
             self.filename= self.playlist.next ()
             # BUG: this should not be here
             if self.stopAfter:
@@ -205,6 +216,7 @@ class Player (dbus.service.Object, QObject):
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def quit (self):
+        self.saveConfig ()
         print "bye!"
         self.finished.emit ()
 
