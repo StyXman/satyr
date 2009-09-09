@@ -38,45 +38,15 @@ class MetaObject (MetaQObject, MetaDBusObject):
         MetaDBusObject.__init__ (cls, name, bases, dct)
         MetaQObject.__init__ (cls, name, bases, dct)
 
-class Player (dbus.service.Object, QObject):
+
+class SatyrObject (dbus.service.Object, QObject):
     __metaclass__= MetaObject
 
-    finished= pyqtSignal ()
-
-    def __init__ (self, parent, playlist, busName, busPath):
+    def __init__ (self, parent, busName, busPath):
         dbus.service.Object.__init__ (self, busName, busPath)
         QObject.__init__ (self, parent)
 
         self.config= KSharedConfig.openConfig ('satyrrc').group (busPath[1:].replace ('/', '-'))
-        self.configValues= (
-            ('playing', configBoolToBool, False),
-            ('paused', configBoolToBool, False),
-            ('stopAfter', configBoolToBool, False),
-            ('quitAfter', configBoolToBool, False))
-
-        self.playlist= playlist
-        # TODO: fix when not DUI
-        # self.connect (self.media, SIGNAL("finished ()"), self.next)
-        self.filename= None
-        # self.playing= False
-        # self.paused= False
-        # self.stopAfter= False
-        # self.quitAfter= False
-        self.loadConfig ()
-
-        # TypeError: too many arguments to PyKDE4.phonon.MediaObject(), 0 at most expected
-        # self.media= Phonon.MediaObject (parent)
-        self.media= Phonon.MediaObject ()
-        # god bless PyQt4.5
-        self.media.finished.connect (self.next)
-        self.media.stateChanged.connect (self.stateChanged)
-
-        self.ao= Phonon.AudioOutput (Phonon.MusicCategory, parent)
-        Phonon.createPath (self.media, self.ao)
-
-        self.mimetypes= [ str (mimetype)
-            for mimetype in Phonon.BackendCapabilities.availableMimeTypes ()
-                if self.validMimetype (str (mimetype)) ]
 
     def saveConfig (self):
         for k, t, v in self.configValues:
@@ -92,6 +62,42 @@ class Player (dbus.service.Object, QObject):
             v= t (s)
             print s, v
             setattr (self, k, v)
+
+
+class Player (SatyrObject):
+    finished= pyqtSignal ()
+
+    def __init__ (self, parent, playlist, busName, busPath):
+        SatyrObject.__init__ (self, parent, busName, busPath)
+
+        self.configValues= (
+            ('playing', configBoolToBool, False),
+            ('paused', configBoolToBool, False),
+            ('stopAfter', configBoolToBool, False),
+            ('quitAfter', configBoolToBool, False),
+            )
+        self.loadConfig ()
+        # BUG: is this the right API?
+        # self.playlist.loadConfig ()
+
+        self.playlist= playlist
+        # TODO: fix when not DUI
+        # self.connect (self.media, SIGNAL("finished ()"), self.next)
+        self.filename= None
+
+        # TypeError: too many arguments to PyKDE4.phonon.MediaObject(), 0 at most expected
+        # self.media= Phonon.MediaObject (parent)
+        self.media= Phonon.MediaObject ()
+        # god bless PyQt4.5
+        self.media.finished.connect (self.next)
+        self.media.stateChanged.connect (self.stateChanged)
+
+        self.ao= Phonon.AudioOutput (Phonon.MusicCategory, parent)
+        Phonon.createPath (self.media, self.ao)
+
+        self.mimetypes= [ str (mimetype)
+            for mimetype in Phonon.BackendCapabilities.availableMimeTypes ()
+                if self.validMimetype (str (mimetype)) ]
 
     def validMimetype (self, mimetype):
         """Phonon.BackendCapabilities.availableMimeTypes() returns a lot of nonsense,
@@ -119,7 +125,8 @@ class Player (dbus.service.Object, QObject):
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def prev (self):
         try:
-            self.filename= self.playlist.prev ()
+            self.playlist.prev ()
+            self.filename= self.playlist.current ()
             if self.playing:
                 self.play ()
         except IndexError:
@@ -183,8 +190,8 @@ class Player (dbus.service.Object, QObject):
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def next (self):
         try:
-            # BUG: it should be pl.next()/pl.current()
-            self.filename= self.playlist.next ()
+            self.playlist.next ()
+            self.filename= self.playlist.current ()
             # BUG: this should not be here
             if self.stopAfter:
                 print "stopping after!"
@@ -217,23 +224,28 @@ class Player (dbus.service.Object, QObject):
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def quit (self):
         self.saveConfig ()
+        # BUG: is this the right API?
+        self.playlist.saveConfig ()
+        self.playlist.collection.saveConfig ()
         print "bye!"
         self.finished.emit ()
+
 
 class StopAfter (Exception):
     pass
 
-class PlayList (dbus.service.Object, QObject):
-    __metaclass__= MetaObject
-
+class PlayList (SatyrObject):
     finished= pyqtSignal ()
 
     def __init__ (self, parent, collections, busName=None, busPath=None):
-        dbus.service.Object.__init__ (self, busName, busPath)
-        QObject.__init__ (self, parent)
+        SatyrObject.__init__ (self, parent, busName, busPath)
         # TODO: support more collections
         self.collection= collections[0]
-        self.random= False
+
+        self.configValues= (
+            ('random', configBoolToBool, False),
+            )
+        self.loadConfig ()
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def toggleRandom (self):
@@ -244,35 +256,44 @@ class PlayList (dbus.service.Object, QObject):
     def prev (self):
         print "¡prev",
         if self.random:
-            filepath= self.collection.prevRandomSong ()
+            self.collection.prevRandomSong ()
         else:
-            filepath= self.collection.prevSong ()
-        return filepath
+            self.collection.prevSong ()
 
     def next (self):
         print "next!",
         if self.random:
-            filepath= self.collection.nextRandomSong ()
+            self.collection.nextRandomSong ()
         else:
-            filepath= self.collection.nextSong ()
-        return filepath
+            self.collection.nextSong ()
+
+    def current (self):
+        return self.collection.current ()
+
 
 class ErrorNoDatabase (Exception):
     pass
 
-class Collection (dbus.service.Object, QObject):
+class Collection (SatyrObject):
     __metaclass__= MetaObject
     """A Collection of Albums"""
 
     def __init__ (self, parent, path, busName=None, busPath=None):
-        dbus.service.Object.__init__ (self, busName, busPath)
-        QObject.__init__ (self, parent)
-        self.path= path
+        SatyrObject.__init__ (self, parent, busName, busPath)
+        # self.path= path
         self.filepaths= []
-        self.index= -1
+        # self.index= -1
         self.count= 0
-        self.seed= 0
-        self.prime= 17
+        # self.seed= 0
+        # self.prime= 17
+
+        self.configValues= (
+            ('path', str, path),
+            ('index', int, -1),
+            ('seed', int, 0),
+            ('prime', int, 17),
+            )
+        self.loadConfig ()
 
         self.watch= KDirWatch (self)
         self.watch.addDir (self.path,
@@ -373,13 +394,11 @@ class Collection (dbus.service.Object, QObject):
 
     def prevSong (self):
         self.index-= 1
-        filepath= self.filepaths[self.index]
-        return filepath
+        self.filepath= self.filepaths[self.index]
 
     def nextSong (self):
         self.index+= 1
-        filepath= self.filepaths[self.index]
-        return filepath
+        self.filepath= self.filepaths[self.index]
 
     def nextRandomSong (self):
         # TODO: FIX this ugliness
@@ -391,8 +410,7 @@ class Collection (dbus.service.Object, QObject):
         self.index= (self.index+random)%self.count
         # print random, self.index
         self.seed= random
-        filepath= self.filepaths[self.index]
-        return filepath
+        self.filepath= self.filepaths[self.index]
 
     def prevRandomSong (self):
         random= self.seed
@@ -400,8 +418,11 @@ class Collection (dbus.service.Object, QObject):
         random= (self.seed-self.prime)%self.count
         # print random, self.index
         self.seed= random
-        filepath= self.filepaths[self.index]
-        return filepath
+        self.filepath= self.filepaths[self.index]
+
+    def current (self):
+        return self.filepath
+
 
 def createApp ():
     #########################################
