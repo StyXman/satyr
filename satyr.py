@@ -287,7 +287,7 @@ class PlayList (SatyrObject):
         try:
             listIndex= self.indexQueue.index (collectionIndex)
             # esists; dequeue
-            print 'dequeuing index %d' % index
+            print 'dequeuing index %d' % listIndex
             self.indexQueue.pop (listIndex)
         except ValueError:
             # doesn't exist; append
