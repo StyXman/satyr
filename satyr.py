@@ -51,16 +51,16 @@ class SatyrObject (dbus.service.Object, QObject):
     def saveConfig (self):
         for k, t, v in self.configValues:
             v= getattr (self, k)
-            print 'writing config entry %s= %s' % (k, v)
+            # print 'writing config entry %s= %s' % (k, v)
             self.config.writeEntry (k, QVariant (v))
         self.config.config ().sync ()
 
     def loadConfig (self):
         for k, t, v in self.configValues:
-            print 'reading config entry %s [%s]' % (k, v),
+            # print 'reading config entry %s [%s]' % (k, v),
             s= self.config.readEntry (k, QVariant (v)).toString ()
             v= t (s)
-            print s, v
+            # print s, v
             setattr (self, k, v)
 
 
@@ -244,6 +244,8 @@ class PlayList (SatyrObject):
         SatyrObject.__init__ (self, parent, busName, busPath)
         # TODO: support more collections
         self.collection= collections[0]
+        self.indexQueue= []
+        self.filename= None
 
         self.configValues= (
             ('random', configBoolToBool, False),
@@ -262,17 +264,35 @@ class PlayList (SatyrObject):
             self.collection.prevRandomSong ()
         else:
             self.collection.prevSong ()
+        self.filename= self.collection.current ()
 
     def next (self):
         print "next!",
-        if self.random:
-            self.collection.nextRandomSong ()
+        if len (self.indexQueue)>0:
+            # TODO: support more than one collection
+            index= self.indexQueue.pop (0)
+            self.filename= self.collection.filepaths[index]
         else:
-            self.collection.nextSong ()
+            if self.random:
+                self.collection.nextRandomSong ()
+            else:
+                self.collection.nextSong ()
+            self.filename= self.collection.current ()
 
     def current (self):
-        return self.collection.current ()
+        return self.filename
 
+    @dbus.service.method (BUS_NAME, in_signature='i', out_signature='')
+    def queue (self, collectionIndex):
+        try:
+            listIndex= self.indexQueue.index (collectionIndex)
+            # esists; dequeue
+            print 'dequeuing index %d' % index
+            self.indexQueue.pop (listIndex)
+        except ValueError:
+            # doesn't exist; append
+            print 'queuing %d' % collectionIndex
+            self.indexQueue.append (collectionIndex)
 
 class ErrorNoDatabase (Exception):
     pass
@@ -293,10 +313,11 @@ class Collection (SatyrObject):
             # even if we could recalculate the filepath given the filelist
             # and the index, we save it anyways
             # just in case they become out of sync
+            # BUG: reading any path gives ''
             ('filepath', str, None)
             )
         self.loadConfig ()
-        print self.filepath
+        # print self.filepath
         self.watch= KDirWatch (self)
         self.watch.addDir (self.path,
             KDirWatch.WatchMode (KDirWatch.WatchFiles|KDirWatch.WatchSubDirs))
@@ -314,7 +335,7 @@ class Collection (SatyrObject):
                 self.filepath= self.filepaths[self.index]
             except IndexError:
                 self.filepath= None
-            print self.filepath
+            # print self.filepath
 
 
     def load (self):
