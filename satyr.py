@@ -151,7 +151,9 @@ class Player (SatyrObject):
             self.playing= True
             time.sleep (0.2)
             if self.filename is None:
-                self.next ()
+                if self.playlist.current () is None:
+                    self.next ()
+                self.filename= self.playlist.current ()
 
             mimetype= self.getMimeType (self.filename)
             # detect mimetype and play only if it's suppourted
@@ -192,17 +194,17 @@ class Player (SatyrObject):
         try:
             self.playlist.next ()
             self.filename= self.playlist.current ()
-            # BUG: this should not be here
+            # FIXME: this should not be here
             if self.stopAfter:
                 print "stopping after!"
                 # stopAfter is one time only
                 self.toggleStopAfter ()
                 self.stop ()
-            # BUG: this should not be here
+            # FIXME: this should not be here
             if self.quitAfter:
                 print "quiting after!"
                 self.quit ()
-            # BUG: this should not be here
+            # FIXME: this should not be here
             elif self.playing:
                 self.play ()
         except IndexError:
@@ -223,8 +225,9 @@ class Player (SatyrObject):
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def quit (self):
+        self.stop ()
         self.saveConfig ()
-        # BUG: is this the right API?
+        # FIXME: is this the right API?
         self.playlist.saveConfig ()
         self.playlist.collection.saveConfig ()
         print "bye!"
@@ -275,26 +278,25 @@ class ErrorNoDatabase (Exception):
     pass
 
 class Collection (SatyrObject):
-    __metaclass__= MetaObject
     """A Collection of Albums"""
 
     def __init__ (self, parent, path, busName=None, busPath=None):
         SatyrObject.__init__ (self, parent, busName, busPath)
-        # self.path= path
         self.filepaths= []
-        # self.index= -1
         self.count= 0
-        # self.seed= 0
-        # self.prime= 17
 
         self.configValues= (
             ('path', str, path),
             ('index', int, -1),
             ('seed', int, 0),
             ('prime', int, 17),
+            # even if we could recalculate the filepath given the filelist
+            # and the index, we save it anyways
+            # just in case they become out of sync
+            ('filepath', str, None)
             )
         self.loadConfig ()
-
+        print self.filepath
         self.watch= KDirWatch (self)
         self.watch.addDir (self.path,
             KDirWatch.WatchMode (KDirWatch.WatchFiles|KDirWatch.WatchSubDirs))
@@ -305,6 +307,15 @@ class Collection (SatyrObject):
         except ErrorNoDatabase:
             print "no database!"
             self.scan ()
+
+        # but if the filepath empty, calculate anyways (as good as any?)
+        if self.filepath in ('', None):
+            try:
+                self.filepath= self.filepaths[self.index]
+            except IndexError:
+                self.filepath= None
+            print self.filepath
+
 
     def load (self):
         raise ErrorNoDatabase
