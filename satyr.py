@@ -203,6 +203,8 @@ class Player (SatyrObject):
             # FIXME: this should not be here
             if self.quitAfter:
                 print "quiting after!"
+                # quitAfter is one time only
+                self.toggleQuitAfter ()
                 self.quit ()
             # FIXME: this should not be here
             elif self.playing:
@@ -214,14 +216,16 @@ class Player (SatyrObject):
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def toggleStopAfter (self):
         """toggle"""
-        print "toggle: stopAfter"
+        print "toggle: stopAfter",
         self.stopAfter= not self.stopAfter
+        print self.stopAfter
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def toggleQuitAfter (self):
         """I need this for debugging"""
-        print "toggle: quitAfter"
+        print "toggle: quitAfter",
         self.quitAfter= not self.quitAfter
+        print self.quitAfter
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def quit (self):
@@ -255,8 +259,9 @@ class PlayList (SatyrObject):
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def toggleRandom (self):
         """toggle"""
-        print "toggle: random"
+        print "toggle: random",
         self.random= not self.random
+        print self.random
 
     def prev (self):
         print "¡prev",
@@ -270,8 +275,10 @@ class PlayList (SatyrObject):
         print "next!",
         if len (self.indexQueue)>0:
             # TODO: support more than one collection
+            print 'from queue!',
             index= self.indexQueue.pop (0)
             self.filename= self.collection.filepaths[index]
+            print "[%d] %s" % (index, self.filename)
         else:
             if self.random:
                 self.collection.nextRandomSong ()
@@ -287,11 +294,11 @@ class PlayList (SatyrObject):
         try:
             listIndex= self.indexQueue.index (collectionIndex)
             # esists; dequeue
-            print 'dequeuing index %d' % listIndex
+            print 'dequeuing index [%d, %d] %s' % (listIndex, collectionIndex, self.collection.filepaths[collectionIndex])
             self.indexQueue.pop (listIndex)
         except ValueError:
             # doesn't exist; append
-            print 'queuing %d' % collectionIndex
+            print 'queuing [%d] %s' % (collectionIndex, self.collection.filepaths[collectionIndex])
             self.indexQueue.append (collectionIndex)
 
 class ErrorNoDatabase (Exception):
