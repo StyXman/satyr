@@ -301,6 +301,26 @@ class PlayList (SatyrObject):
             print 'queuing [%d] %s' % (collectionIndex, self.collection.filepaths[collectionIndex])
             self.indexQueue.append (collectionIndex)
 
+    @dbus.service.method (BUS_NAME, in_signature='s', out_signature='')
+    def search (self, s):
+        words= s.lower ().split ()
+        def p (s):
+            ans= True
+            for word in words:
+                ans= ans and word in s
+            return ans
+
+        # s= set ([ path for path in self.collection.filepaths if p (path.lower ()) ])
+        ans= [ (index, path)
+            for (index, path) in enumerate (self.collection.filepaths)
+                if p (path.lower ()) ]
+        # ans= []
+        # for index in xrange (len (self.collection.filepaths)):
+        #     path= self.collection.filepaths[index].lower ()
+        #     if p (path):
+        #         ans.append ((index, path))
+        print ans
+
 class ErrorNoDatabase (Exception):
     pass
 
