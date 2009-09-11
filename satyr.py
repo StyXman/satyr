@@ -143,17 +143,24 @@ class Player (SatyrObject):
         print
         return str (mimetype.name ())
 
-    @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
-    def play (self):
+    @dbus.service.method (BUS_NAME, in_signature='i', out_signature='')
+    def play (self, index=None):
         if self.paused:
             self.pause ()
         else:
             self.playing= True
             time.sleep (0.2)
+            # FIXME: self.filename should never be None
+            # which implies that self.playlist.current () should always point
+            # to a filename (or index, if we change the API)
             if self.filename is None:
                 if self.playlist.current () is None:
                     self.next ()
-                self.filename= self.playlist.current ()
+
+            if index is not None:
+                self.playlist.jumpTo (index)
+
+            self.filename= self.playlist.current ()
 
             mimetype= self.getMimeType (self.filename)
             # detect mimetype and play only if it's suppourted
@@ -163,11 +170,11 @@ class Player (SatyrObject):
                 print "skipping %s; mimetype %s not supported" % (self.filename, mimetype)
 
                 self.next ()
+                self.filename= self.playlist.current ()
                 mimetype= self.getMimeType (self.filename)
 
             print "playing", self.filename
             self.media.setCurrentSource (Phonon.MediaSource (self.filename))
-            # print "!"
             self.media.play ()
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
@@ -320,6 +327,10 @@ class PlayList (SatyrObject):
         #     if p (path):
         #         ans.append ((index, path))
         print ans
+
+    @dbus.service.method (BUS_NAME, in_signature='i', out_signature='')
+    def jumpTo (self, index):
+        self.filename= self.collection.filepaths[index]
 
 class ErrorNoDatabase (Exception):
     pass
