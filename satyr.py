@@ -57,10 +57,10 @@ class SatyrObject (dbus.service.Object, QObject):
 
     def loadConfig (self):
         for k, t, v in self.configValues:
-            # print 'reading config entry %s [%s]' % (k, v),
+            print 'reading config entry %s [%s]' % (k, v),
             s= self.config.readEntry (k, QVariant (v)).toString ()
             v= t (s)
-            # print s, v
+            print s, v
             setattr (self, k, v)
 
 
@@ -77,16 +77,10 @@ class Player (SatyrObject):
             ('quitAfter', configBoolToBool, False),
             )
         self.loadConfig ()
-        # BUG: is this the right API?
-        # self.playlist.loadConfig ()
 
         self.playlist= playlist
-        # TODO: fix when not DUI
-        # self.connect (self.media, SIGNAL("finished ()"), self.next)
-        self.filename= None
+        self.filepath= None
 
-        # TypeError: too many arguments to PyKDE4.phonon.MediaObject(), 0 at most expected
-        # self.media= Phonon.MediaObject (parent)
         self.media= Phonon.MediaObject ()
         # god bless PyQt4.5
         self.media.finished.connect (self.next)
@@ -126,19 +120,19 @@ class Player (SatyrObject):
     def prev (self):
         try:
             self.playlist.prev ()
-            self.filename= self.playlist.current ()
+            self.filepath= self.playlist.current ()
             if self.playing:
                 self.play ()
         except IndexError:
             print "playlist empty"
             self.stop ()
 
-    def getMimeType (self, filename):
-        mimetype, accuracy= KMimeType.findByFileContent (filename)
+    def getMimeType (self, filepath):
+        mimetype, accuracy= KMimeType.findByFileContent (filepath)
         print mimetype.name (), accuracy,
         if accuracy<50:
             # try harder?
-            mimetype, accuracy= KMimeType.findByUrl (KUrl (filename))
+            mimetype, accuracy= KMimeType.findByUrl (KUrl (filepath))
             print mimetype.name (), accuracy,
         print
         return str (mimetype.name ())
@@ -150,31 +144,31 @@ class Player (SatyrObject):
         else:
             self.playing= True
             time.sleep (0.2)
-            # FIXME: self.filename should never be None
+            # FIXME: self.filepath should never be None
             # which implies that self.playlist.current () should always point
-            # to a filename (or index, if we change the API)
-            if self.filename is None:
+            # to a filepath (or index, if we change the API)
+            if self.filepath is None:
                 if self.playlist.current () is None:
                     self.next ()
 
             if index is not None:
                 self.playlist.jumpTo (index)
 
-            self.filename= self.playlist.current ()
+            self.filepath= self.playlist.current ()
 
-            mimetype= self.getMimeType (self.filename)
+            mimetype= self.getMimeType (self.filepath)
             # detect mimetype and play only if it's suppourted
             while mimetype not in self.mimetypes:
                 # TODO: remove it from the collection?
                 # or should the collection filter them while scaning?
-                print "skipping %s; mimetype %s not supported" % (self.filename, mimetype)
+                print "skipping %s; mimetype %s not supported" % (self.filepath, mimetype)
 
                 self.next ()
-                self.filename= self.playlist.current ()
-                mimetype= self.getMimeType (self.filename)
+                self.filepath= self.playlist.current ()
+                mimetype= self.getMimeType (self.filepath)
 
-            print "playing", self.filename
-            self.media.setCurrentSource (Phonon.MediaSource (self.filename))
+            print "playing", self.filepath
+            self.media.setCurrentSource (Phonon.MediaSource (self.filepath))
             self.media.play ()
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
@@ -200,7 +194,7 @@ class Player (SatyrObject):
     def next (self):
         try:
             self.playlist.next ()
-            self.filename= self.playlist.current ()
+            self.filepath= self.playlist.current ()
             # FIXME: this should not be here
             if self.stopAfter:
                 print "stopping after!"
@@ -256,7 +250,7 @@ class PlayList (SatyrObject):
         # TODO: support more collections
         self.collection= collections[0]
         self.indexQueue= []
-        self.filename= None
+        self.filepath= None
 
         self.configValues= (
             ('random', configBoolToBool, False),
@@ -276,7 +270,7 @@ class PlayList (SatyrObject):
             self.collection.prevRandomSong ()
         else:
             self.collection.prevSong ()
-        self.filename= self.collection.current ()
+        self.filepath= self.collection.current ()
 
     def next (self):
         print "next!",
@@ -284,17 +278,17 @@ class PlayList (SatyrObject):
             # TODO: support more than one collection
             print 'from queue!',
             index= self.indexQueue.pop (0)
-            self.filename= self.collection.filepaths[index]
-            print "[%d] %s" % (index, self.filename)
+            self.filepath= self.collection.filepaths[index]
+            print "[%d] %s" % (index, self.filepath)
         else:
             if self.random:
                 self.collection.nextRandomSong ()
             else:
                 self.collection.nextSong ()
-            self.filename= self.collection.current ()
+            self.filepath= self.collection.current ()
 
     def current (self):
-        return self.filename
+        return self.filepath
 
     @dbus.service.method (BUS_NAME, in_signature='i', out_signature='')
     def queue (self, collectionIndex):
@@ -308,29 +302,28 @@ class PlayList (SatyrObject):
             print 'queuing [%d] %s' % (collectionIndex, self.collection.filepaths[collectionIndex])
             self.indexQueue.append (collectionIndex)
 
+    # FIXME: if I put that out_signature the method is not exported via DBUs
+    # and no error or warning is issued
+    # @dbus.service.method (BUS_NAME, in_signature='s', out_signature='a(is)')
     @dbus.service.method (BUS_NAME, in_signature='s', out_signature='')
     def search (self, s):
         words= s.lower ().split ()
         def p (s):
-            ans= True
+            found= True
             for word in words:
-                ans= ans and word in s
-            return ans
+                found= found and word in s
+            return found
 
-        # s= set ([ path for path in self.collection.filepaths if p (path.lower ()) ])
-        ans= [ (index, path)
+        songs= [ (index, path)
             for (index, path) in enumerate (self.collection.filepaths)
                 if p (path.lower ()) ]
-        # ans= []
-        # for index in xrange (len (self.collection.filepaths)):
-        #     path= self.collection.filepaths[index].lower ()
-        #     if p (path):
-        #         ans.append ((index, path))
-        print ans
+
+        # return songs
+        print songs
 
     @dbus.service.method (BUS_NAME, in_signature='i', out_signature='')
     def jumpTo (self, index):
-        self.filename= self.collection.filepaths[index]
+        self.filepath= self.collection.filepaths[index]
 
 class ErrorNoDatabase (Exception):
     pass
@@ -347,7 +340,7 @@ class Collection (SatyrObject):
             ('path', str, path),
             ('index', int, -1),
             ('seed', int, 0),
-            ('prime', int, 17),
+            ('prime', int, -1),
             # even if we could recalculate the filepath given the filelist
             # and the index, we save it anyways
             # just in case they become out of sync
@@ -359,7 +352,7 @@ class Collection (SatyrObject):
         self.watch= KDirWatch (self)
         self.watch.addDir (self.path,
             KDirWatch.WatchMode (KDirWatch.WatchFiles|KDirWatch.WatchSubDirs))
-        self.watch.created.connect (self.scan)
+        self.watch.created.connect (self.newFiles)
 
         try:
             self.load ()
@@ -419,8 +412,9 @@ class Collection (SatyrObject):
         top= bisect.bisect (primes, self.count)
         # select from the upper 2/3,
         # so in large collections the same artist is not picked consecutively
-        self.prime= random.choice (primes[top/3:top])
-        print "prime selected:", self.prime
+        prime= random.choice (primes[top/3:top])
+
+        return prime
 
     def newFiles (self, path):
         # BUG: this is ugly
@@ -446,12 +440,19 @@ class Collection (SatyrObject):
         elif stat.S_ISREG (mode):
             self.add (path)
 
-        self.randomPrime ()
+        if path is not None or self.prime==-1:
+            # we're adding files,
+            # or we hadn't set the prime yet
+            # so we must recompute the prime.
+            self.prime= self.randomPrime ()
+            print "prime selected:", self.prime
+
         print "scan finished, found %d songs" % self.count
 
     def add (self, filepath):
         index= bisect.bisect (self.filepaths, filepath)
         # test if it's not already there
+        # FIXME: use another sorting method?
         if index==0 or self.filepaths[index-1]!= filepath:
             # print "adding %s to the colection" % filepath
             self.filepaths.insert (index, filepath)
