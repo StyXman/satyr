@@ -302,24 +302,22 @@ class PlayList (SatyrObject):
             print 'queuing [%d] %s' % (collectionIndex, self.collection.filepaths[collectionIndex])
             self.indexQueue.append (collectionIndex)
 
-    # FIXME: if I put that out_signature the method is not exported via DBUs
-    # and no error or warning is issued
-    # @dbus.service.method (BUS_NAME, in_signature='s', out_signature='a(is)')
-    @dbus.service.method (BUS_NAME, in_signature='s', out_signature='')
-    def search (self, s):
-        words= s.lower ().split ()
-        def p (s):
+    @dbus.service.method (BUS_NAME, in_signature='s', out_signature='a(is)')
+    def search (self, words):
+        print "searching %s" % words
+        wordList= words.lower ().split ()
+        def predicate (s):
             found= True
-            for word in words:
+            for word in wordList:
                 found= found and word in s
             return found
 
         songs= [ (index, path)
             for (index, path) in enumerate (self.collection.filepaths)
-                if p (path.lower ()) ]
+                if predicate (path.lower ()) ]
 
-        # return songs
         print songs
+        return songs
 
     @dbus.service.method (BUS_NAME, in_signature='i', out_signature='')
     def jumpTo (self, index):
@@ -348,7 +346,10 @@ class Collection (SatyrObject):
             ('filepath', str, None)
             )
         self.loadConfig ()
-        # print self.filepath
+
+        if self.path!=path:
+            self.path= path
+
         self.watch= KDirWatch (self)
         self.watch.addDir (self.path,
             KDirWatch.WatchMode (KDirWatch.WatchFiles|KDirWatch.WatchSubDirs))
