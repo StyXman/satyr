@@ -383,18 +383,21 @@ class Collection (SatyrObject):
             # (think of the users!) would be loaded incorrectly
             self.filepaths=  ([ path[:-1] for path in f.readlines () ])
             f.close ()
+            self.count= len (self.filepaths)
         except IOError, e:
             print 'FAILED!'
             raise ErrorNoDatabase
 
     def save (self):
         try:
+            print 'saving collection to', self.collectionFile
             f= open (self.collectionFile, 'w+')
             # we must add the trailing newline
             f.writelines ([ path.encode ('utf-8')+'\n' for path in self.filepaths ])
             f.close ()
         except:
             # any problem we kill the bastard
+            print 'FAILED! nuking...'
             os.unlink (self.collectionFile)
 
     def saveConfig (self):
