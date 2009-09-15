@@ -6,6 +6,7 @@
 # qt/kde related
 from PyKDE4.kdecore import KCmdLineArgs, KAboutData, i18n, ki18n
 from PyKDE4.kdecore import KCmdLineOptions, KSharedConfig, KMimeType, KUrl
+from PyKDE4.kdecore import KStandardDirs
 from PyKDE4.kdeui import KApplication
 from PyKDE4.kio import KDirWatch
 # from PyKDE4.phonon import Phonon
@@ -46,7 +47,10 @@ class SatyrObject (dbus.service.Object, QObject):
         dbus.service.Object.__init__ (self, busName, busPath)
         QObject.__init__ (self, parent)
 
-        self.config= KSharedConfig.openConfig ('satyrrc').group (busPath[1:].replace ('/', '-'))
+        self.config= KSharedConfig.openConfig ('satyrrc').group (self.dbusName (busPath))
+
+    def dbusName (self, busPath):
+        return busPath[1:].replace ('/', '-')
 
     def saveConfig (self):
         for k, t, v in self.configValues:
@@ -355,6 +359,7 @@ class Collection (SatyrObject):
             KDirWatch.WatchMode (KDirWatch.WatchFiles|KDirWatch.WatchSubDirs))
         self.watch.created.connect (self.newFiles)
 
+        self.collectionFile= str (KStandardDirs.locateLocal ('data', 'saryr/%s.tdb' % self.dbusName (busPath)))
         try:
             self.load ()
         except ErrorNoDatabase:
@@ -369,9 +374,33 @@ class Collection (SatyrObject):
                 self.filepath= None
             # print self.filepath
 
-
     def load (self):
-        raise ErrorNoDatabase
+        print 'loading from', self.collectionFile
+        try:
+            f= open (self.collectionFile)
+            # we must remove the trailing newline
+            # we could use strip(), but filenames ending with any other whitespace
+            # (think of the users!) would be loaded incorrectly
+            self.filepaths=  ([ path[:-1] for path in f.readlines () ])
+            f.close ()
+        except IOError, e:
+            print 'FAILED!'
+            raise ErrorNoDatabase
+
+    def save (self):
+        try:
+            f= open (self.collectionFile, 'w+')
+            # we must add the trailing newline
+            f.writelines ([ path.encode ('utf-8')+'\n' for path in self.filepaths ])
+            f.close ()
+        except:
+            # any problem we kill the bastard
+            os.unlink (self.collectionFile)
+
+    def saveConfig (self):
+        # reimplement just to also save the collection
+        self.save ()
+        SatyrObject.saveConfig (self)
 
     def walk (self, top):
         # TODO: support single filenames
@@ -449,6 +478,11 @@ class Collection (SatyrObject):
             print "prime selected:", self.prime
 
         print "scan finished, found %d songs" % self.count
+
+    @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
+    def rescan (self):
+        self.filepaths= []
+        self.scan ()
 
     def add (self, filepath):
         index= bisect.bisect (self.filepaths, filepath)
