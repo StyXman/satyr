@@ -11,7 +11,7 @@ from PyKDE4.kdeui import KApplication
 from PyKDE4.kio import KDirWatch
 # from PyKDE4.phonon import Phonon
 from PyQt4.phonon import Phonon
-from PyQt4.QtCore import pyqtSignal, QObject, QUrl, QByteArray, QVariant
+from PyQt4.QtCore import pyqtSignal, QObject, QUrl, QByteArray, QVariant, QThread
 
 # dbus
 import dbus
@@ -93,26 +93,6 @@ class Player (SatyrObject):
         self.ao= Phonon.AudioOutput (Phonon.MusicCategory, parent)
         Phonon.createPath (self.media, self.ao)
 
-        self.mimetypes= [ str (mimetype)
-            for mimetype in Phonon.BackendCapabilities.availableMimeTypes ()
-                if self.validMimetype (str (mimetype)) ]
-
-    def validMimetype (self, mimetype):
-        """Phonon.BackendCapabilities.availableMimeTypes() returns a lot of nonsense,
-        like image/png or so.
-        Filter only interesting mimetypes."""
-
-        valid= False
-        valid= valid or mimetype.startswith ('audio')
-        # we can play the sound of video files :|
-        # also some wma files are detected as video :|
-        # skipping /home/mdione/media/music//N/Noir Desir/Album inconnu (13-07-2004 01:59:07)/10 - Piste 10.wma;
-        # mimetype video/x-ms-asf not supported
-        valid= valid or mimetype.startswith ('video')
-        valid= valid or mimetype=='application/ogg'
-
-        return valid
-
     def stateChanged (self, new, old):
         # print "state changed from %d to %d" % (old, new)
         if new==Phonon.ErrorState:
@@ -130,16 +110,6 @@ class Player (SatyrObject):
         except IndexError:
             print "playlist empty"
             self.stop ()
-
-    def getMimeType (self, filepath):
-        mimetype, accuracy= KMimeType.findByFileContent (filepath)
-        print mimetype.name (), accuracy,
-        if accuracy<50:
-            # try harder?
-            mimetype, accuracy= KMimeType.findByUrl (KUrl (filepath))
-            print mimetype.name (), accuracy,
-        print
-        return str (mimetype.name ())
 
     @dbus.service.method (BUS_NAME, in_signature='i', out_signature='')
     def play (self, index=None):
@@ -159,17 +129,6 @@ class Player (SatyrObject):
                 self.playlist.jumpTo (index)
 
             self.filepath= self.playlist.current ()
-
-            mimetype= self.getMimeType (self.filepath)
-            # detect mimetype and play only if it's suppourted
-            while mimetype not in self.mimetypes:
-                # TODO: remove it from the collection?
-                # or should the collection filter them while scaning?
-                print "skipping %s; mimetype %s not supported" % (self.filepath, mimetype)
-
-                self.next ()
-                self.filepath= self.playlist.current ()
-                mimetype= self.getMimeType (self.filepath)
 
             print "playing", self.filepath
             self.media.setCurrentSource (Phonon.MediaSource (self.filepath))
@@ -327,83 +286,45 @@ class PlayList (SatyrObject):
     def jumpTo (self, index):
         self.filepath= self.collection.filepaths[index]
 
-class ErrorNoDatabase (Exception):
-    pass
 
-class Collection (SatyrObject):
-    """A Collection of Albums"""
+def validMimetype (mimetype):
+    """Phonon.BackendCapabilities.availableMimeTypes() returns a lot of nonsense,
+    like image/png or so.
+    Filter only interesting mimetypes."""
 
-    def __init__ (self, parent, path, busName=None, busPath=None):
-        SatyrObject.__init__ (self, parent, busName, busPath)
-        self.filepaths= []
-        self.count= 0
+    valid= False
+    valid= valid or mimetype.startswith ('audio')
+    # we can play the sound of video files :|
+    # also some wma files are detected as video :|
+    # skipping /home/mdione/media/music//N/Noir Desir/Album inconnu (13-07-2004 01:59:07)/10 - Piste 10.wma;
+    # mimetype video/x-ms-asf not supported
+    valid= valid or mimetype.startswith ('video')
+    valid= valid or mimetype=='application/ogg'
 
-        self.configValues= (
-            ('path', str, path),
-            ('index', int, -1),
-            ('seed', int, 0),
-            ('prime', int, -1),
-            # even if we could recalculate the filepath given the filelist
-            # and the index, we save it anyways
-            # just in case they become out of sync
-            # BUG: reading any path gives ''
-            ('filepath', str, None)
-            )
-        self.loadConfig ()
+    return valid
 
-        if self.path!=path:
-            self.path= path
+mimetypes= [ str (mimetype)
+    for mimetype in Phonon.BackendCapabilities.availableMimeTypes ()
+        if validMimetype (str (mimetype)) ]
 
-        self.watch= KDirWatch (self)
-        self.watch.addDir (self.path,
-            KDirWatch.WatchMode (KDirWatch.WatchFiles|KDirWatch.WatchSubDirs))
-        self.watch.created.connect (self.newFiles)
+def getMimeType (filepath):
+    mimetype, accuracy= KMimeType.findByFileContent (filepath)
+    # print mimetype.name (), accuracy,
+    if accuracy<50:
+        # try harder?
+        mimetype, accuracy= KMimeType.findByUrl (KUrl (filepath))
+        # print mimetype.name (), accuracy,
+    # print
+    return str (mimetype.name ())
 
-        self.collectionFile= str (KStandardDirs.locateLocal ('data', 'saryr/%s.tdb' % self.dbusName (busPath)))
-        try:
-            self.load ()
-        except ErrorNoDatabase:
-            print "no database!"
-            self.scan ()
+class CollectionIndexer (QThread):
+    # finished= pyqtSignal (QThread)
+    scanning= pyqtSignal (unicode)
+    foundSong= pyqtSignal (unicode)
 
-        # but if the filepath empty, calculate anyways (as good as any?)
-        if self.filepath in ('', None):
-            try:
-                self.filepath= self.filepaths[self.index]
-            except IndexError:
-                self.filepath= None
-            # print self.filepath
-
-    def load (self):
-        print 'loading from', self.collectionFile
-        try:
-            f= open (self.collectionFile)
-            # we must remove the trailing newline
-            # we could use strip(), but filenames ending with any other whitespace
-            # (think of the users!) would be loaded incorrectly
-            self.filepaths=  ([ path[:-1] for path in f.readlines () ])
-            f.close ()
-            self.count= len (self.filepaths)
-        except IOError, e:
-            print 'FAILED!'
-            raise ErrorNoDatabase
-
-    def save (self):
-        try:
-            print 'saving collection to', self.collectionFile
-            f= open (self.collectionFile, 'w+')
-            # we must add the trailing newline
-            f.writelines ([ path.encode ('utf-8')+'\n' for path in self.filepaths ])
-            f.close ()
-        except:
-            # any problem we kill the bastard
-            print 'FAILED! nuking...'
-            os.unlink (self.collectionFile)
-
-    def saveConfig (self):
-        # reimplement just to also save the collection
-        self.save ()
-        SatyrObject.saveConfig (self)
+    def __init__ (self, path, parent=None):
+        QThread.__init__ (self, parent)
+        self.path= path
 
     def walk (self, top):
         # TODO: support single filenames
@@ -440,6 +361,113 @@ class Collection (SatyrObject):
                     for x in self.walk(path):
                         yield x
 
+    def run (self):
+        # print "scanning >%s<" % repr (path)
+        mode= os.stat (self.path).st_mode
+        if stat.S_ISDIR (mode):
+            # http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=481795
+            for root, dirs, files in self.walk (self.path):
+                self.scanning.emit (root)
+                songs= []
+                for filename in files:
+                    filepath= os.path.join (root, filename)
+                    # detect mimetype and add only if it's suppourted
+                    mimetype= getMimeType (filepath)
+                    if mimetype in mimetypes:
+                        self.foundSong.emit (filepath)
+
+        elif stat.S_ISREG (mode):
+            mimetype= getMimeType (path)
+            if mimetype in mimetypes:
+                self.foundSong.emit (path)
+
+
+class ErrorNoDatabase (Exception):
+    pass
+
+class Collection (SatyrObject):
+    """A Collection of Albums"""
+
+    def __init__ (self, parent, path, busName=None, busPath=None):
+        SatyrObject.__init__ (self, parent, busName, busPath)
+        self.filepaths= []
+        self.count= 0
+
+        self.configValues= (
+            ('path', str, path),
+            ('index', int, -1),
+            ('seed', int, 0),
+            ('prime', int, -1),
+            # even if we could recalculate the filepath given the filelist
+            # and the index, we save it anyways
+            # just in case they become out of sync
+            # BUG: reading any path gives ''
+            ('filepath', str, None)
+            )
+        self.loadConfig ()
+
+        # if the user requests a new path, use it
+        if self.path!=path:
+            self.path= path
+
+        self.watch= KDirWatch (self)
+        self.watch.addDir (self.path,
+            KDirWatch.WatchMode (KDirWatch.WatchFiles|KDirWatch.WatchSubDirs))
+        self.watch.created.connect (self.newFiles)
+
+        self.scanners= []
+        self.collectionFile= str (KStandardDirs.locateLocal ('data', 'saryr/%s.tdb' % self.dbusName (busPath)))
+        try:
+            self.load ()
+        except ErrorNoDatabase:
+            print "no database!"
+            self.scan ()
+
+        # but if the filepath empty, calculate anyways (as good as any?)
+        if self.filepath in ('', None):
+            try:
+                self.filepath= self.filepaths[self.index]
+            except IndexError:
+                self.filepath= None
+            # print self.filepath
+
+    def load (self):
+        print 'loading from', self.collectionFile
+        try:
+            f= open (self.collectionFile)
+            # we must remove the trailing newline
+            # we could use strip(), but filenames ending with any other whitespace
+            # (think of the users!) would be loaded incorrectly
+            self.filepaths=  ([ path[:-1].decode ('utf-8') for path in f.readlines () ])
+            f.close ()
+            self.count= len (self.filepaths)
+        except IOError, e:
+            print 'FAILED!'
+            raise ErrorNoDatabase
+
+    def save (self):
+        if self.count>0:
+            try:
+                print 'saving collection to', self.collectionFile
+                f= open (self.collectionFile, 'w+')
+                # we must add the trailing newline
+                # f.writelines ([ path.encode ('utf-8')+'\n' for path in self.filepaths ])
+                for filepath in self.filepaths:
+                    f.write (filepath.encode ('utf-8')+'\n')
+                f.close ()
+            except Exception, e:
+                # any problem we kill the bastard
+                print e
+                print 'FAILED! nuking...'
+                os.unlink (self.collectionFile)
+        else:
+            print 'no collection to save!'
+
+    def saveConfig (self):
+        # reimplement just to also save the collection
+        self.save ()
+        SatyrObject.saveConfig (self)
+
     def randomPrime (self):
         # select a random prime based on the amount of songs in the collection
         top= bisect.bisect (primes, self.count)
@@ -462,18 +490,35 @@ class Collection (SatyrObject):
     def scan (self, path=None):
         if path is None:
             path= self.path
-        print "scanning >%s<" % repr (path)
-        mode= os.stat (path).st_mode
-        if stat.S_ISDIR (mode):
-            # http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=481795
-            for root, dirs, files in self.walk (path):
-                for filename in files:
-                    filepath= os.path.join (root, filename)
-                    self.add (filepath)
-        elif stat.S_ISREG (mode):
-            self.add (path)
+        scanner= CollectionIndexer (path)
+        scanner.scanning.connect (self.progress)
+        scanner.foundSong.connect (self.add)
+        scanner.terminated.connect (self.log)
+        scanner.finished.connect (self.scanFinished)
+        scanner.start ()
+        self.scanners.append (scanner)
 
-        if path is not None or self.prime==-1:
+    def progress (self, path):
+        print 'scanning', path
+
+    def add (self, filepath):
+        # the unidocde gets converted to QString, so we convert it back
+        filepath= unicode (filepath)
+        index= bisect.bisect (self.filepaths, filepath)
+        # test if it's not already there
+        # FIXME: use another sorting method?
+        if index==0 or self.filepaths[index-1]!= filepath:
+            # print "adding %s to the colection" % filepath
+            self.filepaths.insert (index, filepath)
+            self.count+= 1
+
+    def log (self, *args):
+        print "logging", args
+
+    def scanFinished (self):
+        # self.scanners.remove (scanner)
+        # FIXME: you know this is wrong
+        if self.path is not None or self.prime==-1:
             # we're adding files,
             # or we hadn't set the prime yet
             # so we must recompute the prime.
@@ -486,15 +531,6 @@ class Collection (SatyrObject):
     def rescan (self):
         self.filepaths= []
         self.scan ()
-
-    def add (self, filepath):
-        index= bisect.bisect (self.filepaths, filepath)
-        # test if it's not already there
-        # FIXME: use another sorting method?
-        if index==0 or self.filepaths[index-1]!= filepath:
-            # print "adding %s to the colection" % filepath
-            self.filepaths.insert (index, filepath)
-            self.count+= 1
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def dump (self):
