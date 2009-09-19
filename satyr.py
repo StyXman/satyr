@@ -12,7 +12,7 @@ from PyKDE4.kio import KDirWatch
 # from PyKDE4.phonon import Phonon
 from PyQt4.phonon import Phonon
 from PyQt4.QtCore import pyqtSignal, QObject, QUrl, QByteArray, QVariant
-from PyQt4.QtCore import QThread, QTimer
+from PyQt4.QtCore import QThread, QTimer, pyqtSignature
 from PyQt4.QtGui import QListWidget, QWidget, QVBoxLayout
 
 # dbus
@@ -113,6 +113,7 @@ class Player (SatyrObject):
             self.stop ()
 
     @dbus.service.method (BUS_NAME, in_signature='i', out_signature='')
+    @pyqtSignature ('')
     def play (self, index=None):
         if self.paused:
             self.pause ()
@@ -136,6 +137,7 @@ class Player (SatyrObject):
             self.media.play ()
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
+    @pyqtSignature ('')
     def pause (self):
         """toggle"""
         if self.playing:
@@ -149,12 +151,14 @@ class Player (SatyrObject):
                 self.paused= False
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
+    @pyqtSignature ('')
     def stop (self):
         print "*screeeech*! stoping!"
         self.media.stop ()
         self.playing= False
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
+    @pyqtSignature ('')
     def next (self):
         try:
             self.playlist.next ()
@@ -208,6 +212,7 @@ class StopAfter (Exception):
 
 class PlayList (SatyrObject):
     finished= pyqtSignal ()
+    randomChanged= pyqtSignal (bool)
 
     def __init__ (self, parent, collections, busName=None, busPath=None):
         SatyrObject.__init__ (self, parent, busName, busPath)
@@ -227,6 +232,7 @@ class PlayList (SatyrObject):
         print "toggle: random",
         self.random= not self.random
         print self.random
+        self.randomChanged.emit (self.random)
 
     def prev (self):
         print "¡prev",
@@ -562,16 +568,16 @@ class Collection (SatyrObject):
             # HACK: ugly
             random= 1
         else:
-            random= (self.seed+self.prime)%self.count
-        self.index= (self.index+random)%self.count
+            random= (self.seed+self.prime) % self.count
+        self.index= (self.index+random) % self.count
         # print random, self.index
         self.seed= random
         self.filepath= self.filepaths[self.index]
 
     def prevRandomSong (self):
         random= self.seed
-        self.index= (self.index-random)%self.count
-        random= (self.seed-self.prime)%self.count
+        self.index= (self.index-random) % self.count
+        random= (self.seed-self.prime) % self.count
         # print random, self.index
         self.seed= random
         self.filepath= self.filepaths[self.index]
@@ -579,19 +585,29 @@ class Collection (SatyrObject):
     def current (self):
         return self.filepath
 
+from default import Ui_MainWindow
 
 class MainWindow (KMainWindow):
     def __init__ (self, parent=None):
         KMainWindow.__init__ (self, parent)
-        self.setCentralWidget (QWidget (self))
-        mainLayout= QVBoxLayout (self.centralWidget ())
-        # buttonLayout
 
-        self.songsList= KListWidget ()
-        mainLayout.addWidget (self.songsList)
+        self.ui= Ui_MainWindow ()
+        self.ui.setupUi (self)
+
+    def connectUi (self, player, playlist):
+        # connect buttons!
+        self.ui.prevButton.clicked.connect (player.prev)
+        self.ui.playButton.clicked.connect (player.play)
+        self.ui.pauseButton.clicked.connect (player.pause)
+        self.ui.stopButton.clicked.connect (player.stop)
+        self.ui.nextButton.clicked.connect (player.next)
+
+        self.ui.randomCheck.setChecked (playlist.random)
+        self.ui.randomCheck.clicked.connect (playlist.toggleRandom)
+        playlist.randomChanged.connect (self.ui.randomCheck.setChecked)
 
     def addSong (self, index, filepath):
-        self.songsList.insertItem (index, filepath)
+        self.ui.songsList.insertItem (index, filepath)
 
 
 def createApp ():
@@ -650,13 +666,18 @@ def main ():
         collection= Collection (app, path, busName, "/collection_%04d" % index)
         collections.append (collection)
         collection.newSong.connect (mw.addSong)
+        # we need to fire the load/scan after the main loop has started
+        # otherwise the signals emited from it are not sent to the connected slots
+        # FIXME? I'm not sure I want it this way
         QTimer.singleShot (100, collection.loadOrScan)
 
     playlist= PlayList (app, collections, busName, '/playlist')
     player= Player (app, playlist, busName, '/player')
     player.finished.connect (app.quit)
 
+    mw.connectUi (player, playlist)
     mw.show ()
+
     app.exec_ ()
 
 if __name__=='__main__':
