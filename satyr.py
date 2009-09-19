@@ -7,11 +7,13 @@
 from PyKDE4.kdecore import KCmdLineArgs, KAboutData, i18n, ki18n
 from PyKDE4.kdecore import KCmdLineOptions, KSharedConfig, KMimeType, KUrl
 from PyKDE4.kdecore import KStandardDirs
-from PyKDE4.kdeui import KApplication
+from PyKDE4.kdeui import KApplication, KMainWindow, KListWidget
 from PyKDE4.kio import KDirWatch
 # from PyKDE4.phonon import Phonon
 from PyQt4.phonon import Phonon
-from PyQt4.QtCore import pyqtSignal, QObject, QUrl, QByteArray, QVariant, QThread
+from PyQt4.QtCore import pyqtSignal, QObject, QUrl, QByteArray, QVariant
+from PyQt4.QtCore import QThread, QTimer
+from PyQt4.QtGui import QListWidget, QWidget, QVBoxLayout
 
 # dbus
 import dbus
@@ -66,7 +68,6 @@ class SatyrObject (dbus.service.Object, QObject):
             v= t (s)
             print s, v
             setattr (self, k, v)
-
 
 class Player (SatyrObject):
     finished= pyqtSignal ()
@@ -387,6 +388,7 @@ class ErrorNoDatabase (Exception):
 
 class Collection (SatyrObject):
     """A Collection of Albums"""
+    newSong= pyqtSignal (int, unicode)
 
     def __init__ (self, parent, path, busName=None, busPath=None):
         SatyrObject.__init__ (self, parent, busName, busPath)
@@ -405,6 +407,7 @@ class Collection (SatyrObject):
             ('filepath', str, None)
             )
         self.loadConfig ()
+        print self.filepath
 
         # if the user requests a new path, use it
         if self.path!=path:
@@ -417,12 +420,6 @@ class Collection (SatyrObject):
 
         self.scanners= []
         self.collectionFile= str (KStandardDirs.locateLocal ('data', 'saryr/%s.tdb' % self.dbusName (busPath)))
-        try:
-            self.load ()
-        except ErrorNoDatabase:
-            print "no database!"
-            self.scan ()
-
         # but if the filepath empty, calculate anyways (as good as any?)
         if self.filepath in ('', None):
             try:
@@ -431,6 +428,13 @@ class Collection (SatyrObject):
                 self.filepath= None
             # print self.filepath
 
+    def loadOrScan (self):
+        try:
+            self.load ()
+        except ErrorNoDatabase:
+            print "no database!"
+            self.scan ()
+
     def load (self):
         print 'loading from', self.collectionFile
         try:
@@ -438,12 +442,15 @@ class Collection (SatyrObject):
             # we must remove the trailing newline
             # we could use strip(), but filenames ending with any other whitespace
             # (think of the users!) would be loaded incorrectly
-            self.filepaths=  ([ path[:-1].decode ('utf-8') for path in f.readlines () ])
+            for line in f.readlines ():
+                # self.filepaths=  ([ path[:-1].decode ('utf-8') for path in  ])
+                self.add (line[:-1].decode ('utf-8'))
             f.close ()
-            self.count= len (self.filepaths)
+            # self.count= len (self.filepaths)
         except IOError, e:
             print 'FAILED!'
             raise ErrorNoDatabase
+        print
 
     def save (self):
         if self.count>0:
@@ -496,13 +503,15 @@ class Collection (SatyrObject):
         scanner.terminated.connect (self.log)
         scanner.finished.connect (self.scanFinished)
         scanner.start ()
+        # hold it or it gets destroyed before it finishes
         self.scanners.append (scanner)
 
     def progress (self, path):
         print 'scanning', path
 
     def add (self, filepath):
-        # the unidocde gets converted to QString, so we convert it back
+        # the unidocde gets converted to QString by the signal/slot processing
+        # so we convert it back
         filepath= unicode (filepath)
         index= bisect.bisect (self.filepaths, filepath)
         # test if it's not already there
@@ -510,6 +519,8 @@ class Collection (SatyrObject):
         if index==0 or self.filepaths[index-1]!= filepath:
             # print "adding %s to the colection" % filepath
             self.filepaths.insert (index, filepath)
+            # FIXME: make a proper Song implementation
+            self.newSong.emit (index, filepath)
             self.count+= 1
 
     def log (self, *args):
@@ -569,6 +580,20 @@ class Collection (SatyrObject):
         return self.filepath
 
 
+class MainWindow (KMainWindow):
+    def __init__ (self, parent=None):
+        KMainWindow.__init__ (self, parent)
+        self.setCentralWidget (QWidget (self))
+        mainLayout= QVBoxLayout (self.centralWidget ())
+        # buttonLayout
+
+        self.songsList= KListWidget ()
+        mainLayout.addWidget (self.songsList)
+
+    def addSong (self, index, filepath):
+        self.songsList.insertItem (index, filepath)
+
+
 def createApp ():
     #########################################
     # all the bureaucratic init of a KDE App
@@ -608,6 +633,7 @@ def main ():
 
     #########################################
     # the app itself!
+    mw= MainWindow ()
 
     collections= []
     for index in xrange (args.count ()):
@@ -621,12 +647,16 @@ def main ():
 
         # convert QString to unicode
         path= unicode (path)
-        collections.append (Collection (app, path, busName, "/collection_%04d" % index))
+        collection= Collection (app, path, busName, "/collection_%04d" % index)
+        collections.append (collection)
+        collection.newSong.connect (mw.addSong)
+        QTimer.singleShot (100, collection.loadOrScan)
 
     playlist= PlayList (app, collections, busName, '/playlist')
     player= Player (app, playlist, busName, '/player')
     player.finished.connect (app.quit)
 
+    mw.show ()
     app.exec_ ()
 
 if __name__=='__main__':
