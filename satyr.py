@@ -12,7 +12,7 @@ from PyKDE4.kio import KDirWatch
 # from PyKDE4.phonon import Phonon
 from PyQt4.phonon import Phonon
 from PyQt4.QtCore import pyqtSignal, QObject, QUrl, QByteArray, QVariant
-from PyQt4.QtCore import QThread, QTimer, pyqtSignature
+from PyQt4.QtCore import QThread, QTimer
 from PyQt4.QtGui import QListWidget, QWidget, QVBoxLayout
 
 # dbus
@@ -71,6 +71,7 @@ class SatyrObject (dbus.service.Object, QObject):
 
 class Player (SatyrObject):
     finished= pyqtSignal ()
+    stopAfterChanged= pyqtSignal (bool)
 
     def __init__ (self, parent, playlist, busName, busPath):
         SatyrObject.__init__ (self, parent, busName, busPath)
@@ -113,7 +114,6 @@ class Player (SatyrObject):
             self.stop ()
 
     @dbus.service.method (BUS_NAME, in_signature='i', out_signature='')
-    @pyqtSignature ('')
     def play (self, index=None):
         if self.paused:
             self.pause ()
@@ -137,7 +137,6 @@ class Player (SatyrObject):
             self.media.play ()
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
-    @pyqtSignature ('')
     def pause (self):
         """toggle"""
         if self.playing:
@@ -151,14 +150,12 @@ class Player (SatyrObject):
                 self.paused= False
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
-    @pyqtSignature ('')
     def stop (self):
         print "*screeeech*! stoping!"
         self.media.stop ()
         self.playing= False
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
-    @pyqtSignature ('')
     def next (self):
         try:
             self.playlist.next ()
@@ -188,6 +185,7 @@ class Player (SatyrObject):
         print "toggle: stopAfter",
         self.stopAfter= not self.stopAfter
         print self.stopAfter
+        self.stopAfterChanged.emit (self.stopAfter)
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def toggleQuitAfter (self):
@@ -605,6 +603,10 @@ class MainWindow (KMainWindow):
         self.ui.randomCheck.setChecked (playlist.random)
         self.ui.randomCheck.clicked.connect (playlist.toggleRandom)
         playlist.randomChanged.connect (self.ui.randomCheck.setChecked)
+
+        self.ui.stopAfterCheck.setChecked (player.stopAfter)
+        self.ui.stopAfterCheck.clicked.connect (player.toggleStopAfter)
+        player.stopAfterChanged.connect (self.ui.stopAfterCheck.setChecked)
 
     def addSong (self, index, filepath):
         self.ui.songsList.insertItem (index, filepath)
