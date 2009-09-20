@@ -211,6 +211,7 @@ class StopAfter (Exception):
 class PlayList (SatyrObject):
     finished= pyqtSignal ()
     randomChanged= pyqtSignal (bool)
+    songChanged= pyqtSignal (int)
 
     def __init__ (self, parent, collections, busName=None, busPath=None):
         SatyrObject.__init__ (self, parent, busName, busPath)
@@ -254,6 +255,8 @@ class PlayList (SatyrObject):
             else:
                 self.collection.nextSong ()
             self.filepath= self.collection.current ()
+        # FIXME: use an index in the playlist
+        self.songChanged.emit (self.collection.index)
 
     def current (self):
         return self.filepath
@@ -608,8 +611,15 @@ class MainWindow (KMainWindow):
         self.ui.stopAfterCheck.clicked.connect (player.toggleStopAfter)
         player.stopAfterChanged.connect (self.ui.stopAfterCheck.setChecked)
 
+        playlist.songChanged.connect (self.showSong)
+
     def addSong (self, index, filepath):
         self.ui.songsList.insertItem (index, filepath)
+
+    def showSong (self, index):
+        item= self.ui.songsList.item (index)
+        self.ui.songsList.scrollToItem (item)
+        self.ui.songsList.setCurrentItem (item)
 
 
 def createApp ():
