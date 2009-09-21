@@ -43,6 +43,7 @@ class MetaObject (MetaQObject, MetaDBusObject):
 
 
 class SatyrObject (dbus.service.Object, QObject):
+    """A QObject with a DBus interface and a section in the config file"""
     __metaclass__= MetaObject
 
     def __init__ (self, parent, busName, busPath):
@@ -215,8 +216,11 @@ class PlayList (SatyrObject):
 
     def __init__ (self, parent, collections, busName=None, busPath=None):
         SatyrObject.__init__ (self, parent, busName, busPath)
+        self.collections= collections
+        self.collectionStartIndexes= [ (0, self.collections[0]) ]
         # TODO: support more collections
         self.collection= collections[0]
+
         self.indexQueue= []
         self.filepath= None
 
@@ -233,6 +237,24 @@ class PlayList (SatyrObject):
         print self.random
         self.randomChanged.emit (self.random)
 
+    def indexToCollection (self, index):
+        """Selects the collection that contains the index"""
+
+        for startIndex, collection in self.collectionStartIndexes:
+            if index > startIndex+collection.count:
+                break
+            print index, startIndex, collection.count, startIndex+collection.count
+            prevCollection= collection
+
+        return startIndex, prevCollection
+
+    def indexToCollectionIndex (self, index):
+        """Converts a global index to a index in a collection"""
+        startIndex, collection= self.indexToCollection (index)
+        collectionIndex= index-startIndex
+
+        return collection, collectionIndex
+
     def prev (self):
         print "¡prev",
         if self.random:
@@ -240,14 +262,16 @@ class PlayList (SatyrObject):
         else:
             self.collection.prevSong ()
         self.filepath= self.collection.current ()
+        # FIXME: use an index in the playlist
+        self.songChanged.emit (self.collection.index)
 
     def next (self):
         print "next!",
         if len (self.indexQueue)>0:
             # TODO: support more than one collection
             print 'from queue!',
-            index= self.indexQueue.pop (0)
-            self.filepath= self.collection.filepaths[index]
+            collection, index= self.indexToCollectionIndex (self.indexQueue.pop (0))
+            self.filepath= collection.filepaths[index]
             print "[%d] %s" % (index, self.filepath)
         else:
             if self.random:
@@ -292,7 +316,9 @@ class PlayList (SatyrObject):
 
     @dbus.service.method (BUS_NAME, in_signature='i', out_signature='')
     def jumpTo (self, index):
-        self.filepath= self.collection.filepaths[index]
+        collection, collectionIndex= self.indexToCollectionIndex (index)
+        self.filepath= collection.filepaths[collectionIndex]
+        self.songChanged.emit (index)
 
 
 def validMimetype (mimetype):
@@ -596,6 +622,8 @@ class MainWindow (KMainWindow):
         self.ui.setupUi (self)
 
     def connectUi (self, player, playlist):
+        self.player= player
+        self.playlist= playlist
         # connect buttons!
         self.ui.prevButton.clicked.connect (player.prev)
         self.ui.playButton.clicked.connect (player.play)
@@ -605,13 +633,14 @@ class MainWindow (KMainWindow):
 
         self.ui.randomCheck.setChecked (playlist.random)
         self.ui.randomCheck.clicked.connect (playlist.toggleRandom)
-        playlist.randomChanged.connect (self.ui.randomCheck.setChecked)
+        self.playlist.randomChanged.connect (self.ui.randomCheck.setChecked)
 
         self.ui.stopAfterCheck.setChecked (player.stopAfter)
         self.ui.stopAfterCheck.clicked.connect (player.toggleStopAfter)
-        player.stopAfterChanged.connect (self.ui.stopAfterCheck.setChecked)
+        self.player.stopAfterChanged.connect (self.ui.stopAfterCheck.setChecked)
 
-        playlist.songChanged.connect (self.showSong)
+        self.playlist.songChanged.connect (self.showSong)
+        self.ui.songsList.itemActivated.connect (self.changeSong)
 
     def addSong (self, index, filepath):
         self.ui.songsList.insertItem (index, filepath)
@@ -620,6 +649,10 @@ class MainWindow (KMainWindow):
         item= self.ui.songsList.item (index)
         self.ui.songsList.scrollToItem (item)
         self.ui.songsList.setCurrentItem (item)
+
+    def changeSong (self, item):
+        index= self.ui.songsList.row (item)
+        self.player.play (index)
 
 
 def createApp ():
