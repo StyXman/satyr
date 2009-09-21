@@ -111,9 +111,9 @@ def main ():
 
     collections= []
     for index in xrange (args.count ()):
-        # paths must be bytes, nos ascii or utf-8
         path= args.arg (index)
 
+        # paths must be bytes, not ascii or utf-8
         # BUG: this is ugly
         # qba= QByteArray ()
         # qba.append (path)

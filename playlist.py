@@ -25,7 +25,7 @@ class PlayList (SatyrObject):
     def __init__ (self, parent, collections, busName=None, busPath=None):
         SatyrObject.__init__ (self, parent, busName, busPath)
         self.collections= collections
-        self.collectionStartIndexes= [ (0, self.collections[0]) ]
+        self.recalculateIndexes ()
         # TODO: support more collections
         self.collection= collections[0]
 
@@ -62,6 +62,15 @@ class PlayList (SatyrObject):
         collectionIndex= index-startIndex
 
         return collection, collectionIndex
+
+    def recalculateIndexes (self):
+        startIndex= 0
+        self.collectionStartIndexes= []
+
+        for collection in self.collections:
+            self.collectionStartIndexes.append ((startIndex, self.collections[0]))
+            startIndex+= collection.count
+
 
     def prev (self):
         print "¡prev",
