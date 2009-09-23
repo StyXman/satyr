@@ -11,11 +11,10 @@ from PyQt4.QtCore import pyqtSignal, QObject, QUrl, QByteArray, QVariant
 import dbus.service
 
 # std python
-import os, bisect, random
+import os, bisect
 
 # local
 from common import SatyrObject, BUS_NAME
-from primes import primes
 from collection_indexer import CollectionIndexer
 
 class ErrorNoDatabase (Exception):
@@ -24,6 +23,7 @@ class ErrorNoDatabase (Exception):
 class Collection (SatyrObject):
     """A Collection of Albums"""
     newSong= pyqtSignal (int, unicode)
+    filesAdded= pyqtSignal ()
 
     def __init__ (self, parent, path, busName=None, busPath=None):
         SatyrObject.__init__ (self, parent, busName, busPath)
@@ -32,17 +32,13 @@ class Collection (SatyrObject):
 
         self.configValues= (
             ('path', str, path),
-            ('index', int, -1),
-            ('seed', int, 0),
-            ('prime', int, -1),
             # even if we could recalculate the filepath given the filelist
             # and the index, we save it anyways
             # just in case they become out of sync
             # BUG: reading any path gives ''
-            ('filepath', str, None)
+            # ('filepath', str, None)
             )
         self.loadConfig ()
-        print self.filepath
 
         # if the user requests a new path, use it
         if self.path!=path:
@@ -55,13 +51,6 @@ class Collection (SatyrObject):
 
         self.scanners= []
         self.collectionFile= str (KStandardDirs.locateLocal ('data', 'saryr/%s.tdb' % self.dbusName (busPath)))
-        # but if the filepath empty, calculate anyways (as good as any?)
-        if self.filepath in ('', None):
-            try:
-                self.filepath= self.filepaths[self.index]
-            except IndexError:
-                self.filepath= None
-            # print self.filepath
 
     def loadOrScan (self):
         try:
@@ -82,8 +71,10 @@ class Collection (SatyrObject):
                 self.add (line[:-1].decode ('utf-8'))
             f.close ()
             # self.count= len (self.filepaths)
+            print "load finished, found %d songs" % self.count
+            self.filesAdded.emit ()
         except IOError, e:
-            print 'FAILED!'
+            print 'FAILED!', e
             raise ErrorNoDatabase
         print
 
@@ -109,15 +100,6 @@ class Collection (SatyrObject):
         # reimplement just to also save the collection
         self.save ()
         SatyrObject.saveConfig (self)
-
-    def randomPrime (self):
-        # select a random prime based on the amount of songs in the collection
-        top= bisect.bisect (primes, self.count)
-        # select from the upper 2/3,
-        # so in large collections the same artist is not picked consecutively
-        prime= random.choice (primes[top/3:top])
-
-        return prime
 
     def newFiles (self, path):
         # BUG: this is ugly
@@ -163,15 +145,8 @@ class Collection (SatyrObject):
 
     def scanFinished (self):
         # self.scanners.remove (scanner)
-        # FIXME: you know this is wrong
-        if self.path is not None or self.prime==-1:
-            # we're adding files,
-            # or we hadn't set the prime yet
-            # so we must recompute the prime.
-            self.prime= self.randomPrime ()
-            print "prime selected:", self.prime
-
         print "scan finished, found %d songs" % self.count
+        self.filesAdded.emit ()
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def rescan (self):
@@ -182,36 +157,5 @@ class Collection (SatyrObject):
     def dump (self):
         for filepath in self.filepaths:
             print filepath
-
-    def prevSong (self):
-        self.index-= 1
-        self.filepath= self.filepaths[self.index]
-
-    def nextSong (self):
-        self.index+= 1
-        self.filepath= self.filepaths[self.index]
-
-    def nextRandomSong (self):
-        # TODO: FIX this ugliness
-        if self.index==-1:
-            # HACK: ugly
-            random= 1
-        else:
-            random= (self.seed+self.prime) % self.count
-        self.index= (self.index+random) % self.count
-        # print random, self.index
-        self.seed= random
-        self.filepath= self.filepaths[self.index]
-
-    def prevRandomSong (self):
-        random= self.seed
-        self.index= (self.index-random) % self.count
-        random= (self.seed-self.prime) % self.count
-        # print random, self.index
-        self.seed= random
-        self.filepath= self.filepaths[self.index]
-
-    def current (self):
-        return self.filepath
 
 # end

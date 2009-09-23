@@ -10,9 +10,11 @@ from PyQt4.QtCore import pyqtSignal
 import dbus.service
 
 # std python
+import random, bisect
 
 # local
 from common import SatyrObject, BUS_NAME, configBoolToBool
+from primes import primes
 
 class StopAfter (Exception):
     pass
@@ -24,16 +26,23 @@ class PlayList (SatyrObject):
 
     def __init__ (self, parent, collections, busName=None, busPath=None):
         SatyrObject.__init__ (self, parent, busName, busPath)
+
+        print collections
         self.collections= collections
-        self.recalculateIndexes ()
-        # TODO: support more collections
-        self.collection= collections[0]
+        for collection in self.collections:
+            collection.filesAdded.connect (self.filesAdded)
+        # FIXME: fix search to get rid of this
+        self.collection= self.collections[0]
 
         self.indexQueue= []
         self.filepath= None
+        self.count= 0
 
         self.configValues= (
             ('random', configBoolToBool, False),
+            ('seed', int, 0),
+            ('prime', int, -1),
+            ('index', int, -1),
             )
         self.loadConfig ()
 
@@ -63,55 +72,86 @@ class PlayList (SatyrObject):
 
         return collection, collectionIndex
 
-    def recalculateIndexes (self):
+    def prev (self):
+        print "¡prev",
+        if self.random:
+            random= self.seed
+            self.index= (self.index-random) % self.count
+            random= (self.seed-self.prime) % self.count
+            # print random, self.index
+            self.seed= random
+        else:
+            self.index-= 1
+
+        collection, collectionIndex= self.indexToCollectionIndex (self.index)
+        self.filepath= collection.filepaths[collectionIndex]
+        print "[%d] %s" % (self.index, self.filepath)
+        self.songChanged.emit (self.index)
+
+    def next (self):
+        print "next!",
+        if len (self.indexQueue)>0:
+            print 'from queue!',
+            self.index= self.indexQueue.pop (0)
+        else:
+            if self.random:
+                # TODO: FIX this ugliness
+                if self.index==-1:
+                    # HACK: ugly
+                    random= 1
+                else:
+                    random= (self.seed+self.prime) % self.count
+                self.index= (self.index+random) % self.count
+                # print random, self.index
+                self.seed= random
+            else:
+                self.index+= 1
+
+        collection, collectionIndex= self.indexToCollectionIndex (self.index)
+        self.filepath= collection.filepaths[collectionIndex]
+        print "[%d] %s" % (self.index, self.filepath)
+        self.songChanged.emit (self.index)
+
+    def filesAdded (self):
+        # recalculate the count and the startIndexes
+        # HINT: yes, self.count==startIndex, but the semantic is different
+        # otherwise the update of startIndexes will not be so clear
+        self.count= 0
         startIndex= 0
         self.collectionStartIndexes= []
 
         for collection in self.collections:
             self.collectionStartIndexes.append ((startIndex, self.collections[0]))
             startIndex+= collection.count
+            self.count+= collection.count
+        print "count:", self.count
 
+        # we must recompute the prime too
+        if self.count>0:
+            self.prime= self.randomPrime ()
+            print "prime selected:", self.prime
 
-    def prev (self):
-        print "¡prev",
-        if self.random:
-            self.collection.prevRandomSong ()
-        else:
-            self.collection.prevSong ()
-        self.filepath= self.collection.current ()
-        # FIXME: use an index in the playlist
-        self.songChanged.emit (self.collection.index)
+    def randomPrime (self):
+        # select a random prime based on the amount of songs in the playlist
+        top= bisect.bisect (primes, self.count)
+        # select from the upper 2/3,
+        # so in large playlists the same artist is not picked consecutively
+        prime= random.choice (primes[top/3:top])
 
-    def next (self):
-        print "next!",
-        if len (self.indexQueue)>0:
-            # TODO: support more than one collection
-            print 'from queue!',
-            collection, index= self.indexToCollectionIndex (self.indexQueue.pop (0))
-            self.filepath= collection.filepaths[index]
-            print "[%d] %s" % (index, self.filepath)
-        else:
-            if self.random:
-                self.collection.nextRandomSong ()
-            else:
-                self.collection.nextSong ()
-            self.filepath= self.collection.current ()
-        # FIXME: use an index in the playlist
-        self.songChanged.emit (self.collection.index)
-
-    def current (self):
-        return self.filepath
+        return prime
 
     @dbus.service.method (BUS_NAME, in_signature='i', out_signature='')
     def queue (self, collectionIndex):
         try:
             listIndex= self.indexQueue.index (collectionIndex)
-            # esists; dequeue
-            print 'dequeuing index [%d, %d] %s' % (listIndex, collectionIndex, self.collection.filepaths[collectionIndex])
+            # exists; dequeue
+            # print 'dequeuing index [%d, %d] %s' % (listIndex, collectionIndex, self.collection.filepaths[collectionIndex])
+            print 'dequeuing index [%d, %d]' % (listIndex, collectionIndex)
             self.indexQueue.pop (listIndex)
         except ValueError:
             # doesn't exist; append
-            print 'queuing [%d] %s' % (collectionIndex, self.collection.filepaths[collectionIndex])
+            # print 'queuing [%d] %s' % (collectionIndex, self.collection.filepaths[collectionIndex])
+            print 'queuing [%d]' % (collectionIndex)
             self.indexQueue.append (collectionIndex)
 
     @dbus.service.method (BUS_NAME, in_signature='s', out_signature='a(is)')
@@ -135,6 +175,7 @@ class PlayList (SatyrObject):
     def jumpTo (self, index):
         collection, collectionIndex= self.indexToCollectionIndex (index)
         self.filepath= collection.filepaths[collectionIndex]
-        self.songChanged.emit (index)
+        self.index= index
+        self.songChanged.emit (self.index)
 
 # end

@@ -53,7 +53,7 @@ class Player (SatyrObject):
     def prev (self):
         try:
             self.playlist.prev ()
-            self.filepath= self.playlist.current ()
+            self.filepath= self.playlist.filepath
             if self.playing:
                 self.play ()
         except IndexError:
@@ -68,16 +68,16 @@ class Player (SatyrObject):
             self.playing= True
             time.sleep (0.2)
             # FIXME: self.filepath should never be None
-            # which implies that self.playlist.current () should always point
+            # which implies that self.playlist.filepath should always point
             # to a filepath (or index, if we change the API)
             if self.filepath is None:
-                if self.playlist.current () is None:
+                if self.playlist.filepath is None:
                     self.next ()
 
             if index is not None:
                 self.playlist.jumpTo (index)
 
-            self.filepath= self.playlist.current ()
+            self.filepath= self.playlist.filepath
 
             print "playing", self.filepath
             self.media.setCurrentSource (Phonon.MediaSource (self.filepath))
@@ -106,7 +106,7 @@ class Player (SatyrObject):
     def next (self):
         try:
             self.playlist.next ()
-            self.filepath= self.playlist.current ()
+            self.filepath= self.playlist.filepath
             # FIXME: this should not be here
             if self.stopAfter:
                 print "stopping after!"

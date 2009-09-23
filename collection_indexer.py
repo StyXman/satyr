@@ -98,7 +98,6 @@ class CollectionIndexer (QThread):
             # http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=481795
             for root, dirs, files in self.walk (self.path):
                 self.scanning.emit (root)
-                songs= []
                 for filename in files:
                     filepath= os.path.join (root, filename)
                     # detect mimetype and add only if it's suppourted
