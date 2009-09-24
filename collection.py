@@ -32,11 +32,6 @@ class Collection (SatyrObject):
 
         self.configValues= (
             ('path', str, path),
-            # even if we could recalculate the filepath given the filelist
-            # and the index, we save it anyways
-            # just in case they become out of sync
-            # BUG: reading any path gives ''
-            # ('filepath', str, None)
             )
         self.loadConfig ()
 

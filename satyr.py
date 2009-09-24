@@ -25,6 +25,7 @@ from player import Player
 from playlist import PlayList
 from collection import Collection
 
+# ui
 from default import Ui_MainWindow
 
 class MainWindow (KMainWindow):
@@ -54,6 +55,8 @@ class MainWindow (KMainWindow):
 
         self.playlist.songChanged.connect (self.showSong)
         self.ui.songsList.itemActivated.connect (self.changeSong)
+
+        # self.ui.searchEntry.
 
     def addSong (self, index, filepath):
         self.ui.songsList.insertItem (index, filepath)

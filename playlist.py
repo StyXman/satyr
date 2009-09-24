@@ -32,7 +32,7 @@ class PlayList (SatyrObject):
         for collection in self.collections:
             collection.filesAdded.connect (self.filesAdded)
         # FIXME: fix search to get rid of this
-        self.collection= self.collections[0]
+        # self.collection= self.collections[0]
 
         self.indexQueue= []
         self.filepath= None
@@ -60,7 +60,7 @@ class PlayList (SatyrObject):
         for startIndex, collection in self.collectionStartIndexes:
             if index > startIndex+collection.count:
                 break
-            print index, startIndex, collection.count, startIndex+collection.count
+            # print index, startIndex, collection.count, startIndex+collection.count
             prevCollection= collection
 
         return startIndex, prevCollection
@@ -85,7 +85,7 @@ class PlayList (SatyrObject):
 
         collection, collectionIndex= self.indexToCollectionIndex (self.index)
         self.filepath= collection.filepaths[collectionIndex]
-        print "[%d] %s" % (self.index, self.filepath)
+        # print "[%d] %s" % (self.index, self.filepath)
         self.songChanged.emit (self.index)
 
     def next (self):
@@ -109,7 +109,7 @@ class PlayList (SatyrObject):
 
         collection, collectionIndex= self.indexToCollectionIndex (self.index)
         self.filepath= collection.filepaths[collectionIndex]
-        print "[%d] %s" % (self.index, self.filepath)
+        # print "[%d] %s" % (self.index, self.filepath)
         self.songChanged.emit (self.index)
 
     def filesAdded (self):
@@ -164,9 +164,11 @@ class PlayList (SatyrObject):
                 found= found and word in s
             return found
 
-        songs= [ (index, path)
-            for (index, path) in enumerate (self.collection.filepaths)
-                if predicate (path.lower ()) ]
+        songs= []
+        for collection in self.collections:
+            songs+= [ (index, path)
+                for (index, path) in enumerate (collection.filepaths)
+                    if predicate (path.lower ()) ]
 
         print songs
         return songs
