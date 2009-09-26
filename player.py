@@ -33,7 +33,6 @@ class Player (SatyrObject):
         self.loadConfig ()
 
         self.playlist= playlist
-        self.filepath= None
 
         self.media= Phonon.MediaObject ()
         # god bless PyQt4.5
@@ -59,7 +58,6 @@ class Player (SatyrObject):
     def prev (self):
         try:
             self.playlist.prev ()
-            self.filepath= self.playlist.filepath
             if self.playing:
                 self.play ()
         except IndexError:
@@ -72,15 +70,13 @@ class Player (SatyrObject):
             self.pause ()
         else:
             self.playing= True
+            # FIXME? this should not be here, but right now seems to be needed
             time.sleep (0.2)
-            # FIXME: self.filepath should never be None
-            # which implies that self.playlist.filepath should always point
-            # to a filepath (or index, if we change the API)
-            if self.filepath is None:
-                if self.playlist.filepath is None:
-                    self.next ()
 
-            if index is not None:
+            # the QPushButton.clicked() emits a bool,
+            # and it's False on normal (non-checkable) buttons
+            if index is not None and index!=False:
+                print index
                 self.playlist.jumpTo (index)
 
             self.filepath= self.playlist.filepath
@@ -112,7 +108,6 @@ class Player (SatyrObject):
     def next (self):
         try:
             self.playlist.next ()
-            self.filepath= self.playlist.filepath
             # FIXME: this should not be here
             if self.stopAfter:
                 print "stopping after!"

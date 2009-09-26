@@ -32,6 +32,7 @@ class PlayList (SatyrObject):
             collection.scanFinished.connect (self.filesAdded)
             # FIXME: this should be redundant
             collection.filesAdded.connect (self.filesAdded)
+        self.collectionStartIndexes= []
 
         self.indexQueue= []
         self.filepath= None
@@ -41,9 +42,10 @@ class PlayList (SatyrObject):
             ('random', configBoolToBool, False),
             ('seed', int, 0),
             ('prime', int, -1),
-            ('index', int, -1),
+            ('index', int, 0),
             )
         self.loadConfig ()
+        # self.setCurrent ()
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def toggleRandom (self):
@@ -55,8 +57,8 @@ class PlayList (SatyrObject):
 
     def indexToCollection (self, index):
         """Selects the collection that contains the index"""
-
         for startIndex, collection in self.collectionStartIndexes:
+            # FIXME: I still don't think this is right
             if index > startIndex+collection.count:
                 break
             # print index, startIndex, collection.count, startIndex+collection.count
@@ -72,9 +74,10 @@ class PlayList (SatyrObject):
         return collection, collectionIndex
 
     def setCurrent (self):
+        # BUG: this doesn't take into account changes in the collections sizes
         collection, collectionIndex= self.indexToCollectionIndex (self.index)
         self.filepath= collection.filepaths[collectionIndex]
-        # print "[%d] %s" % (self.index, self.filepath)
+        # print "PL.setCurrent: [%d] %s" % (self.index, self.filepath)
         self.songChanged.emit (self.index)
 
     def prev (self):
@@ -97,12 +100,7 @@ class PlayList (SatyrObject):
             self.index= self.indexQueue.pop (0)
         else:
             if self.random:
-                # TODO: FIX this ugliness
-                if self.index==-1:
-                    # HACK: ugly
-                    random= 1
-                else:
-                    random= (self.seed+self.prime) % self.count
+                random= (self.seed+self.prime) % self.count
                 self.index= (self.index+random) % self.count
                 # print random, self.index
                 self.seed= random
@@ -129,6 +127,8 @@ class PlayList (SatyrObject):
         if self.count>0:
             self.prime= self.randomPrime ()
             print "prime selected:", self.prime
+
+        self.setCurrent ()
 
     def randomPrime (self):
         # select a random prime based on the amount of songs in the playlist
@@ -174,7 +174,9 @@ class PlayList (SatyrObject):
 
     @dbus.service.method (BUS_NAME, in_signature='i', out_signature='')
     def jumpTo (self, index):
+        # print 'jU..'
         self.index= index
         self.setCurrent ()
+        # print 'Mp!'
 
 # end
