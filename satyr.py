@@ -9,7 +9,8 @@ from PyKDE4.kdecore import KCmdLineOptions, KMimeType, KUrl
 from PyKDE4.kdecore import KStandardDirs
 from PyKDE4.kdeui import KApplication, KMainWindow
 from PyQt4.QtCore import pyqtSignal, QObject, QByteArray, QTimer, QStringList
-from PyQt4.QtGui import QStringListModel
+from PyQt4.QtCore import QModelIndex
+from PyQt4.QtGui import QStringListModel, QItemSelectionModel
 
 # dbus
 import dbus
@@ -60,6 +61,9 @@ class MainWindow (KMainWindow):
         # FIXME:
         # self.ui.songsList.itemActivated.connect (self.changeSong)
         self.ui.songsList.setModel (self.model)
+        self.selection= self.ui.songsList.selectionModel ()
+        self.selection.currentChanged.connect (self.changeSong)
+        # self.selection.selectionChanged.connect (self.changeSong)
 
         self.ui.searchEntry.textChanged.connect (self.search)
 
@@ -74,10 +78,13 @@ class MainWindow (KMainWindow):
         # item= self.ui.songsList.item (index)
         # self.ui.songsList.scrollToItem (item)
         # self.ui.songsList.setCurrentItem (item)
-        pass
+        modelIndex= self.model.index (index, 0)
+        self.selection.select (modelIndex, QItemSelectionModel.SelectCurrent)
 
-    def changeSong (self, item):
-        index= self.ui.songsList.row (item)
+    def changeSong (self, curr, prev):
+        print curr
+        index= curr.row ()
+        print index
         self.player.play (index)
 
     def scanBegins (self):
