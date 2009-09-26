@@ -44,7 +44,10 @@ class MainWindow (KMainWindow):
         self.playlist= playlist
         # connect buttons!
         self.ui.prevButton.clicked.connect (player.prev)
-        self.ui.playButton.clicked.connect (player.play)
+        # the QPushButton.clicked() emits a bool,
+        # and it's False on normal (non-checkable) buttons
+        # BUG: it's not false, it's 0, which is indistinguishable from play(0)
+        self.ui.playButton.clicked.connect (lambda b: player.play ())
         self.ui.pauseButton.clicked.connect (player.pause)
         self.ui.stopButton.clicked.connect (player.stop)
         self.ui.nextButton.clicked.connect (player.next)
@@ -58,10 +61,10 @@ class MainWindow (KMainWindow):
         self.player.stopAfterChanged.connect (self.ui.stopAfterCheck.setChecked)
 
         self.playlist.songChanged.connect (self.showSong)
-        # FIXME:
-        # self.ui.songsList.itemActivated.connect (self.changeSong)
         self.ui.songsList.setModel (self.model)
         self.selection= self.ui.songsList.selectionModel ()
+        # FIXME:
+        # self.ui.songsList.itemActivated.connect (self.changeSong)
         self.selection.currentChanged.connect (self.changeSong)
         # self.selection.selectionChanged.connect (self.changeSong)
 
@@ -74,17 +77,15 @@ class MainWindow (KMainWindow):
         self.model.setStringList (QStringList (self.playlist.collections[0].filepaths))
 
     def showSong (self, index):
-        # FIXME:
-        # item= self.ui.songsList.item (index)
-        # self.ui.songsList.scrollToItem (item)
-        # self.ui.songsList.setCurrentItem (item)
         modelIndex= self.model.index (index, 0)
         self.selection.select (modelIndex, QItemSelectionModel.SelectCurrent)
+        # TODO: scroll so it's seen
+        # self.ui.songsList.scrollToItem (item)
 
     def changeSong (self, curr, prev):
-        print curr
+        # print curr
         index= curr.row ()
-        print index
+        # print index
         self.player.play (index)
 
     def scanBegins (self):

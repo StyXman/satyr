@@ -77,7 +77,7 @@ class PlayList (SatyrObject):
     def setCurrent (self):
         # BUG: this doesn't take into account changes in the collections sizes
         collection, collectionIndex= self.indexToCollectionIndex (self.index)
-        # print self.index, collectionIndex, collection.count
+        print self.index, collectionIndex, collection.count
         try:
             self.filepath= collection.filepaths[collectionIndex]
         except IndexError:

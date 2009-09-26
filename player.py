@@ -77,8 +77,12 @@ class Player (SatyrObject):
 
             # the QPushButton.clicked() emits a bool,
             # and it's False on normal (non-checkable) buttons
-            if index is not None and index!=False:
-                print index
+            # BUG: it's not false, it's 0, which is indistinguishable from play(0)
+            # also, 0!=False is False?
+            # >>> 0!=False
+            # False
+            # print "play:", index
+            if index is not None:
                 self.playlist.jumpTo (index)
 
             self.filepath= self.playlist.filepath
