@@ -63,10 +63,8 @@ class MainWindow (KMainWindow):
         self.playlist.songChanged.connect (self.showSong)
         self.ui.songsList.setModel (self.model)
         self.selection= self.ui.songsList.selectionModel ()
-        # FIXME:
-        # self.ui.songsList.itemActivated.connect (self.changeSong)
-        self.selection.currentChanged.connect (self.changeSong)
-        self.selection.selectionChanged.connect (self.log)
+        self.ui.songsList.setSelectionMode (QAbstractItemView.NoSelection)
+        self.ui.songsList.activated.connect (self.changeSong)
 
         self.ui.searchEntry.textChanged.connect (self.search)
 
@@ -82,14 +80,11 @@ class MainWindow (KMainWindow):
     def showSong (self, index):
         modelIndex= self.model.index (index, 0)
         self.selection.select (modelIndex, QItemSelectionModel.SelectCurrent)
-        # TODO: scroll so it's seen
-        # self.ui.songsList.scrollToItem (item)
+        # TODO: QAbstractItemView.EnsureVisible?
         self.ui.songsList.scrollTo (modelIndex, QAbstractItemView.PositionAtCenter)
 
-    def changeSong (self, curr, prev):
-        # print curr
-        index= curr.row ()
-        # print index
+    def changeSong (self, modelIndex):
+        index= modelIndex.row ()
         self.player.play (index)
 
     def scanBegins (self):
@@ -105,7 +100,7 @@ class MainWindow (KMainWindow):
         return True
 
     def search (self, text):
-        # below 3 chars is too slow (and with big playlists useless)
+        # below 3 chars is too slow (and with big playlists, useless)
         if len (text)>2:
             filepaths= [ filepath
                 for index, filepath in self.playlist.search (unicode (text)) ]

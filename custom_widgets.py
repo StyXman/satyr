@@ -4,12 +4,12 @@
 
 # qt/kde related
 from PyKDE4.kdeui import KLineEdit
-from PyQt4.QtCore import QEvent, pyqtSignal, Qt
+from PyQt4.QtCore import Qt
 
 class SearchEntry (KLineEdit):
 
     def keyPressEvent (self, event):
-        if event.type ()==QEvent.KeyPress and event.key ()==Qt.Key_Escape:
+        if event.key ()==Qt.Key_Escape:
             print "esc!"
             self.setText ('')
         else:

@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>satyr</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout">
@@ -119,12 +119,9 @@
   <customwidget>
    <class>SearchEntry</class>
    <extends>QLineEdit</extends>
-   <header>searchentry.h</header>
+   <header>custom_widgets.h</header>
   </customwidget>
  </customwidgets>
- <includes>
-  <include location="local">Python:from search_entry import SerachEntry</include>
- </includes>
  <resources/>
  <connections/>
 </ui>

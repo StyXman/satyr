@@ -1,2 +1,2 @@
 default.py: default.ui
-	pyuic4 $< | sed 's/searchentry/search_entry/g' > $@
+	pyuic4 -o $@ $<
