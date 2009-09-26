@@ -10,7 +10,7 @@ from PyKDE4.kdecore import KStandardDirs
 from PyKDE4.kdeui import KApplication, KMainWindow
 from PyQt4.QtCore import pyqtSignal, QObject, QByteArray, QTimer, QStringList
 from PyQt4.QtCore import QModelIndex
-from PyQt4.QtGui import QStringListModel, QItemSelectionModel
+from PyQt4.QtGui import QStringListModel, QItemSelectionModel, QAbstractItemView
 
 # dbus
 import dbus
@@ -66,9 +66,12 @@ class MainWindow (KMainWindow):
         # FIXME:
         # self.ui.songsList.itemActivated.connect (self.changeSong)
         self.selection.currentChanged.connect (self.changeSong)
-        # self.selection.selectionChanged.connect (self.changeSong)
+        self.selection.selectionChanged.connect (self.log)
 
         self.ui.searchEntry.textChanged.connect (self.search)
+
+    def log (self, *args):
+        print args
 
     def addSong (self, index, filepath):
         # self.ui.songsList.insertItem (index, filepath)
@@ -81,6 +84,7 @@ class MainWindow (KMainWindow):
         self.selection.select (modelIndex, QItemSelectionModel.SelectCurrent)
         # TODO: scroll so it's seen
         # self.ui.songsList.scrollToItem (item)
+        self.ui.songsList.scrollTo (modelIndex, QAbstractItemView.PositionAtCenter)
 
     def changeSong (self, curr, prev):
         # print curr
