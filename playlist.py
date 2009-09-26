@@ -59,7 +59,8 @@ class PlayList (SatyrObject):
         """Selects the collection that contains the index"""
         for startIndex, collection in self.collectionStartIndexes:
             # FIXME: I still don't think this is right
-            if index > startIndex+collection.count:
+            # if index > startIndex+collection.count:
+            if index < startIndex:
                 break
             # print index, startIndex, collection.count, startIndex+collection.count
             prevCollection= collection
@@ -76,7 +77,13 @@ class PlayList (SatyrObject):
     def setCurrent (self):
         # BUG: this doesn't take into account changes in the collections sizes
         collection, collectionIndex= self.indexToCollectionIndex (self.index)
-        self.filepath= collection.filepaths[collectionIndex]
+        # print self.index, collectionIndex, collection.count
+        try:
+            self.filepath= collection.filepaths[collectionIndex]
+        except IndexError:
+            # the index saved in the config is bigger than the current collection
+            self.index= 0
+            self.filepath= collection.filepaths[collectionIndex]
         # print "PL.setCurrent: [%d] %s" % (self.index, self.filepath)
         self.songChanged.emit (self.index)
 
@@ -155,7 +162,7 @@ class PlayList (SatyrObject):
 
     @dbus.service.method (BUS_NAME, in_signature='s', out_signature='a(is)')
     def search (self, words):
-        print "searching %s" % words
+        # print "searching %s" % words
         wordList= words.lower ().split ()
         def predicate (s):
             found= True
@@ -169,7 +176,6 @@ class PlayList (SatyrObject):
                 for (index, path) in enumerate (collection.filepaths)
                     if predicate (path.lower ()) ]
 
-        print songs
         return songs
 
     @dbus.service.method (BUS_NAME, in_signature='i', out_signature='')

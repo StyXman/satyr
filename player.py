@@ -25,9 +25,11 @@ class Player (SatyrObject):
         SatyrObject.__init__ (self, parent, busName, busPath)
 
         self.configValues= (
+            # actually it doesn't make much sense to save this two.
             ('playing', configBoolToBool, False),
             ('paused', configBoolToBool, False),
             ('stopAfter', configBoolToBool, False),
+            # or this one...
             ('quitAfter', configBoolToBool, False),
             )
         self.loadConfig ()

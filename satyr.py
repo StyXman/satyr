@@ -8,7 +8,8 @@ from PyKDE4.kdecore import KCmdLineArgs, KAboutData, i18n, ki18n
 from PyKDE4.kdecore import KCmdLineOptions, KMimeType, KUrl
 from PyKDE4.kdecore import KStandardDirs
 from PyKDE4.kdeui import KApplication, KMainWindow
-from PyQt4.QtCore import pyqtSignal, QObject, QByteArray, QTimer
+from PyQt4.QtCore import pyqtSignal, QObject, QByteArray, QTimer, QStringList
+from PyQt4.QtGui import QStringListModel
 
 # dbus
 import dbus
@@ -35,6 +36,8 @@ class MainWindow (KMainWindow):
         self.ui= Ui_MainWindow ()
         self.ui.setupUi (self)
 
+        self.model= QStringListModel ()
+
     def connectUi (self, player, playlist):
         self.player= player
         self.playlist= playlist
@@ -54,31 +57,49 @@ class MainWindow (KMainWindow):
         self.player.stopAfterChanged.connect (self.ui.stopAfterCheck.setChecked)
 
         self.playlist.songChanged.connect (self.showSong)
-        self.ui.songsList.itemActivated.connect (self.changeSong)
+        # FIXME:
+        # self.ui.songsList.itemActivated.connect (self.changeSong)
+        self.ui.songsList.setModel (self.model)
 
-        # self.ui.searchEntry.
+        self.ui.searchEntry.textChanged.connect (self.search)
 
     def addSong (self, index, filepath):
-        self.ui.songsList.insertItem (index, filepath)
+        # self.ui.songsList.insertItem (index, filepath)
+        # FIXME: there must be an easier way
+        # FIXME: support multiple collections
+        self.model.setStringList (QStringList (self.playlist.collections[0].filepaths))
 
     def showSong (self, index):
-        item= self.ui.songsList.item (index)
-        self.ui.songsList.scrollToItem (item)
-        self.ui.songsList.setCurrentItem (item)
+        # FIXME:
+        # item= self.ui.songsList.item (index)
+        # self.ui.songsList.scrollToItem (item)
+        # self.ui.songsList.setCurrentItem (item)
+        pass
 
     def changeSong (self, item):
         index= self.ui.songsList.row (item)
         self.player.play (index)
 
     def scanBegins (self):
-        self.ui.songsList.setEnabled (False)
+        # self.ui.songsList.setEnabled (False)
+        self.ui.songsList.setUpdatesEnabled (False)
 
     def scanFinished (self):
-        self.ui.songsList.setEnabled (True)
+        # self.ui.songsList.setEnabled (True)
+        self.ui.songsList.setUpdatesEnabled (True)
 
     def queryClose (self):
         self.player.quit ()
         return True
+
+    def search (self, text):
+        # below 3 chars is too slow (and with big playlists useless)
+        if len (text)>2:
+            filepaths= [ filepath
+                for index, filepath in self.playlist.search (unicode (text)) ]
+            self.model.setStringList (QStringList (filepaths))
+        else:
+            self.model.setStringList (QStringList (self.playlist.collections[0].filepaths))
 
 
 def createApp ():

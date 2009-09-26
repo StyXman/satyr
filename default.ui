@@ -89,17 +89,17 @@
          <string>Search</string>
         </property>
         <property name="buddy">
-         <cstring>searchText</cstring>
+         <cstring>searchEntry</cstring>
         </property>
        </widget>
       </item>
       <item>
-       <widget class="SearchEntry" name="searchText"/>
+       <widget class="SearchEntry" name="searchEntry"/>
       </item>
      </layout>
     </item>
     <item>
-     <widget class="QListWidget" name="songsList"/>
+     <widget class="QListView" name="songsList"/>
     </item>
    </layout>
   </widget>
