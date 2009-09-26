@@ -70,6 +70,16 @@ class MainWindow (KMainWindow):
         index= self.ui.songsList.row (item)
         self.player.play (index)
 
+    def scanBegins (self):
+        self.ui.songsList.setEnabled (False)
+
+    def scanFinished (self):
+        self.ui.songsList.setEnabled (True)
+
+    def queryClose (self):
+        self.player.quit ()
+        return True
+
 
 def createApp ():
     #########################################
@@ -127,6 +137,8 @@ def main ():
         collection= Collection (app, path, busName, "/collection_%04d" % index)
         collections.append (collection)
         collection.newSong.connect (mw.addSong)
+        collection.scanBegins.connect (mw.scanBegins)
+        collection.scanFinished.connect (mw.scanFinished)
         # we need to fire the load/scan after the main loop has started
         # otherwise the signals emited from it are not sent to the connected slots
         # FIXME? I'm not sure I want it this way

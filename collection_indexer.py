@@ -4,7 +4,7 @@
 
 # qt/kde related
 from PyKDE4.kdecore import KStandardDirs, KMimeType, KUrl
-from PyQt4.QtCore import pyqtSignal, QThread
+from PyQt4.QtCore import pyqtSignal, QThread, QStringList
 # from PyKDE4.phonon import Phonon
 from PyQt4.phonon import Phonon
 
@@ -16,6 +16,7 @@ import sys, os, os.path, time, bisect, stat, random
 
 # local
 from common import SatyrObject, BUS_NAME
+from model import Song
 
 def validMimetype (mimetype):
     """Phonon.BackendCapabilities.availableMimeTypes() returns a lot of nonsense,
@@ -50,7 +51,7 @@ def getMimeType (filepath):
 class CollectionIndexer (QThread):
     # finished= pyqtSignal (QThread)
     scanning= pyqtSignal (unicode)
-    foundSong= pyqtSignal (unicode)
+    foundSongs= pyqtSignal (QStringList)
 
     def __init__ (self, path, parent=None):
         QThread.__init__ (self, parent)
@@ -98,18 +99,23 @@ class CollectionIndexer (QThread):
             # http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=481795
             for root, dirs, files in self.walk (self.path):
                 self.scanning.emit (root)
+                filepaths= []
                 for filename in files:
                     filepath= os.path.join (root, filename)
                     # detect mimetype and add only if it's suppourted
                     mimetype= getMimeType (filepath)
                     if mimetype in mimetypes:
-                        self.foundSong.emit (filepath)
+                        # Song (filepath)
+                        filepaths.append (filepath)
+
+                # pyqt4 cannot make this automatically
+                self.foundSongs.emit (QStringList (filepaths))
 
         elif stat.S_ISREG (mode):
             # HINT: collection_indexer.py:110: Local variable (mimetype) shadows global defined on line 37
             # it's not a global
             mimetype= getMimeType (self.path)
             if mimetype in mimetypes:
-                self.foundSong.emit (self.path)
+                self.foundSongs.emit (QStringList ([self.path]))
 
 # end

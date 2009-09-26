@@ -24,6 +24,8 @@ class Collection (SatyrObject):
     """A Collection of Albums"""
     newSong= pyqtSignal (int, unicode)
     filesAdded= pyqtSignal ()
+    scanBegins= pyqtSignal ()
+    scanFinished= pyqtSignal ()
 
     def __init__ (self, parent, path, busName=None, busPath=None):
         SatyrObject.__init__ (self, parent, busName, busPath)
@@ -38,6 +40,10 @@ class Collection (SatyrObject):
         # if the user requests a new path, use it
         if self.path!=path:
             self.path= path
+            self.forceScan= True
+            print "new path, forcing (re)scan"
+        else:
+            self.forceScan= False
 
         self.watch= KDirWatch (self)
         self.watch.addDir (self.path,
@@ -45,11 +51,14 @@ class Collection (SatyrObject):
         self.watch.created.connect (self.newFiles)
 
         self.scanners= []
-        self.collectionFile= str (KStandardDirs.locateLocal ('data', 'saryr/%s.tdb' % self.dbusName (busPath)))
+        self.collectionFile= str (KStandardDirs.locateLocal ('data', 'satyr/%s.tdb' % self.dbusName (busPath)))
 
     def loadOrScan (self):
         try:
-            self.load ()
+            if self.forceScan:
+                self.scan ()
+            else:
+                self.load ()
         except ErrorNoDatabase:
             print "no database!"
             self.scan ()
@@ -61,11 +70,12 @@ class Collection (SatyrObject):
             # we must remove the trailing newline
             # we could use strip(), but filenames ending with any other whitespace
             # (think of the users!) would be loaded incorrectly
+            # self.filepaths= [ line[:-1].decode ('utf-8') for line in f.readlines () ]
+            filepaths= []
             for line in f.readlines ():
-                # self.filepaths=  ([ path[:-1].decode ('utf-8') for path in  ])
-                self.add (line[:-1].decode ('utf-8'))
+                filepaths.append (line[:-1].decode ('utf-8'))
             f.close ()
-            # self.count= len (self.filepaths)
+            self.add (filepaths)
             print "load finished, found %d songs" % self.count
             self.filesAdded.emit ()
         except IOError, e:
@@ -111,37 +121,43 @@ class Collection (SatyrObject):
             path= self.path
         scanner= CollectionIndexer (path)
         scanner.scanning.connect (self.progress)
-        scanner.foundSong.connect (self.add)
+        scanner.foundSongs.connect (self.add)
         scanner.terminated.connect (self.log)
         scanner.finished.connect (self.scanFinished)
+
+        self.scanBegins.emit ()
         scanner.start ()
         # hold it or it gets destroyed before it finishes
         self.scanners.append (scanner)
 
     def progress (self, path):
-        print 'scanning', path
+        # print 'scanning', path
+        pass
 
-    def add (self, filepath):
-        # the unidocde gets converted to QString by the signal/slot processing
-        # so we convert it back
-        filepath= unicode (filepath)
-        index= bisect.bisect (self.filepaths, filepath)
-        # test if it's not already there
-        # FIXME: use another sorting method?
-        if index==0 or self.filepaths[index-1]!= filepath:
-            # print "adding %s to the colection" % filepath
-            self.filepaths.insert (index, filepath)
-            # FIXME: make a proper Song implementation
-            self.newSong.emit (index, filepath)
-            self.count+= 1
+    def add (self, filepaths):
+        # print filepaths
+        # we get a QStringList; convert to a list (of QStrings, see below)
+        for filepath in list (filepaths):
+            filepath= unicode (filepath)
+            index= bisect.bisect (self.filepaths, filepath)
+            # test if it's not already there
+            # FIXME: use another sorting method?
+            if index==0 or self.filepaths[index-1]!= filepath:
+                # print "adding %s to the colection" % filepath
+                self.filepaths.insert (index, filepath)
+                # FIXME: make a proper Song implementation
+                self.newSong.emit (index, filepath)
+                self.count+= 1
 
     def log (self, *args):
         print "logging", args
 
-    def scanFinished (self):
-        # self.scanners.remove (scanner)
-        print "scan finished, found %d songs" % self.count
-        self.filesAdded.emit ()
+    #def scanFinished (self):
+        ## self.scanners.remove (scanner)
+        #print "scan finished, found %d songs" % self.count
+        ## TODO: emit this one only if there are new files
+        #self.filesAdded.emit ()
+        #self.scanFinished.emit ()
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def rescan (self):

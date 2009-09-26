@@ -27,12 +27,11 @@ class PlayList (SatyrObject):
     def __init__ (self, parent, collections, busName=None, busPath=None):
         SatyrObject.__init__ (self, parent, busName, busPath)
 
-        print collections
         self.collections= collections
         for collection in self.collections:
+            collection.scanFinished.connect (self.filesAdded)
+            # FIXME: this should be redundant
             collection.filesAdded.connect (self.filesAdded)
-        # FIXME: fix search to get rid of this
-        # self.collection= self.collections[0]
 
         self.indexQueue= []
         self.filepath= None
@@ -72,6 +71,12 @@ class PlayList (SatyrObject):
 
         return collection, collectionIndex
 
+    def setCurrent (self):
+        collection, collectionIndex= self.indexToCollectionIndex (self.index)
+        self.filepath= collection.filepaths[collectionIndex]
+        # print "[%d] %s" % (self.index, self.filepath)
+        self.songChanged.emit (self.index)
+
     def prev (self):
         print "¡prev",
         if self.random:
@@ -83,10 +88,7 @@ class PlayList (SatyrObject):
         else:
             self.index-= 1
 
-        collection, collectionIndex= self.indexToCollectionIndex (self.index)
-        self.filepath= collection.filepaths[collectionIndex]
-        # print "[%d] %s" % (self.index, self.filepath)
-        self.songChanged.emit (self.index)
+        self.setCurrent ()
 
     def next (self):
         print "next!",
@@ -107,10 +109,7 @@ class PlayList (SatyrObject):
             else:
                 self.index+= 1
 
-        collection, collectionIndex= self.indexToCollectionIndex (self.index)
-        self.filepath= collection.filepaths[collectionIndex]
-        # print "[%d] %s" % (self.index, self.filepath)
-        self.songChanged.emit (self.index)
+        self.setCurrent ()
 
     def filesAdded (self):
         # recalculate the count and the startIndexes
@@ -175,9 +174,7 @@ class PlayList (SatyrObject):
 
     @dbus.service.method (BUS_NAME, in_signature='i', out_signature='')
     def jumpTo (self, index):
-        collection, collectionIndex= self.indexToCollectionIndex (index)
-        self.filepath= collection.filepaths[collectionIndex]
         self.index= index
-        self.songChanged.emit (self.index)
+        self.setCurrent ()
 
 # end

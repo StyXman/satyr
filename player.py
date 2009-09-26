@@ -15,6 +15,7 @@ import time
 
 # local
 from common import SatyrObject, BUS_NAME, configBoolToBool
+from model import Song
 
 class Player (SatyrObject):
     finished= pyqtSignal ()
@@ -38,6 +39,7 @@ class Player (SatyrObject):
         # god bless PyQt4.5
         self.media.finished.connect (self.next)
         self.media.stateChanged.connect (self.stateChanged)
+        self.media.metaDataChanged.connect (self.printMetaData)
 
         self.ao= Phonon.AudioOutput (Phonon.MusicCategory, parent)
         Phonon.createPath (self.media, self.ao)
@@ -48,6 +50,10 @@ class Player (SatyrObject):
             print "ERROR: %d: %s" % (self.media.errorType (), self.media.errorString ())
             # just skip it
             self.next ()
+
+    def printMetaData (self):
+        # Song (self.filepath)
+        pass
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def prev (self):
@@ -147,7 +153,8 @@ class Player (SatyrObject):
         self.saveConfig ()
         # FIXME: is this the right API?
         self.playlist.saveConfig ()
-        self.playlist.collection.saveConfig ()
+        for collection in self.playlist.collections:
+            collection.saveConfig ()
         print "bye!"
         self.finished.emit ()
 
