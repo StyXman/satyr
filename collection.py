@@ -5,7 +5,9 @@
 # qt/kde related
 from PyKDE4.kdecore import KStandardDirs
 from PyKDE4.kio import KDirWatch
-from PyQt4.QtCore import pyqtSignal, QObject, QUrl, QByteArray, QVariant
+# QAbstractListModel
+# QAbstractItemModel for when we can model albums and group them that way
+from PyQt4.QtCore import pyqtSignal, QAbstractListModel, QModelIndex, QVariant, Qt
 
 # dbus
 import dbus.service
@@ -16,6 +18,28 @@ import os, bisect
 # local
 from common import SatyrObject, BUS_NAME
 from collection_indexer import CollectionIndexer
+
+class CollectionModel (QAbstractListModel):
+    def __init__ (self, parent= None):
+        QAbstractListModel.__init__ (self, parent)
+        self.songs= []
+
+    def rowCount (self, index= QModelIndex ()):
+        return len (self.songs)
+
+    def data (self, index, role):
+        if not index.isValid ():
+            return QVariant ()
+
+        if index.row ()>=len (self.songs.size):
+            return QVariant ()
+
+        if role==Qt.DisplayRole:
+            return self.songs[index.row ()]
+        else:
+            return QVariant ()
+
+    # def index (self, row, column, parent):
 
 class ErrorNoDatabase (Exception):
     pass
@@ -31,6 +55,7 @@ class Collection (SatyrObject):
         SatyrObject.__init__ (self, parent, busName, busPath)
         self.filepaths= []
         self.count= 0
+        # self.model= CollectionModel ()
 
         self.configValues= (
             ('path', str, path),

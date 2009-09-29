@@ -9,7 +9,7 @@ from PyKDE4.kdecore import KCmdLineOptions, KMimeType, KUrl
 from PyKDE4.kdecore import KStandardDirs
 from PyKDE4.kdeui import KApplication, KMainWindow
 from PyQt4.QtCore import pyqtSignal, QObject, QByteArray, QTimer, QStringList
-from PyQt4.QtCore import QModelIndex
+from PyQt4.QtCore import QModelIndex, QVariant, QString
 from PyQt4.QtGui import QStringListModel, QItemSelectionModel, QAbstractItemView
 
 # dbus
@@ -37,7 +37,10 @@ class MainWindow (KMainWindow):
         self.ui= Ui_MainWindow ()
         self.ui.setupUi (self)
 
-        self.model= QStringListModel ()
+        self.songsList= QStringList ()
+        self.model= QStringListModel (self.songsList)
+        self.searchModel= QStringListModel ()
+        self.ui.songsList.setModel (self.model)
 
     def connectUi (self, player, playlist):
         self.player= player
@@ -47,6 +50,7 @@ class MainWindow (KMainWindow):
         # the QPushButton.clicked() emits a bool,
         # and it's False on normal (non-checkable) buttons
         # BUG: it's not false, it's 0, which is indistinguishable from play(0)
+        # so lambda the 'bool' away
         self.ui.playButton.clicked.connect (lambda b: player.play ())
         self.ui.pauseButton.clicked.connect (player.pause)
         self.ui.stopButton.clicked.connect (player.stop)
@@ -61,7 +65,6 @@ class MainWindow (KMainWindow):
         self.player.stopAfterChanged.connect (self.ui.stopAfterCheck.setChecked)
 
         self.playlist.songChanged.connect (self.showSong)
-        self.ui.songsList.setModel (self.model)
         self.selection= self.ui.songsList.selectionModel ()
         self.ui.songsList.setSelectionMode (QAbstractItemView.NoSelection)
         self.ui.songsList.activated.connect (self.changeSong)
@@ -72,19 +75,27 @@ class MainWindow (KMainWindow):
         print args
 
     def addSong (self, index, filepath):
-        # self.ui.songsList.insertItem (index, filepath)
         # FIXME: there must be an easier way
         # FIXME: support multiple collections
-        self.model.setStringList (QStringList (self.playlist.collections[0].filepaths))
+        # self.songsList= QStringList (self.playlist.collections[0].filepaths)
+        # self.model.setStringList (self.songsList)
+        self.model.insertRow (index)
+        modelIndex= self.model.index (index, 0)
+        self.model.setData (modelIndex, QVariant (QString (filepath)))
 
     def showSong (self, index):
         modelIndex= self.model.index (index, 0)
         self.selection.select (modelIndex, QItemSelectionModel.SelectCurrent)
-        # TODO: QAbstractItemView.EnsureVisible?
+        # TODO? QAbstractItemView.EnsureVisible
         self.ui.songsList.scrollTo (modelIndex, QAbstractItemView.PositionAtCenter)
+        # TODO: move the selection cursor too
 
     def changeSong (self, modelIndex):
+        # BUG: the index is relative (at least) to the model,
+        # which it has an offset when searching
+        # FIXME: this should be fixed once the Song includes the index
         index= modelIndex.row ()
+        print modelIndex.model (), self.model, modelIndex.data ()
         self.player.play (index)
 
     def scanBegins (self):
@@ -104,9 +115,12 @@ class MainWindow (KMainWindow):
         if len (text)>2:
             filepaths= [ filepath
                 for index, filepath in self.playlist.search (unicode (text)) ]
-            self.model.setStringList (QStringList (filepaths))
+            # self.model.setStringList (QStringList (filepaths))
+            self.searchModel.setStringList (QStringList (filepaths))
+            self.ui.songsList.setModel (self.searchModel)
         else:
-            self.model.setStringList (QStringList (self.playlist.collections[0].filepaths))
+            # self.model.setStringList (self.songsList)
+            self.ui.songsList.setModel (self.model)
 
 
 def createApp ():

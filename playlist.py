@@ -3,8 +3,10 @@
 # distributed under the terms of the GPLv2.1
 
 # qt/kde related
-from PyKDE4.kdecore import KStandardDirs
 from PyQt4.QtCore import pyqtSignal
+# QAbstractListModel
+# QAbstractItemModel for when we can model albums and group them that way
+from PyQt4.QtCore import QAbstractListModel, QModelIndex, QVariant, Qt
 
 # dbus
 import dbus.service
@@ -15,6 +17,28 @@ import random, bisect
 # local
 from common import SatyrObject, BUS_NAME, configBoolToBool
 from primes import primes
+
+class PlayListModel (QAbstractListModel):
+    def __init__ (self, collection, parent= None):
+        QAbstractListModel.__init__ (self, parent)
+        self.songs= []
+
+    def rowCount (self, index= QModelIndex ()):
+        return len (self.songs)
+
+    def data (self, index, role):
+        if not index.isValid ():
+            return QVariant ()
+
+        if index.row ()>=len (self.songs.size):
+            return QVariant ()
+
+        if role==Qt.DisplayRole:
+            return self.songs[index.row ()]
+        else:
+            return QVariant ()
+
+    # def index (self, row, column, parent):
 
 class StopAfter (Exception):
     pass
@@ -34,6 +58,7 @@ class PlayList (SatyrObject):
             collection.filesAdded.connect (self.filesAdded)
         self.collectionStartIndexes= []
 
+        # self.model= PlayListModel (self.collections)
         self.indexQueue= []
         self.filepath= None
         self.count= 0
@@ -82,8 +107,9 @@ class PlayList (SatyrObject):
             self.filepath= collection.filepaths[collectionIndex]
         except IndexError:
             # the index saved in the config is bigger than the current collection
+            # fall back to 0
             self.index= 0
-            self.filepath= collection.filepaths[collectionIndex]
+            self.filepath= self.collections.filepaths[0]
         # print "PL.setCurrent: [%d] %s" % (self.index, self.filepath)
         self.songChanged.emit (self.index)
 

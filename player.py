@@ -5,7 +5,7 @@
 # qt/kde related
 # from PyKDE4.phonon import Phonon
 from PyQt4.phonon import Phonon
-from PyQt4.QtCore import pyqtSignal, QObject
+from PyQt4.QtCore import pyqtSignal
 
 # dbus
 import dbus.service
