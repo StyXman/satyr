@@ -9,7 +9,7 @@ from PyKDE4.kdecore import KCmdLineOptions, KMimeType, KUrl
 from PyKDE4.kdecore import KStandardDirs
 from PyKDE4.kdeui import KApplication, KMainWindow
 from PyQt4.QtCore import pyqtSignal, QObject, QByteArray, QTimer, QStringList
-from PyQt4.QtCore import QModelIndex, QVariant, QString
+from PyQt4.QtCore import QModelIndex, QVariant
 from PyQt4.QtGui import QStringListModel, QItemSelectionModel, QAbstractItemView
 
 # dbus
@@ -75,13 +75,10 @@ class MainWindow (KMainWindow):
         print args
 
     def addSong (self, index, filepath):
-        # FIXME: there must be an easier way
-        # FIXME: support multiple collections
-        # self.songsList= QStringList (self.playlist.collections[0].filepaths)
-        # self.model.setStringList (self.songsList)
+        # add the song via the model, so the views realize of the changes
         self.model.insertRow (index)
         modelIndex= self.model.index (index, 0)
-        self.model.setData (modelIndex, QVariant (QString (filepath)))
+        self.model.setData (modelIndex, QVariant (filepath))
 
     def showSong (self, index):
         modelIndex= self.model.index (index, 0)
@@ -91,11 +88,13 @@ class MainWindow (KMainWindow):
         # TODO: move the selection cursor too
 
     def changeSong (self, modelIndex):
-        # BUG: the index is relative (at least) to the model,
-        # which it has an offset when searching
-        # FIXME: this should be fixed once the Song includes the index
-        index= modelIndex.row ()
-        print modelIndex.model (), self.model, modelIndex.data ()
+        # FIXME: this should be fixed in a better way
+        # once the Song includes the index
+        # print modelIndex.model (), self.model
+        filepath= modelIndex.data ().toString ()
+        # FIXME: support multiple collections (and counting...)
+        index= self.playlist.collections[0].filepaths.index (filepath)
+        print "[%d] %s" % (index, filepath)
         self.player.play (index)
 
     def scanBegins (self):
@@ -115,11 +114,9 @@ class MainWindow (KMainWindow):
         if len (text)>2:
             filepaths= [ filepath
                 for index, filepath in self.playlist.search (unicode (text)) ]
-            # self.model.setStringList (QStringList (filepaths))
             self.searchModel.setStringList (QStringList (filepaths))
             self.ui.songsList.setModel (self.searchModel)
         else:
-            # self.model.setStringList (self.songsList)
             self.ui.songsList.setModel (self.model)
 
 
