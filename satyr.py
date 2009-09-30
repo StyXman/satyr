@@ -5,11 +5,9 @@
 
 # qt/kde related
 from PyKDE4.kdecore import KCmdLineArgs, KAboutData, i18n, ki18n
-from PyKDE4.kdecore import KCmdLineOptions, KMimeType, KUrl
-from PyKDE4.kdecore import KStandardDirs
+from PyKDE4.kdecore import KCmdLineOptions, KMimeType, KUrl, KStandardDirs
 from PyKDE4.kdeui import KApplication, KMainWindow
-from PyQt4.QtCore import pyqtSignal, QObject, QByteArray, QTimer, QStringList
-from PyQt4.QtCore import QModelIndex, QVariant
+from PyQt4.QtCore import pyqtSignal, QTimer, QStringList, QVariant
 from PyQt4.QtGui import QStringListModel, QItemSelectionModel, QAbstractItemView
 
 # dbus
@@ -41,6 +39,7 @@ class MainWindow (KMainWindow):
         self.model= QStringListModel (self.songsList)
         self.searchModel= QStringListModel ()
         self.ui.songsList.setModel (self.model)
+        self.selection= self.ui.songsList.selectionModel ()
 
     def connectUi (self, player, playlist):
         self.player= player
@@ -65,7 +64,6 @@ class MainWindow (KMainWindow):
         self.player.stopAfterChanged.connect (self.ui.stopAfterCheck.setChecked)
 
         self.playlist.songChanged.connect (self.showSong)
-        self.selection= self.ui.songsList.selectionModel ()
         self.ui.songsList.setSelectionMode (QAbstractItemView.NoSelection)
         self.ui.songsList.activated.connect (self.changeSong)
 
@@ -82,6 +80,7 @@ class MainWindow (KMainWindow):
 
     def showSong (self, index):
         modelIndex= self.model.index (index, 0)
+        print "showSong()", modelIndex.row ()
         self.selection.select (modelIndex, QItemSelectionModel.SelectCurrent)
         # TODO? QAbstractItemView.EnsureVisible
         self.ui.songsList.scrollTo (modelIndex, QAbstractItemView.PositionAtCenter)
@@ -116,8 +115,10 @@ class MainWindow (KMainWindow):
                 for index, filepath in self.playlist.search (unicode (text)) ]
             self.searchModel.setStringList (QStringList (filepaths))
             self.ui.songsList.setModel (self.searchModel)
+            self.selection= self.ui.songsList.selectionModel ()
         else:
             self.ui.songsList.setModel (self.model)
+            self.selection= self.ui.songsList.selectionModel ()
 
 
 def createApp ():
@@ -142,7 +143,7 @@ def createApp ():
 
     KCmdLineArgs.init (sys.argv, aboutData)
     options= KCmdLineOptions ()
-    options.add ("+file", ki18n ("file to play"))
+    options.add ("+path", ki18n ("path to your music collection"))
     KCmdLineArgs.addCmdLineOptions (options)
 
     app= KApplication ()

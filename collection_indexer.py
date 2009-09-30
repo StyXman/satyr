@@ -57,7 +57,8 @@ class CollectionIndexer (QThread):
         QThread.__init__ (self, parent)
         self.path= path
 
-    def walk (self, top):
+    def walk (self, top, relative=False):
+        # TODO: return relative paths
         # TODO: support single filenames
         # if not os.path.isdir (top):
         #     return top
