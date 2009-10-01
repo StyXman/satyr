@@ -94,7 +94,7 @@ class MainWindow (KMainWindow):
 
     def showSong (self, index):
         modelIndex= self.model.index (index, 0)
-        print "showSong()", modelIndex.row ()
+        # print "showSong()", modelIndex.row ()
         self.selection.select (modelIndex, QItemSelectionModel.SelectCurrent)
         # TODO? QAbstractItemView.EnsureVisible
         self.ui.songsList.scrollTo (modelIndex, QAbstractItemView.PositionAtCenter)
@@ -107,7 +107,7 @@ class MainWindow (KMainWindow):
         filepath= modelIndex.data ().toString ()
         # FIXME: support multiple collections (and counting...)
         index= self.playlist.collections[0].filepaths.index (filepath)
-        print "[%d] %s" % (index, filepath)
+        # print "[%d] %s" % (index, filepath)
         self.player.play (index)
 
     def scanBegins (self):

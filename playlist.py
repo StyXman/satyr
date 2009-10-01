@@ -202,14 +202,21 @@ class PlayList (SatyrObject):
             self.indexQueue.append (collectionIndex)
 
     @dbus.service.method (BUS_NAME, in_signature='s', out_signature='a(is)')
-    def search (self, words):
+    def search (self, searchSpec):
         # print "searching %s" % words
-        wordList= words.lower ().split ()
         def predicate (s):
-            found= True
-            for word in wordList:
-                found= found and word in s
-            return found
+            foundAny= False
+            for words in searchSpec.split ('+'):
+                if words=='':
+                    # the first or last char is +, so the words at its right is ''
+                    foundWords= False
+                else:
+                    foundWords= True
+                    wordList= words.lower ().split ()
+                    for word in wordList:
+                        foundWords= foundWords and word in s
+                foundAny= foundAny or foundWords
+            return foundAny
 
         songs= []
         for collection in self.collections:
