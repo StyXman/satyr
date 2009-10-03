@@ -42,6 +42,8 @@ from collection import Collection
 # ui
 from default import Ui_MainWindow
 
+#   PID USER     PRI  NI  VIRT   RES   SHR S CPU% MEM%   TIME+  Command
+# 24979 mdione    20   0  216M 46132 17380 S  1.0  2.2  4:01.62 python satyr.py /home/mdione/media/music/
 class MainWindow (KMainWindow):
     def __init__ (self, parent=None):
         KMainWindow.__init__ (self, parent)
@@ -49,20 +51,15 @@ class MainWindow (KMainWindow):
         self.ui= Ui_MainWindow ()
         self.ui.setupUi (self)
 
-        self.songsList= QStringList ()
-        self.model= QStringListModel (self.songsList)
-        self.searchModel= QStringListModel ()
-        self.ui.songsList.setModel (self.model)
-        self.selection= self.ui.songsList.selectionModel ()
-
     def connectUi (self, player, playlist):
         self.player= player
         self.playlist= playlist
+
         # connect buttons!
         self.ui.prevButton.clicked.connect (player.prev)
         # the QPushButton.clicked() emits a bool,
         # and it's False on normal (non-checkable) buttons
-        # BUG: it's not false, it's 0, which is indistinguishable from play(0)
+        # it's not false, it's 0, which is indistinguishable from play(0)
         # so lambda the 'bool' away
         self.ui.playButton.clicked.connect (lambda b: player.play ())
         self.ui.pauseButton.clicked.connect (player.pause)
@@ -83,20 +80,18 @@ class MainWindow (KMainWindow):
 
         self.ui.searchEntry.textChanged.connect (self.search)
 
+        self.model= self.playlist.model
+        self.ui.songsList.setModel (self.model)
+        self.selection= self.ui.songsList.selectionModel ()
+
     def log (self, *args):
         print args
-
-    def addSong (self, index, filepath):
-        # add the song via the model, so the views realize of the changes
-        self.model.insertRow (index)
-        modelIndex= self.model.index (index, 0)
-        self.model.setData (modelIndex, QVariant (filepath))
 
     def showSong (self, index):
         modelIndex= self.model.index (index, 0)
         # print "showSong()", modelIndex.row ()
         self.selection.select (modelIndex, QItemSelectionModel.SelectCurrent)
-        # TODO? QAbstractItemView.EnsureVisible
+        # FIXME? QAbstractItemView.EnsureVisible config?
         self.ui.songsList.scrollTo (modelIndex, QAbstractItemView.PositionAtCenter)
         # TODO: move the selection cursor too
 
@@ -190,7 +185,6 @@ def main ():
         path= unicode (path)
         collection= Collection (app, path, busName, "/collection_%04d" % index)
         collections.append (collection)
-        collection.newSong.connect (mw.addSong)
         collection.scanBegins.connect (mw.scanBegins)
         collection.scanFinished.connect (mw.scanFinished)
         # we need to fire the load/scan after the main loop has started

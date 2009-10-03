@@ -19,9 +19,8 @@
 
 # qt/kde related
 from PyQt4.QtCore import pyqtSignal
-# QAbstractListModel
 # QAbstractItemModel for when we can model albums and group them that way
-from PyQt4.QtCore import QAbstractListModel, QModelIndex, QVariant, Qt
+from PyQt4.QtCore import QAbstractTableModel, QModelIndex, QVariant, Qt
 
 # dbus
 import dbus.service
@@ -32,28 +31,7 @@ import random, bisect
 # local
 from common import SatyrObject, BUS_NAME, configBoolToBool
 from primes import primes
-
-class PlayListModel (QAbstractListModel):
-    def __init__ (self, collection, parent= None):
-        QAbstractListModel.__init__ (self, parent)
-        self.songs= []
-
-    def rowCount (self, index= QModelIndex ()):
-        return len (self.songs)
-
-    def data (self, index, role):
-        if not index.isValid ():
-            return QVariant ()
-
-        if index.row ()>=len (self.songs.size):
-            return QVariant ()
-
-        if role==Qt.DisplayRole:
-            return self.songs[index.row ()]
-        else:
-            return QVariant ()
-
-    # def index (self, row, column, parent):
+from models import PlayListModel
 
 class StopAfter (Exception):
     pass
@@ -66,17 +44,14 @@ class PlayList (SatyrObject):
     def __init__ (self, parent, collections, busName=None, busPath=None):
         SatyrObject.__init__ (self, parent, busName, busPath)
 
+        self.model= PlayListModel ()
         self.collections= collections
         for collection in self.collections:
+            collection.newSong.connect (self.model.addSong)
             collection.scanFinished.connect (self.filesAdded)
-            # FIXME: this should be redundant
-            collection.filesAdded.connect (self.filesAdded)
-        self.collectionStartIndexes= []
 
-        # self.model= PlayListModel (self.collections)
         self.indexQueue= []
         self.filepath= None
-        self.count= 0
 
         self.configValues= (
             ('random', configBoolToBool, False),
@@ -85,7 +60,6 @@ class PlayList (SatyrObject):
             ('index', int, 0),
             )
         self.loadConfig ()
-        # self.setCurrent ()
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def toggleRandom (self):
@@ -95,45 +69,22 @@ class PlayList (SatyrObject):
         print self.random
         self.randomChanged.emit (self.random)
 
-    def indexToCollection (self, index):
-        """Selects the collection that contains the index"""
-        for startIndex, collection in self.collectionStartIndexes:
-            # FIXME: I still don't think this is right
-            # if index > startIndex+collection.count:
-            if index < startIndex:
-                break
-            # print index, startIndex, collection.count, startIndex+collection.count
-            prevCollection= collection
-
-        return startIndex, prevCollection
-
-    def indexToCollectionIndex (self, index):
-        """Converts a global index to a index in a collection"""
-        startIndex, collection= self.indexToCollection (index)
-        collectionIndex= index-startIndex
-
-        return collection, collectionIndex
-
     def setCurrent (self):
-        # BUG: this doesn't take into account changes in the collections sizes
-        collection, collectionIndex= self.indexToCollectionIndex (self.index)
-        # print self.index, collectionIndex, collection.count
         try:
-            self.filepath= collection.filepaths[collectionIndex]
+            self.filepath= self.model.songs[self.index].filepath
         except IndexError:
             # the index saved in the config is bigger than the current collection
             # fall back to 0
             self.index= 0
-            self.filepath= self.collections.filepaths[0]
-        # print "PL.setCurrent: [%d] %s" % (self.index, self.filepath)
+            self.filepath= self.model.songs[self.index].filepath
         self.songChanged.emit (self.index)
 
     def prev (self):
         print "¡prev",
         if self.random:
             random= self.seed
-            self.index= (self.index-random) % self.count
-            random= (self.seed-self.prime) % self.count
+            self.index= (self.index-random) % self.model.count
+            random= (self.seed-self.prime) % self.model.count
             # print random, self.index
             self.seed= random
         else:
@@ -148,8 +99,8 @@ class PlayList (SatyrObject):
             self.index= self.indexQueue.pop (0)
         else:
             if self.random:
-                random= (self.seed+self.prime) % self.count
-                self.index= (self.index+random) % self.count
+                random= (self.seed+self.prime) % self.model.count
+                self.index= (self.index+random) % self.model.count
                 # print random, self.index
                 self.seed= random
             else:
@@ -158,21 +109,8 @@ class PlayList (SatyrObject):
         self.setCurrent ()
 
     def filesAdded (self):
-        # recalculate the count and the startIndexes
-        # HINT: yes, self.count==startIndex, but the semantic is different
-        # otherwise the update of startIndexes will not be so clear
-        self.count= 0
-        startIndex= 0
-        self.collectionStartIndexes= []
-
-        for collection in self.collections:
-            self.collectionStartIndexes.append ((startIndex, self.collections[0]))
-            startIndex+= collection.count
-            self.count+= collection.count
-        print "count:", self.count
-
-        # we must recompute the prime too
-        if self.count>2:
+        # we must recompute the prime
+        if self.model.count>2:
             # if count is 1, it make no sense to select a prime
             # if it's 2, the prime selected would be 2
             # if you turn on random and hit next
@@ -187,7 +125,7 @@ class PlayList (SatyrObject):
 
     def randomPrime (self):
         # select a random prime based on the amount of songs in the playlist
-        top= bisect.bisect (primes, self.count)
+        top= bisect.bisect (primes, self.model.count)
         # select from the upper 2/3,
         # so in large playlists the same artist is not picked consecutively
         prime= random.choice (primes[top/3:top])

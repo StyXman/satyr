@@ -31,7 +31,6 @@ import sys, os, os.path, time, bisect, stat, random
 
 # local
 from common import SatyrObject, BUS_NAME
-from model import Song
 
 def validMimetype (mimetype):
     """Phonon.BackendCapabilities.availableMimeTypes() returns a lot of nonsense,

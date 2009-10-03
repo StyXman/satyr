@@ -22,7 +22,7 @@ from PyKDE4.kdecore import KStandardDirs
 from PyKDE4.kio import KDirWatch
 # QAbstractListModel
 # QAbstractItemModel for when we can model albums and group them that way
-from PyQt4.QtCore import pyqtSignal, QAbstractListModel, QModelIndex, QVariant, Qt
+from PyQt4.QtCore import pyqtSignal
 
 # dbus
 import dbus.service
@@ -34,43 +34,18 @@ import os, bisect
 from common import SatyrObject, BUS_NAME
 from collection_indexer import CollectionIndexer
 
-class CollectionModel (QAbstractListModel):
-    def __init__ (self, parent= None):
-        QAbstractListModel.__init__ (self, parent)
-        self.songs= []
-
-    def rowCount (self, index= QModelIndex ()):
-        return len (self.songs)
-
-    def data (self, index, role):
-        if not index.isValid ():
-            return QVariant ()
-
-        if index.row ()>=len (self.songs.size):
-            return QVariant ()
-
-        if role==Qt.DisplayRole:
-            return self.songs[index.row ()]
-        else:
-            return QVariant ()
-
-    # def index (self, row, column, parent):
-
 class ErrorNoDatabase (Exception):
     pass
 
 class Collection (SatyrObject):
     """A Collection of Albums"""
-    newSong= pyqtSignal (int, unicode)
+    newSong= pyqtSignal (unicode)
     filesAdded= pyqtSignal ()
     scanBegins= pyqtSignal ()
     scanFinished= pyqtSignal ()
 
     def __init__ (self, parent, path, busName=None, busPath=None):
         SatyrObject.__init__ (self, parent, busName, busPath)
-        self.filepaths= []
-        self.count= 0
-        # self.model= CollectionModel ()
 
         self.configValues= (
             ('path', str, path),
@@ -116,7 +91,7 @@ class Collection (SatyrObject):
                 filepaths.append (line[:-1].decode ('utf-8'))
             f.close ()
             self.add (filepaths)
-            print "load finished, found %d songs" % self.count
+            # print "load finished, found %d songs" % self.count
             self.filesAdded.emit ()
         except IOError, e:
             print 'FAILED!', e
@@ -124,6 +99,7 @@ class Collection (SatyrObject):
         print
 
     def save (self):
+        return
         if self.count>0:
             try:
                 print 'saving collection to', self.collectionFile
@@ -175,33 +151,18 @@ class Collection (SatyrObject):
         pass
 
     def add (self, filepaths):
-        # print filepaths
-        # we get a QStringList; convert to a list (of QStrings, see below)
+        # we get a QStringList; convert to a list so we can python-iterate it
         for filepath in list (filepaths):
             filepath= unicode (filepath)
-            index= bisect.bisect (self.filepaths, filepath)
-            # test if it's not already there
-            # FIXME: use another sorting method?
-            if index==0 or self.filepaths[index-1]!= filepath:
-                # print "adding %s to the colection" % filepath
-                self.filepaths.insert (index, filepath)
-                # FIXME: make a proper Song implementation
-                self.newSong.emit (index, filepath)
-                self.count+= 1
+            self.newSong.emit (filepath)
 
     def log (self, *args):
         print "logging", args
 
-    #def scanFinished (self):
-        ## self.scanners.remove (scanner)
-        #print "scan finished, found %d songs" % self.count
-        ## TODO: emit this one only if there are new files
-        #self.filesAdded.emit ()
-        #self.scanFinished.emit ()
-
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def rescan (self):
-        self.filepaths= []
+        # FIXME: now that we don't hold our own filepaths, ...
+        # self.filepaths= []
         self.scan ()
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
