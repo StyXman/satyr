@@ -30,7 +30,6 @@ import time
 
 # local
 from common import SatyrObject, BUS_NAME, configBoolToBool
-from model import Song
 
 class Player (SatyrObject):
     finished= pyqtSignal ()
