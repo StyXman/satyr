@@ -61,7 +61,7 @@ class Player (SatyrObject):
         Phonon.createPath (self.media, self.ao)
 
     def stateChanged (self, new, old):
-        # print "state changed from %d to %d" % (old, new)
+        print "state changed from %d to %d" % (old, new)
         if new==Phonon.ErrorState:
             print "ERROR: %d: %s" % (self.media.errorType (), self.media.errorString ())
             # just skip it

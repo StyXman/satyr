@@ -172,9 +172,16 @@ class PlayList (SatyrObject):
         print "count:", self.count
 
         # we must recompute the prime too
-        if self.count>0:
+        if self.count>2:
+            # if count is 1, it make no sense to select a prime
+            # if it's 2, the prime selected would be 2
+            # if you turn on random and hit next
+            # you get the same song over and over again...
             self.prime= self.randomPrime ()
             print "prime selected:", self.prime
+        else:
+            # so instead we hadrcode it to 1
+            self.prime= 1
 
         self.setCurrent ()
 
