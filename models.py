@@ -139,7 +139,7 @@ class PlayListModel (QAbstractListModel):
             if song.metadataNotNull ():
                 return QVariant (self.format % song)
             else:
-                return QVariant (song.filepath)
+                return QVariant (self.altFormat % song)
         else:
             return QVariant ()
 
@@ -175,6 +175,7 @@ class CollectionModel (QAbstractListModel):
         # TODO: config
         # HINT: attrs from kaa-metadata are all strings
         self.format= "%(artist)s/%(album)s: %(trackno)s - %(title)s [%(length)s]"
+        self.altFormat= "%(filepath)s [%(length)s]"
 
     def data (self, index, role):
         if not index.isValid ():
@@ -267,7 +268,6 @@ class SongModel (QObject):
             self.loadMetadata ()
 
         # we could do it more complex, but I think this is enough
-        print repr (self.title)
         return self.title is not None
 
 # end
