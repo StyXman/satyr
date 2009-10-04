@@ -67,14 +67,19 @@ class PlayList (SatyrObject):
         print self.random
         self.randomChanged.emit (self.random)
 
-    def setCurrent (self):
-        try:
-            self.filepath= self.model.songs[self.index].filepath
-        except IndexError:
-            # the index saved in the config is bigger than the current collection
-            # fall back to 0
-            self.index= 0
-            self.filepath= self.model.songs[self.index].filepath
+    def setCurrent (self, song=None):
+        if song is None:
+            try:
+                self.filepath= self.model.songs[self.index].filepath
+            except IndexError:
+                # the index saved in the config is bigger than the current collection
+                # fall back to 0
+                self.index= 0
+                self.filepath= self.model.songs[self.index].filepath
+        else:
+            self.filepath= song.filepath
+            # yes, this is O(n), but hookers!
+            self.index= self.model.songs.index (song)
         self.songChanged.emit (self.index)
 
     def prev (self):
@@ -179,10 +184,14 @@ class PlayList (SatyrObject):
         return songs
 
     @dbus.service.method (BUS_NAME, in_signature='i', out_signature='')
-    def jumpTo (self, index):
+    def jumpToIndex (self, index):
         # print 'jU..'
         self.index= index
         self.setCurrent ()
         # print 'Mp!'
+
+    # we can't export this through dbus because it's a Song
+    def jumpToSong (self, song):
+        self.setCurrent (song)
 
 # end

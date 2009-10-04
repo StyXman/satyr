@@ -81,7 +81,7 @@ class Player (SatyrObject):
             self.stop ()
 
     @dbus.service.method (BUS_NAME, in_signature='i', out_signature='')
-    def play (self, index=None):
+    def play (self, song=None):
         if self.paused:
             self.pause ()
         else:
@@ -96,8 +96,8 @@ class Player (SatyrObject):
             # >>> 0!=False
             # False
             # print "play:", index
-            if index is not None:
-                self.playlist.jumpTo (index)
+            if song is not None:
+                self.playlist.jumpToSong (song)
 
             self.filepath= self.playlist.filepath
 

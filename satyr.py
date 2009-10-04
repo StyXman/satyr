@@ -101,10 +101,10 @@ class MainWindow (KMainWindow):
     def changeSong (self, modelIndex):
         # FIXME: now the Song includes the index, but we don't know the Song!
         # (no pun intended)
-        filepath= modelIndex.data ().toString ()
-        index= self.playlist.model.index (filepath)
-        # print "[%d] %s" % (index, filepath)
-        self.player.play (index)
+        song= self.model.songs[modelIndex.row ()]
+        # index= self.playlist.model.index (song.filepath)
+        print song
+        self.player.play (song)
 
     def scanBegins (self):
         # self.ui.songsList.setEnabled (False)
