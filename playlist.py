@@ -18,9 +18,7 @@
 
 
 # qt/kde related
-from PyQt4.QtCore import pyqtSignal
-# QAbstractItemModel for when we can model albums and group them that way
-from PyQt4.QtCore import QAbstractTableModel, QModelIndex, QVariant, Qt
+from PyQt4.QtCore import pyqtSignal, QModelIndex
 
 # dbus
 import dbus.service
@@ -121,6 +119,14 @@ class PlayList (SatyrObject):
             # so instead we hadrcode it to 1
             self.prime= 1
 
+        # HACK
+        if False:
+            self.model.beginInsertRows (QModelIndex (), 0, self.model.count-1)
+            self.model.endInsertRows ()
+            start= self.model.index (0, 0)
+            end= self.model.index (self.model.count-1, 0)
+            self.model.dataChanged.emit (start, end)
+
         self.setCurrent ()
 
     def randomPrime (self):
@@ -164,6 +170,7 @@ class PlayList (SatyrObject):
             return foundAny
 
         songs= []
+        # FIXME: broken. use model
         for collection in self.collections:
             songs+= [ (index, path)
                 for (index, path) in enumerate (collection.filepaths)

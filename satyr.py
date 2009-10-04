@@ -44,6 +44,8 @@ from default import Ui_MainWindow
 
 #   PID USER     PRI  NI  VIRT   RES   SHR S CPU% MEM%   TIME+  Command
 # 24979 mdione    20   0  216M 46132 17380 S  1.0  2.2  4:01.62 python satyr.py /home/mdione/media/music/
+#  7300 mdione    20   0  171M 52604 20004 S  0.0  2.5  0:18.42 python satyr.py /home/mdione/media/music/
+
 class MainWindow (KMainWindow):
     def __init__ (self, parent=None):
         KMainWindow.__init__ (self, parent)
@@ -96,12 +98,10 @@ class MainWindow (KMainWindow):
         # TODO: move the selection cursor too
 
     def changeSong (self, modelIndex):
-        # FIXME: this should be fixed in a better way
-        # once the Song includes the index
-        # print modelIndex.model (), self.model
+        # FIXME: now the Song includes the index, but we don't know the Song!
+        # (no pun intended)
         filepath= modelIndex.data ().toString ()
-        # FIXME: support multiple collections (and counting...)
-        index= self.playlist.collections[0].filepaths.index (filepath)
+        index= self.playlist.model.index (filepath)
         # print "[%d] %s" % (index, filepath)
         self.player.play (index)
 

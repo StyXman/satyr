@@ -66,7 +66,10 @@ class Collection (SatyrObject):
         self.watch.created.connect (self.newFiles)
 
         self.scanners= []
-        self.collectionFile= str (KStandardDirs.locateLocal ('data', 'satyr/%s.tdb' % self.dbusName (busPath)))
+        if busPath is not None:
+            self.collectionFile= str (KStandardDirs.locateLocal ('data', 'satyr/%s.tdb' % self.dbusName (busPath)))
+        else:
+            self.collectionFile= str (KStandardDirs.locateLocal ('data', 'satyr/collection.tdb'))
 
     def loadOrScan (self):
         try:

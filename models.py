@@ -25,6 +25,9 @@ from PyQt4.QtCore import QAbstractListModel, QModelIndex, QVariant, Qt
 # QAbstractTableModel if we ever change to a table
 from PyQt4.QtCore import QAbstractTableModel
 
+# std python
+import traceback
+
 # other libs
 from kaa import metadata
 
@@ -111,10 +114,10 @@ class PlayListModel (QAbstractListModel):
         if not index.isValid ():
             return QVariant ()
 
-        if index.row ()>=self.count:
+        elif index.row ()>=self.count:
             return QVariant ()
 
-        if role==Qt.DisplayRole:
+        elif role==Qt.DisplayRole:
             data= self.songs[index.row ()]
             return QVariant (self.format % data)
         else:
@@ -143,7 +146,7 @@ class PlayListModel (QAbstractListModel):
 
 
 class SongModel (QObject):
-    def __init__ (self, index, filepath):
+    def __init__ (self, index, filepath, onDemand=False):
         # sigsegv :(
         # KCrash: Application 'satyr.py' crashing...
         # sock_file=/home/mdione/.kde/socket-mustang/kdeinit4__0
@@ -153,21 +156,30 @@ class SongModel (QObject):
         # mo.setCurrentSource (ms)
         # print mo.metadata ()
 
+        self.loaded= False
+        self.index= index
+        self.filepath= filepath
+        if onDemand:
+            self.loadMetadata ()
+
+    def loadMetadata (self):
+        # traceback.print_stack ()
         try:
-            info= metadata.parse (filepath)
+            info= metadata.parse (self.filepath)
             # print info.artist, info.album, info.trackno, info.title
         except Exception, e:
-            print filepath
+            print self.filepath
             print e
             print '-----'
 
-        self.index= index
         for attr in ('artist', 'album', 'trackno', 'title', 'length'):
             setattr (self, attr, getattr (info, attr, None))
-        self.filepath= filepath
+        self.loaded= True
 
     # dict iface so we can simply % it to a pattern
     def __getitem__ (self, key):
+        if not self.loaded:
+            self.loadMetadata ()
         return getattr (self, key)
 
 # end

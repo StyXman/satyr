@@ -30,6 +30,7 @@ BUS_NAME= 'org.kde.satyr'
 def configBoolToBool (s):
     return s!='false'
 
+
 MetaDBusObject= type (dbus.service.Object)
 MetaQObject= type (QObject)
 
@@ -43,30 +44,36 @@ class SatyrObject (dbus.service.Object, QObject):
     """A QObject with a DBus interface and a section in the config file"""
     __metaclass__= MetaObject
 
-    def __init__ (self, parent, busName, busPath):
+    def __init__ (self, parent, busName=None, busPath=None):
         dbus.service.Object.__init__ (self, busName, busPath)
         QObject.__init__ (self, parent)
 
-        # HINT: please redwefine in inheriting classes
+        # HINT: please redefine in inheriting classes
         self.configValues= ()
-        self.config= KSharedConfig.openConfig ('satyrrc').group (self.dbusName (busPath))
+        if busPath is not None:
+            self.config= KSharedConfig.openConfig ('satyrrc').group (dbusName (busPath))
+        else:
+            self.config= None
 
     def dbusName (self, busPath):
         return busPath[1:].replace ('/', '-')
 
     def saveConfig (self):
-        for k, t, v in self.configValues:
-            v= getattr (self, k)
-            # print 'writing config entry %s= %s' % (k, v)
-            self.config.writeEntry (k, QVariant (v))
-        self.config.config ().sync ()
+        if not self.config is None:
+            for k, t, v in self.configValues:
+                v= getattr (self, k)
+                # print 'writing config entry %s= %s' % (k, v)
+                self.config.writeEntry (k, QVariant (v))
+            self.config.config ().sync ()
 
     def loadConfig (self):
         for k, t, v in self.configValues:
-            print 'reading config entry %s [%s]' % (k, v),
-            s= self.config.readEntry (k, QVariant (v)).toString ()
-            v= t (s)
-            print s, v
+            if not self.config is None:
+                print 'reading config entry %s [%s]' % (k, v),
+                s= self.config.readEntry (k, QVariant (v)).toString ()
+                v= t (s)
+                print s, v
+
             setattr (self, k, v)
 
 # end
