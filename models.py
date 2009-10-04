@@ -25,9 +25,6 @@ from PyQt4.QtCore import QAbstractListModel, QModelIndex, QVariant, Qt
 # QAbstractTableModel if we ever change to a table
 from PyQt4.QtCore import QAbstractTableModel
 
-# std python
-import traceback
-
 # other libs
 from kaa import metadata
 
@@ -110,6 +107,71 @@ class PlayListModel (QAbstractListModel):
         # HINT: attrs from kaa-metadata are all strings
         self.format= "[%(index)d] %(artist)s/%(album)s: %(trackno)s - %(title)s [%(length)s]"
 
+    def indexToCollection (self, index):
+        """Selects the collection that contains the index"""
+        for startIndex, collection in self.collectionStartIndexes:
+            # FIXME: I still don't think this is right
+            # if index > startIndex+collection.count:
+            if index < startIndex:
+                break
+            # print index, startIndex, collection.count, startIndex+collection.count
+            prevCollection= collection
+
+        return startIndex, prevCollection
+
+    def indexToCollectionIndex (self, index):
+        """Converts a global index to a index in a collection"""
+        startIndex, collection= self.indexToCollection (index)
+        collectionIndex= index-startIndex
+
+        return collection, collectionIndex
+
+    def data (self, index, role):
+        if not index.isValid ():
+            return QVariant ()
+
+        elif index.row ()>=self.count:
+            return QVariant ()
+
+        elif role==Qt.DisplayRole:
+            data= self.songs[index.row ()]
+            return QVariant (self.format % data)
+        else:
+            return QVariant ()
+
+    def addSong (self, filepath):
+        # convert QString to unicode
+        filepath= unicode (filepath)
+        row= index= self.lastIndex
+        self.lastIndex+= 1
+
+        self.beginInsertRows (QModelIndex (), row, row)
+        self.songs.append (SongModel (index, filepath))
+        self.endInsertRows ()
+
+        # again, I know that count and lastIndex are equal,
+        # but again, it's better for the intiutive semantics of the code
+        # (readability, they call it)
+        self.count+= 1
+
+        modelIndex= self.index (row, 0)
+        self.dataChanged.emit (modelIndex, modelIndex)
+
+    def rowCount (self, parent=None):
+        return self.count
+
+
+class CollectionModel (QAbstractListModel):
+    def __init__ (self, parent= None):
+        QAbstractListModel.__init__ (self, parent)
+        self.songs= []
+        self.lastIndex= 0
+        self.count= 0
+        # self.attrNames= ('index', 'artist', 'album', 'trackno', 'title', 'length', 'filepath')
+        # TODO: config
+        # HINT: attrs from kaa-metadata are all strings
+        self.format= "%(artist)s/%(album)s: %(trackno)s - %(title)s [%(length)s]"
+
     def data (self, index, role):
         if not index.isValid ():
             return QVariant ()
@@ -162,6 +224,16 @@ class SongModel (QObject):
         if not onDemand:
             self.loadMetadata ()
 
+    def formatSeconds (self, seconds):
+        """convert length from seconds to mm:ss"""
+        if seconds is not None:
+            s= float (seconds)
+            seconds= int (s) % 60
+            minutes= int (s) / 60
+            return "%02d:%02d" % (minutes, seconds)
+        else:
+            return "???"
+
     def loadMetadata (self):
         # traceback.print_stack ()
         try:
@@ -174,6 +246,7 @@ class SongModel (QObject):
 
         for attr in ('artist', 'album', 'trackno', 'title', 'length'):
             setattr (self, attr, getattr (info, attr, None))
+        self.length= self.formatSeconds (self.length)
         self.loaded= True
 
     # dict iface so we can simply % it to a pattern
