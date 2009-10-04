@@ -106,6 +106,7 @@ class PlayListModel (QAbstractListModel):
         # TODO: config
         # HINT: attrs from kaa-metadata are all strings
         self.format= "[%(index)d] %(artist)s/%(album)s: %(trackno)s - %(title)s [%(length)s]"
+        self.altFormat= "%(filepath)s [%(length)s]"
 
     def indexToCollection (self, index):
         """Selects the collection that contains the index"""
@@ -134,8 +135,11 @@ class PlayListModel (QAbstractListModel):
             return QVariant ()
 
         elif role==Qt.DisplayRole:
-            data= self.songs[index.row ()]
-            return QVariant (self.format % data)
+            song= self.songs[index.row ()]
+            if song.metadataNotNull ():
+                return QVariant (self.format % song)
+            else:
+                return QVariant (song.filepath)
         else:
             return QVariant ()
 
@@ -180,8 +184,11 @@ class CollectionModel (QAbstractListModel):
             return QVariant ()
 
         elif role==Qt.DisplayRole:
-            data= self.songs[index.row ()]
-            return QVariant (self.format % data)
+            song= self.songs[index.row ()]
+            if song.metadataNotNull ():
+                return QVariant (self.format % song)
+            else:
+                return QVariant (self.altFormat % song)
         else:
             return QVariant ()
 
@@ -254,5 +261,13 @@ class SongModel (QObject):
         if not self.loaded:
             self.loadMetadata ()
         return getattr (self, key)
+
+    def metadataNotNull (self):
+        if not self.loaded:
+            self.loadMetadata ()
+
+        # we could do it more complex, but I think this is enough
+        print repr (self.title)
+        return self.title is not None
 
 # end
