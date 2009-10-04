@@ -51,7 +51,7 @@ class SatyrObject (dbus.service.Object, QObject):
         # HINT: please redefine in inheriting classes
         self.configValues= ()
         if busPath is not None:
-            self.config= KSharedConfig.openConfig ('satyrrc').group (dbusName (busPath))
+            self.config= KSharedConfig.openConfig ('satyrrc').group (self.dbusName (busPath))
         else:
             self.config= None
 

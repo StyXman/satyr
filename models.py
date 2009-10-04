@@ -146,7 +146,7 @@ class PlayListModel (QAbstractListModel):
 
 
 class SongModel (QObject):
-    def __init__ (self, index, filepath, onDemand=False):
+    def __init__ (self, index, filepath, onDemand=True):
         # sigsegv :(
         # KCrash: Application 'satyr.py' crashing...
         # sock_file=/home/mdione/.kde/socket-mustang/kdeinit4__0
@@ -159,7 +159,7 @@ class SongModel (QObject):
         self.loaded= False
         self.index= index
         self.filepath= filepath
-        if onDemand:
+        if not onDemand:
             self.loadMetadata ()
 
     def loadMetadata (self):

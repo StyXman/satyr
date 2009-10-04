@@ -82,6 +82,7 @@ class MainWindow (KMainWindow):
 
         self.ui.searchEntry.textChanged.connect (self.search)
 
+        self.ui.songsList.setUniformItemSizes (True)
         self.model= self.playlist.model
         self.ui.songsList.setModel (self.model)
         self.selection= self.ui.songsList.selectionModel ()
