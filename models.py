@@ -97,9 +97,13 @@ class PlayListTableModel (QAbstractTableModel):
 
 
 class PlayListModel (QAbstractListModel):
-    def __init__ (self, parent= None):
+    def __init__ (self, songs=None, parent= None):
         QAbstractListModel.__init__ (self, parent)
-        self.songs= []
+        if songs is None:
+            self.songs= []
+        else:
+            self.songs= songs
+        print self.songs
         self.lastIndex= 0
         self.count= 0
         # self.attrNames= ('index', 'artist', 'album', 'trackno', 'title', 'length', 'filepath')

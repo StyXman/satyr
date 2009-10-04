@@ -38,6 +38,7 @@ from common import SatyrObject, BUS_NAME
 from player import Player
 from playlist import PlayList
 from collection import Collection
+from models import PlayListModel
 
 # ui
 from default import Ui_MainWindow
@@ -121,9 +122,10 @@ class MainWindow (KMainWindow):
     def search (self, text):
         # below 3 chars is too slow (and with big playlists, useless)
         if len (text)>2:
-            filepaths= [ filepath
-                for index, filepath in self.playlist.search (unicode (text)) ]
-            self.searchModel.setStringList (QStringList (filepaths))
+            songs=self.playlist.search (unicode (text))
+            # we have to keep it
+            # otherwise it pufs into inexistence after the function ends
+            self.searchModel= PlayListModel (songs)
             self.ui.songsList.setModel (self.searchModel)
             self.selection= self.ui.songsList.selectionModel ()
         else:

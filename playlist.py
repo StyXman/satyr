@@ -79,6 +79,8 @@ class PlayList (SatyrObject):
         else:
             self.filepath= song.filepath
             # yes, this is O(n), but hookers!
+            # FIXME: maybe we can get it from the modelIndex
+            # (we're using elsewhere anyways)
             self.index= self.model.songs.index (song)
         self.songChanged.emit (self.index)
 
@@ -159,10 +161,11 @@ class PlayList (SatyrObject):
 
     @dbus.service.method (BUS_NAME, in_signature='s', out_signature='a(is)')
     def search (self, searchSpec):
-        # print "searching %s" % words
+        print "searching %s" % searchSpec
         def predicate (s):
             foundAny= False
             for words in searchSpec.split ('+'):
+                # print words
                 if words=='':
                     # the first or last char is +, so the words at its right is ''
                     foundWords= False
@@ -175,12 +178,12 @@ class PlayList (SatyrObject):
             return foundAny
 
         songs= []
-        # FIXME: broken. use model
         for collection in self.collections:
-            songs+= [ (index, path)
-                for (index, path) in enumerate (collection.filepaths)
-                    if predicate (path.lower ()) ]
+            songs+= [ song
+                for song in self.model.songs
+                    if predicate (song.filepath.lower ()) ]
 
+        print songs
         return songs
 
     @dbus.service.method (BUS_NAME, in_signature='i', out_signature='')
