@@ -103,8 +103,6 @@ class MainWindow (KMainWindow):
         # FIXME: now the Song includes the index, but we don't know the Song!
         # (no pun intended)
         song= self.model.songs[modelIndex.row ()]
-        # index= self.playlist.model.index (song.filepath)
-        print song
         self.player.play (song)
 
     def scanBegins (self):
@@ -122,7 +120,7 @@ class MainWindow (KMainWindow):
     def search (self, text):
         # below 3 chars is too slow (and with big playlists, useless)
         if len (text)>2:
-            songs=self.playlist.search (unicode (text))
+            songs= self.playlist.search (unicode (text))
             # we have to keep it
             # otherwise it pufs into inexistence after the function ends
             self.searchModel= PlayListModel (songs)

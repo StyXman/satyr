@@ -161,7 +161,7 @@ class PlayList (SatyrObject):
 
     @dbus.service.method (BUS_NAME, in_signature='s', out_signature='a(is)')
     def search (self, searchSpec):
-        print "searching %s" % searchSpec
+        # print "searching %s" % searchSpec
         def predicate (s):
             foundAny= False
             for words in searchSpec.split ('+'):
@@ -183,7 +183,7 @@ class PlayList (SatyrObject):
                 for song in self.model.songs
                     if predicate (song.filepath.lower ()) ]
 
-        print songs
+        # print songs
         return songs
 
     @dbus.service.method (BUS_NAME, in_signature='i', out_signature='')

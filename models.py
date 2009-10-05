@@ -25,6 +25,9 @@ from PyQt4.QtCore import QAbstractListModel, QModelIndex, QVariant, Qt
 # QAbstractTableModel if we ever change to a table
 from PyQt4.QtCore import QAbstractTableModel
 
+# std python
+# import traceback
+
 # other libs
 from kaa import metadata
 
@@ -101,11 +104,13 @@ class PlayListModel (QAbstractListModel):
         QAbstractListModel.__init__ (self, parent)
         if songs is None:
             self.songs= []
+            self.lastIndex= 0
+            self.count= 0
         else:
             self.songs= songs
-        print self.songs
-        self.lastIndex= 0
-        self.count= 0
+            self.lastIndex= self.count= len (songs)
+        # print self.songs
+
         # self.attrNames= ('index', 'artist', 'album', 'trackno', 'title', 'length', 'filepath')
         # TODO: config
         # HINT: attrs from kaa-metadata are all strings
@@ -140,6 +145,7 @@ class PlayListModel (QAbstractListModel):
 
         elif role==Qt.DisplayRole:
             song= self.songs[index.row ()]
+            # print song
             if song.metadataNotNull ():
                 return QVariant (self.format % song)
             else:
