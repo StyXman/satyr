@@ -4,10 +4,22 @@ This is such a program.»
 satyr is a rather minimalistic audio player based in KDE technologies, and
 developed in the python language.
 
-it has very few, if maybe big, dependencies: python-kde4,
-python-kaa-metadata and pyqt4-dev-tools. once installed, run 'make' and then
-'python satyr.py <path to collection>'. more advanced installation
-instructions will come later. remember this is version 0.1alpha.
+it has very few, if maybe big, dependencies:
+
+package[1]		version[2]
+-------------------------------
+python-kde4		4.3.1
+python-kaa-metadata	0.7.7
+pyqt4-dev-tools[3]	4.5.4[4]
+
+[1] the names are the ones used in debian.
+[2] these are the versions used while developing
+[3] or the package that provides the pyuic4 tool.
+[4] I think any 4.5.x is enough.
+
+once installed, run 'make' and then 'python satyr.py <path to collection>'.
+more advanced installation instructions will come later. remember this is
+version 0.1alpha.
 
 if you have any question or suggestion and you want to conatct me, you can
 send me an e-mail to:
@@ -15,4 +27,4 @@ send me an e-mail to:
 Marcos Dione <mdione@grulic.org.ar>
 
 or contact me via irc: I'm StyXman on the freenode network. good luck and
-happy hearing!
+happy song listening!
