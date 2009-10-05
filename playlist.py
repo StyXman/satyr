@@ -80,7 +80,7 @@ class PlayList (SatyrObject):
             self.filepath= song.filepath
             # yes, this is O(n), but hookers!
             # FIXME: maybe we can get it from the modelIndex
-            # (we're using elsewhere anyways)
+            # (we're using it elsewhere anyways)
             self.index= self.model.songs.index (song)
         self.songChanged.emit (self.index)
 
@@ -125,14 +125,6 @@ class PlayList (SatyrObject):
         else:
             # so instead we hadrcode it to 1
             self.prime= 1
-
-        # HACK
-        if False:
-            self.model.beginInsertRows (QModelIndex (), 0, self.model.count-1)
-            self.model.endInsertRows ()
-            start= self.model.index (0, 0)
-            end= self.model.index (self.model.count-1, 0)
-            self.model.dataChanged.emit (start, end)
 
         self.setCurrent ()
 

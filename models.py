@@ -112,8 +112,9 @@ class PlayListModel (QAbstractListModel):
         # print self.songs
 
         # self.attrNames= ('index', 'artist', 'album', 'trackno', 'title', 'length', 'filepath')
-        # TODO: config
         # HINT: attrs from kaa-metadata are all strings
+        # TODO: config
+        # TODO: optional parts
         self.format= "[%(index)d] %(artist)s/%(album)s: %(trackno)s - %(title)s [%(length)s]"
         self.altFormat= "%(filepath)s [%(length)s]"
 
@@ -146,56 +147,6 @@ class PlayListModel (QAbstractListModel):
         elif role==Qt.DisplayRole:
             song= self.songs[index.row ()]
             # print song
-            if song.metadataNotNull ():
-                return QVariant (self.format % song)
-            else:
-                return QVariant (self.altFormat % song)
-        else:
-            return QVariant ()
-
-    def addSong (self, filepath):
-        # convert QString to unicode
-        filepath= unicode (filepath)
-        row= index= self.lastIndex
-        self.lastIndex+= 1
-
-        self.beginInsertRows (QModelIndex (), row, row)
-        self.songs.append (SongModel (index, filepath))
-        self.endInsertRows ()
-
-        # again, I know that count and lastIndex are equal,
-        # but again, it's better for the intiutive semantics of the code
-        # (readability, they call it)
-        self.count+= 1
-
-        modelIndex= self.index (row, 0)
-        self.dataChanged.emit (modelIndex, modelIndex)
-
-    def rowCount (self, parent=None):
-        return self.count
-
-
-class CollectionModel (QAbstractListModel):
-    def __init__ (self, parent= None):
-        QAbstractListModel.__init__ (self, parent)
-        self.songs= []
-        self.lastIndex= 0
-        self.count= 0
-        # self.attrNames= ('index', 'artist', 'album', 'trackno', 'title', 'length', 'filepath')
-        # TODO: config
-        # HINT: attrs from kaa-metadata are all strings
-        self.format= "%(artist)s/%(album)s: %(trackno)s - %(title)s [%(length)s]"
-        self.altFormat= "%(filepath)s [%(length)s]"
-
-    def data (self, index, role):
-        if not index.isValid ():
-            return QVariant ()
-
-        elif index.row ()>=self.count:
-            return QVariant ()
-
-        elif role==Qt.DisplayRole:
-            song= self.songs[index.row ()]
             if song.metadataNotNull ():
                 return QVariant (self.format % song)
             else:
