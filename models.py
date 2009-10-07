@@ -160,6 +160,19 @@ class PlayListModel (QAbstractListModel):
         row= index= self.lastIndex
         self.lastIndex+= 1
 
+        if False:
+            # TODO: integrate this
+            index= bisect.bisect (self.filepaths, filepath)
+            # test if it's not already there
+            # FIXME: use another sorting method?
+            # FIXED: use SongModel's cmp
+            if index==0 or self.filepaths[index-1]!= filepath:
+                # print "adding %s to the colection" % filepath
+                self.filepaths.insert (index, filepath)
+                # FIXME: make a proper Song implementation
+                self.newSong.emit (index, filepath)
+                self.count+= 1
+
         self.beginInsertRows (QModelIndex (), row, row)
         self.songs.append (SongModel (index, filepath))
         self.endInsertRows ()
@@ -191,19 +204,9 @@ class PlayListModel (QAbstractListModel):
 
 class SongModel (QObject):
     def __init__ (self, index, filepath, onDemand=True, va=False):
-        # sigsegv :(
-        # KCrash: Application 'satyr.py' crashing...
-        # sock_file=/home/mdione/.kde/socket-mustang/kdeinit4__0
-        # satyr.py: Fatal IO error: client killed
-        # ms= Phonon.MediaSource (filepath)
-        # mo= Phonon.MediaObject ()
-        # mo.setCurrentSource (ms)
-        # print mo.metadata ()
-
         self.loaded= False
         self.index= index
         self.filepath= filepath
-        # TODO:
         self.variousArtists= va
         if not self.variousArtists:
             self.cmpOrder= ('artist', 'album', 'trackno', 'title', 'length')
@@ -224,6 +227,15 @@ class SongModel (QObject):
             return "???"
 
     def loadMetadata (self):
+        # sigsegv :(
+        # KCrash: Application 'satyr.py' crashing...
+        # sock_file=/home/mdione/.kde/socket-mustang/kdeinit4__0
+        # satyr.py: Fatal IO error: client killed
+        # ms= Phonon.MediaSource (filepath)
+        # mo= Phonon.MediaObject ()
+        # mo.setCurrentSource (ms)
+        # print mo.metadata ()
+
         # traceback.print_stack ()
         # BUG: doesn't say anything if the file doesn't exist!
         try:
@@ -253,7 +265,7 @@ class SongModel (QObject):
         return self.title is not None
 
     def __cmp__ (self, other):
-        # don't want to implement the myriad of rich comparison
+        # I don't want to implement the myriad of rich comparison
         for attr1, attr2 in zip (self.cmpOrder, other.cmpOrder):
             val1= getattr (self, attr1)
             # print attr1, val1
