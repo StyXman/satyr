@@ -100,8 +100,7 @@ class MainWindow (KMainWindow):
         # TODO: move the selection cursor too
 
     def changeSong (self, modelIndex):
-        # FIXME: now the Song includes the index, but we don't know the Song!
-        # (no pun intended)
+        # FIXME: later we ask for the index... doesn't make sense!
         song= self.model.songs[modelIndex.row ()]
         self.player.play (song)
 

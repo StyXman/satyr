@@ -175,9 +175,22 @@ class PlayListModel (QAbstractListModel):
     def rowCount (self, parent=None):
         return self.count
 
+    def filesAdded (self):
+        # recalculate the count and the startIndexes
+        # HINT: yes, self.count==startIndex, but the semantic is different
+        # otherwise the update of startIndexes will not be so clear
+        self.count= 0
+        startIndex= 0
+        self.collectionStartIndexes= []
+
+        for collection in self.collections:
+            self.collectionStartIndexes.append ((startIndex, self.collections[0]))
+            startIndex+= collection.count
+            self.count+= collection.count
+        print "count:", self.count
 
 class SongModel (QObject):
-    def __init__ (self, index, filepath, onDemand=True):
+    def __init__ (self, index, filepath, onDemand=True, va=False):
         # sigsegv :(
         # KCrash: Application 'satyr.py' crashing...
         # sock_file=/home/mdione/.kde/socket-mustang/kdeinit4__0
@@ -190,6 +203,13 @@ class SongModel (QObject):
         self.loaded= False
         self.index= index
         self.filepath= filepath
+        # TODO:
+        self.variousArtists= va
+        if not self.variousArtists:
+            self.cmpOrder= ('artist', 'album', 'trackno', 'title', 'length')
+        else:
+            self.cmpOrder= ('album', 'trackno', 'title', 'artist', 'length')
+
         if not onDemand:
             self.loadMetadata ()
 
@@ -205,6 +225,7 @@ class SongModel (QObject):
 
     def loadMetadata (self):
         # traceback.print_stack ()
+        # BUG: doesn't say anything if the file doesn't exist!
         try:
             info= metadata.parse (self.filepath)
             # print info.artist, info.album, info.trackno, info.title
@@ -230,5 +251,18 @@ class SongModel (QObject):
 
         # we could do it more complex, but I think this is enough
         return self.title is not None
+
+    def __cmp__ (self, other):
+        # don't want to implement the myriad of rich comparison
+        for attr1, attr2 in zip (self.cmpOrder, other.cmpOrder):
+            val1= getattr (self, attr1)
+            # print attr1, val1
+            val2= getattr (other, attr2)
+            # print attr2, val2
+            ans= cmp (val1, val2)
+            if ans!=0:
+                break
+
+        return ans
 
 # end
