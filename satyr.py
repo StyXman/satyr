@@ -99,6 +99,11 @@ class MainWindow (KMainWindow):
         self.ui.songsList.scrollTo (modelIndex, QAbstractItemView.PositionAtCenter)
         # TODO: move the selection cursor too
 
+        # set the window title
+        song= self.model.songs[modelIndex.row ()]
+        # maybe the formatting si too 'deep'
+        self.setCaption (self.playlist.model.formatSong (song))
+
     def changeSong (self, modelIndex):
         # FIXME: later we ask for the index... doesn't make sense!
         song= self.model.songs[modelIndex.row ()]

@@ -115,8 +115,8 @@ class PlayListModel (QAbstractListModel):
         # HINT: attrs from kaa-metadata are all strings
         # TODO: config
         # TODO: optional parts
-        self.format= "[%(index)d] %(artist)s/%(album)s: %(trackno)s - %(title)s [%(length)s]"
-        self.altFormat= "%(filepath)s [%(length)s]"
+        self.format= u"[%(index)d] %(artist)s/%(album)s: %(trackno)s - %(title)s [%(length)s]"
+        self.altFormat= u"%(filepath)s [%(length)s]"
 
     def indexToCollection (self, index):
         """Selects the collection that contains the index"""
@@ -137,22 +137,27 @@ class PlayListModel (QAbstractListModel):
 
         return collection, collectionIndex
 
+    def formatSong (self, song):
+        if song.metadataNotNull ():
+            formatted= self.format % song
+        else:
+            formatted= self.altFormat % song
+
+        return formatted
+
     def data (self, index, role):
         if not index.isValid ():
-            return QVariant ()
-
+            data= QVariant ()
         elif index.row ()>=self.count:
-            return QVariant ()
-
+            data= QVariant ()
         elif role==Qt.DisplayRole:
             song= self.songs[index.row ()]
             # print song
-            if song.metadataNotNull ():
-                return QVariant (self.format % song)
-            else:
-                return QVariant (self.altFormat % song)
+            data= QVariant (self.formatSong (song))
         else:
-            return QVariant ()
+            data= QVariant ()
+
+        return data
 
     def addSong (self, filepath):
         # convert QString to unicode
@@ -162,14 +167,14 @@ class PlayListModel (QAbstractListModel):
 
         if False:
             # TODO: integrate this
+            # HINT: it should be in CollectionModel (where is it, anyways?)
+            # we still use filepath because it's what's used when there's no metadata
+            # we save the load of creating two SongModel's
             index= bisect.bisect (self.filepaths, filepath)
             # test if it's not already there
-            # FIXME: use another sorting method?
-            # FIXED: use SongModel's cmp
             if index==0 or self.filepaths[index-1]!= filepath:
                 # print "adding %s to the colection" % filepath
-                self.filepaths.insert (index, filepath)
-                # FIXME: make a proper Song implementation
+                # self.filepaths.insert (index, filepath)
                 self.newSong.emit (index, filepath)
                 self.count+= 1
 
@@ -236,7 +241,6 @@ class SongModel (QObject):
         # mo.setCurrentSource (ms)
         # print mo.metadata ()
 
-        # traceback.print_stack ()
         # BUG: doesn't say anything if the file doesn't exist!
         try:
             info= metadata.parse (self.filepath)
