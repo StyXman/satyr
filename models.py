@@ -266,14 +266,25 @@ class SongModel (QObject):
 
     def __cmp__ (self, other):
         # I don't want to implement the myriad of rich comparison
-        for attr1, attr2 in zip (self.cmpOrder, other.cmpOrder):
-            val1= getattr (self, attr1)
-            # print attr1, val1
-            val2= getattr (other, attr2)
-            # print attr2, val2
-            ans= cmp (val1, val2)
-            if ans!=0:
-                break
+        if not self.loaded:
+            ans= cmp (self.filepath, other.filepath)
+        else:
+            try:
+                for attr1, attr2 in zip (self.cmpOrder, other.cmpOrder):
+                    val1= getattr (self, attr1)
+                    # print attr1, val1
+                    val2= getattr (other, attr2)
+                    # print attr2, val2
+                    ans= cmp (val1, val2)
+                    if ans!=0:
+                        break
+
+            except Exception, e:
+                print self.filepath
+                print e
+                print '-----'
+                # any lie is good as any
+                ans= -1
 
         return ans
 
