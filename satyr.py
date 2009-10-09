@@ -84,7 +84,11 @@ class MainWindow (KMainWindow):
         self.ui.searchEntry.textChanged.connect (self.search)
 
         self.ui.songsList.setUniformItemSizes (True)
-        self.model= self.playlist.model
+
+        self.setModel (self.playlist.model)
+
+    def setModel (self, model):
+        self.model= model
         self.ui.songsList.setModel (self.model)
         self.selection= self.ui.songsList.selectionModel ()
 
@@ -127,12 +131,9 @@ class MainWindow (KMainWindow):
             songs= self.playlist.search (unicode (text))
             # we have to keep it
             # otherwise it pufs into inexistence after the function ends
-            self.searchModel= PlayListModel (songs)
-            self.ui.songsList.setModel (self.searchModel)
-            self.selection= self.ui.songsList.selectionModel ()
+            self.setModel (PlayListModel (songs))
         else:
-            self.ui.songsList.setModel (self.model)
-            self.selection= self.ui.songsList.selectionModel ()
+            self.setModel (self.playlist.model)
 
 
 def createApp ():

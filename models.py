@@ -207,6 +207,7 @@ class PlayListModel (QAbstractListModel):
             self.count+= collection.count
         print "count:", self.count
 
+
 class SongModel (QObject):
     def __init__ (self, index, filepath, onDemand=True, va=False):
         self.loaded= False
@@ -271,6 +272,9 @@ class SongModel (QObject):
     def __cmp__ (self, other):
         # I don't want to implement the myriad of rich comparison
         if not self.loaded:
+            # don't load metadata on any comparison
+            # this would force it very soon at boot time
+            # so use the only reasonable thing: the filepath
             ans= cmp (self.filepath, other.filepath)
         else:
             try:
