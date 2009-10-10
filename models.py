@@ -41,7 +41,7 @@ class PlayListTableModel (QAbstractTableModel):
         self.lastIndex= 0
         self.count= 0
         # FIXME? hardcoded
-        self.attrNames= ('index', 'artist', 'album', 'trackno', 'title', 'length', 'filepath')
+        self.attrNames= ('index', 'artist', 'year', 'album', 'trackno', 'title', 'length', 'filepath')
 
     def data (self, index, role):
         if not index.isValid ():
@@ -111,16 +111,14 @@ class PlayListModel (QAbstractListModel):
         else:
             self.songs= songs
             self.lastIndex= self.count= len (songs)
-        # print self.songs
 
-        # self.attrNames= ('index', 'artist', 'album', 'trackno', 'title', 'length', 'filepath')
+        # self.attrNames= ('index', 'artist', 'year', 'album', 'trackno', 'title', 'length', 'filepath')
         # HINT: attrs from kaa-metadata are all strings
         # TODO: config
         # TODO: optional parts
-        self.format= u"[%(index)d] %(artist)s/%(album)s: %(trackno)s - %(title)s [%(length)s]"
+        self.format= u"[%(index)d] %(artist)s/%(year)s-%(album)s: %(trackno)s - %(title)s [%(length)s]"
         self.altFormat= u"%(filepath)s [%(length)s]"
-        # const QFont f(KGlobalSettings::smallestReadableFont());
-        # const QFontMetrics metrics(f);
+
         self.fontMetrics= QFontMetrics (KGlobalSettings.generalFont ())
 
     def indexToCollection (self, index):
@@ -162,7 +160,6 @@ class PlayListModel (QAbstractListModel):
             data= QVariant (self.formatSong (song))
         elif role==Qt.SizeHintRole:
             # calculate something based on the filepath
-            # QSize s = metrics.size(Qt::TextSingleLine, m_dateString);
             data= QVariant (self.fontMetrics.size (Qt.TextSingleLine, song.filepath))
         else:
             data= QVariant ()
@@ -218,6 +215,10 @@ class PlayListModel (QAbstractListModel):
         print "count:", self.count
 
 
+class CollectionModel (QObject):
+    pass
+
+
 class SongModel (QObject):
     def __init__ (self, index, filepath, onDemand=True, va=False):
         self.loaded= False
@@ -225,8 +226,9 @@ class SongModel (QObject):
         self.filepath= filepath
         self.variousArtists= va
         if not self.variousArtists:
-            self.cmpOrder= ('artist', 'album', 'trackno', 'title', 'length')
+            self.cmpOrder= ('artist', 'year', 'album', 'trackno', 'title', 'length')
         else:
+            # note that the year is not used in this case!
             self.cmpOrder= ('album', 'trackno', 'title', 'artist', 'length')
 
         if not onDemand:
@@ -261,13 +263,13 @@ class SongModel (QObject):
             print e
             print '-----'
 
-        for attr in ('artist', 'album', 'trackno', 'title', 'length'):
+        for attr in ('artist', 'year', 'album', 'trackno', 'title', 'length'):
             setattr (self, attr, getattr (info, attr, None))
         self.length= self.formatSeconds (self.length)
         self.loaded= True
 
-    # dict iface so we can simply % it to a pattern
     def __getitem__ (self, key):
+        """dict iface so we can simply % it to a pattern"""
         if not self.loaded:
             self.loadMetadata ()
         return getattr (self, key)
@@ -290,9 +292,7 @@ class SongModel (QObject):
             try:
                 for attr1, attr2 in zip (self.cmpOrder, other.cmpOrder):
                     val1= getattr (self, attr1)
-                    # print attr1, val1
                     val2= getattr (other, attr2)
-                    # print attr2, val2
                     ans= cmp (val1, val2)
                     if ans!=0:
                         break
