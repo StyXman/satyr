@@ -62,7 +62,7 @@ class MainWindow (KMainWindow):
         self.ui.prevButton.clicked.connect (player.prev)
         # the QPushButton.clicked() emits a bool,
         # and it's False on normal (non-checkable) buttons
-        # BUG: it's not false, it's 0, which is indistinguishable from play(0)
+        # no, it's not false, it's 0, which is indistinguishable from play(0)
         # so lambda the 'bool' away
         self.ui.playButton.clicked.connect (lambda b: player.play ())
         self.ui.pauseButton.clicked.connect (player.pause)
@@ -99,6 +99,7 @@ class MainWindow (KMainWindow):
         # TODO? QAbstractItemView.EnsureVisible
         self.ui.songsList.scrollTo (modelIndex, QAbstractItemView.PositionAtCenter)
         # TODO: move the selection cursor too
+        self.ui.songsList.setCurrentIndex (modelIndex)
 
     def changeSong (self, modelIndex):
         # FIXME: this should be fixed in a better way
