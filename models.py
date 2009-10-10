@@ -18,12 +18,14 @@
 
 
 # qt/kde related
+from PyKDE4.kdeui import KGlobalSettings
 from PyQt4.QtCore import QObject
 # from PyQt4.phonon import Phonon
 # QAbstractItemModel for when we can model albums and group them that way
 from PyQt4.QtCore import QAbstractListModel, QModelIndex, QVariant, Qt
 # QAbstractTableModel if we ever change to a table
 from PyQt4.QtCore import QAbstractTableModel
+from PyQt4.QtGui import QFontMetrics
 
 # std python
 # import traceback
@@ -117,6 +119,9 @@ class PlayListModel (QAbstractListModel):
         # TODO: optional parts
         self.format= u"[%(index)d] %(artist)s/%(album)s: %(trackno)s - %(title)s [%(length)s]"
         self.altFormat= u"%(filepath)s [%(length)s]"
+        # const QFont f(KGlobalSettings::smallestReadableFont());
+        # const QFontMetrics metrics(f);
+        self.fontMetrics= QFontMetrics (KGlobalSettings.generalFont ())
 
     def indexToCollection (self, index):
         """Selects the collection that contains the index"""
@@ -146,14 +151,19 @@ class PlayListModel (QAbstractListModel):
         return formatted
 
     def data (self, index, role):
+        song= self.songs[index.row ()]
+
         if not index.isValid ():
             data= QVariant ()
         elif index.row ()>=self.count:
             data= QVariant ()
         elif role==Qt.DisplayRole:
-            song= self.songs[index.row ()]
             # print song
             data= QVariant (self.formatSong (song))
+        elif role==Qt.SizeHintRole:
+            # calculate something based on the filepath
+            # QSize s = metrics.size(Qt::TextSingleLine, m_dateString);
+            data= QVariant (self.fontMetrics.size (Qt.TextSingleLine, song.filepath))
         else:
             data= QVariant ()
 

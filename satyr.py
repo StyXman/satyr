@@ -83,7 +83,7 @@ class MainWindow (KMainWindow):
 
         self.ui.searchEntry.textChanged.connect (self.search)
 
-        self.ui.songsList.setUniformItemSizes (True)
+        # self.ui.songsList.setUniformItemSizes (True)
 
         self.setModel (self.playlist.model)
 
@@ -101,7 +101,7 @@ class MainWindow (KMainWindow):
         self.selection.select (modelIndex, QItemSelectionModel.SelectCurrent)
         # FIXME? QAbstractItemView.EnsureVisible config?
         self.ui.songsList.scrollTo (modelIndex, QAbstractItemView.PositionAtCenter)
-        # TODO: move the selection cursor too
+        # move the selection cursor too
         self.ui.songsList.setCurrentIndex (modelIndex)
 
         # set the window title
