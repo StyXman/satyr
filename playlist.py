@@ -81,7 +81,8 @@ class PlayList (SatyrObject):
             # yes, this is O(n), but hookers!
             # FIXME: maybe we can get it from the modelIndex
             # (we're using it elsewhere anyways)
-            self.index= self.model.songs.index (song)
+            # FIXME: this os O(n)
+            self.index= song.collection.songs.index (song)
         self.songChanged.emit (self.index)
 
     def prev (self):

@@ -33,6 +33,7 @@ import os, bisect
 # local
 from common import SatyrObject, BUS_NAME
 from collection_indexer import CollectionIndexer
+from models import SongModel
 
 class ErrorNoDatabase (Exception):
     pass
@@ -46,6 +47,9 @@ class Collection (SatyrObject):
 
     def __init__ (self, parent, path, busName=None, busPath=None):
         SatyrObject.__init__ (self, parent, busName, busPath)
+
+        self.songs= []
+        self.count= 0
 
         self.configValues= (
             ('path', str, path),
@@ -72,6 +76,7 @@ class Collection (SatyrObject):
             self.collectionFile= str (KStandardDirs.locateLocal ('data', 'satyr/collection.tdb'))
 
     def loadOrScan (self):
+        # FIXME: ugly
         try:
             if self.forceScan:
                 self.scan ()
@@ -102,15 +107,14 @@ class Collection (SatyrObject):
         print
 
     def save (self):
-        return
         if self.count>0:
             try:
                 print 'saving collection to', self.collectionFile
                 f= open (self.collectionFile, 'w+')
                 # we must add the trailing newline
                 # f.writelines ([ path.encode ('utf-8')+'\n' for path in self.filepaths ])
-                for filepath in self.filepaths:
-                    f.write (filepath.encode ('utf-8')+'\n')
+                for song in self.songs:
+                    f.write (song.filepath.encode ('utf-8')+'\n')
                 f.close ()
             except Exception, e:
                 # any problem we kill the bastard
@@ -157,7 +161,18 @@ class Collection (SatyrObject):
         # we get a QStringList; convert to a list so we can python-iterate it
         for filepath in list (filepaths):
             filepath= unicode (filepath)
-            self.newSong.emit (filepath)
+            song= SongModel (self, filepath)
+
+            index= bisect.bisect (self.songs, song)
+            # test if it's not already there
+            # FIXME: use another sorting method?
+            if index==0 or self.song[index-1]!= song:
+                # print "adding %s to the colection" % filepath
+                self.songs.insert (index, song)
+                self.count+= 1
+
+                # self.newSong.emit (index, song)
+                self.newSong.emit (filepath)
 
     def log (self, *args):
         print "logging", args
