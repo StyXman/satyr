@@ -102,7 +102,7 @@ class PlayListTableModel (QAbstractTableModel):
 
 
 class PlayListModel (QAbstractListModel):
-    def __init__ (self, songs=None, parent= None):
+    def __init__ (self, collections= None, songs=None, parent= None):
         QAbstractListModel.__init__ (self, parent)
         if songs is None:
             self.songs= []
@@ -111,6 +111,16 @@ class PlayListModel (QAbstractListModel):
         else:
             self.songs= songs
             self.lastIndex= self.count= len (songs)
+
+        if collections is None:
+            collections= []
+        self.collections= collections
+
+        for collection in self.collections:
+            collection.scanFinished.connect (self.filesAdded)
+            # FIXME: this should be redundant
+            collection.filesAdded.connect (self.filesAdded)
+        self.collectionStartIndexes= []
 
         # self.attrNames= ('index', 'artist', 'year', 'album', 'trackno', 'title', 'length', 'filepath')
         # HINT: attrs from kaa-metadata are all strings
@@ -201,17 +211,19 @@ class PlayListModel (QAbstractListModel):
         return self.count
 
     def filesAdded (self):
-        # recalculate the count and the startIndexes
-        # HINT: yes, self.count==startIndex, but the semantic is different
-        # otherwise the update of startIndexes will not be so clear
-        self.count= 0
-        startIndex= 0
-        self.collectionStartIndexes= []
+        if False:
+            # recalculate the count and the startIndexes
+            # HINT: yes, self.count==startIndex, but the semantic is different
+            # otherwise the update of startIndexes will not be so clear
+            self.count= 0
+            startIndex= 0
+            self.collectionStartIndexes= []
 
-        for collection in self.collections:
-            self.collectionStartIndexes.append ((startIndex, self.collections[0]))
-            startIndex+= collection.count
-            self.count+= collection.count
+            for collection in self.collections:
+                self.collectionStartIndexes.append ((startIndex, self.collections[0]))
+                startIndex+= collection.count
+                self.count+= collection.count
+
         print "count:", self.count
 
 

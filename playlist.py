@@ -42,7 +42,7 @@ class PlayList (SatyrObject):
     def __init__ (self, parent, collections, busName=None, busPath=None):
         SatyrObject.__init__ (self, parent, busName, busPath)
 
-        self.model= PlayListModel ()
+        self.model= PlayListModel (collections)
         self.collections= collections
         for collection in self.collections:
             collection.newSong.connect (self.model.addSong)

@@ -130,7 +130,7 @@ class MainWindow (KMainWindow):
             songs= self.playlist.search (unicode (text))
             # we have to keep it
             # otherwise it pufs into inexistence after the function ends
-            self.setModel (PlayListModel (songs))
+            self.setModel (PlayListModel (songs=songs))
         else:
             self.setModel (self.playlist.model)
 
