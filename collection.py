@@ -34,7 +34,7 @@ import pdb
 # local
 from common import SatyrObject, BUS_NAME
 from collection_indexer import CollectionIndexer
-from models import SongModel
+from models import Song
 
 class ErrorNoDatabase (Exception):
     pass
@@ -163,7 +163,7 @@ class Collection (SatyrObject):
         # we get a QStringList; convert to a list so we can python-iterate it
         for filepath in list (filepaths):
             filepath= unicode (filepath)
-            song= SongModel (self, filepath)
+            song= Song (self, filepath)
 
             index= bisect.bisect (self.songs, song)
             # test if it's not already there

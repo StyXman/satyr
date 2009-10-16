@@ -225,7 +225,7 @@ class PlayListModel (QAbstractListModel):
         print "PLM: count:", self.count
 
 
-class SongModel (QObject):
+class Song (QObject):
     def __init__ (self, collection, filepath, onDemand=True, va=False):
         self.loaded= False
         self.collection= collection
