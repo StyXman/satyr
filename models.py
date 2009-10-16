@@ -161,16 +161,21 @@ class PlayListModel (QAbstractListModel):
 
         return formatted
 
-    def data (self, index, role):
+    def song (self, index):
         if len (self.songs)==0:
-            collection, collectionIndex= self.indexToCollectionIndex (index.row ())
+            collection, collectionIndex= self.indexToCollectionIndex (index)
             song= collection.songs[collectionIndex]
         else:
             song= self.songs[index.row ()]
 
-        if not index.isValid ():
+        return song
+
+    def data (self, modelIndex, role):
+        song= self.song (modelIndex.row ())
+
+        if not modelIndex.isValid ():
             data= QVariant ()
-        elif index.row ()>=self.count:
+        elif modelIndex.row ()>=self.count:
             data= QVariant ()
         elif role==Qt.DisplayRole:
             # print song

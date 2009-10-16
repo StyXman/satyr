@@ -29,6 +29,7 @@ import dbus.service
 
 # std python
 import os, bisect
+import pdb
 
 # local
 from common import SatyrObject, BUS_NAME
@@ -158,6 +159,7 @@ class Collection (SatyrObject):
         pass
 
     def add (self, filepaths):
+        # pdb.set_trace ()
         # we get a QStringList; convert to a list so we can python-iterate it
         for filepath in list (filepaths):
             filepath= unicode (filepath)
