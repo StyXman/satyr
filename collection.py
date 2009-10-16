@@ -166,7 +166,7 @@ class Collection (SatyrObject):
             index= bisect.bisect (self.songs, song)
             # test if it's not already there
             # FIXME: use another sorting method?
-            if index==0 or self.song[index-1]!= song:
+            if index==0 or self.songs[index-1]!= song:
                 # print "adding %s to the colection" % filepath
                 self.songs.insert (index, song)
                 self.count+= 1

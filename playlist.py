@@ -82,6 +82,7 @@ class PlayList (SatyrObject):
             # FIXME: maybe we can get it from the modelIndex
             # (we're using it elsewhere anyways)
             # FIXME: this os O(n)
+            # BUG: this is the Collection index, not the global one
             self.index= song.collection.songs.index (song)
         self.songChanged.emit (self.index)
 

@@ -128,7 +128,7 @@ class PlayListModel (QAbstractListModel):
         # HINT: attrs from kaa-metadata are all strings
         # TODO: config
         # TODO: optional parts
-        self.format= u"[%(index)d] %(artist)s/%(year)s-%(album)s: %(trackno)s - %(title)s [%(length)s]"
+        self.format= u"%(artist)s/%(year)s-%(album)s: %(trackno)s - %(title)s [%(length)s]"
         self.altFormat= u"%(filepath)s [%(length)s]"
 
         # FIXME: kinda hacky
