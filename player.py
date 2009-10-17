@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # vim: set fileencoding=utf-8 :
 # (c) 2009 Marcos Dione <mdione@grulic.org.ar>
 
@@ -82,7 +83,7 @@ class Player (SatyrObject):
 
     @dbus.service.method (BUS_NAME, in_signature='i', out_signature='')
     def play (self, index=None):
-        if self.paused:
+        if self.paused and self.playing:
             self.pause ()
         else:
             self.playing= True
