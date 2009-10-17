@@ -109,7 +109,7 @@ class MainWindow (KMainWindow):
 
     def changeSong (self, modelIndex):
         # FIXME: later we ask for the index... doesn't make sense!
-        song= self.model.songs[modelIndex.row ()]
+        song= self.model.song (modelIndex.row ())
         self.player.play (song)
 
     def scanBegins (self):
