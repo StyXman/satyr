@@ -104,6 +104,11 @@ class PlayListTableModel (QAbstractTableModel):
 class PlayListModel (QAbstractListModel):
     def __init__ (self, collections= None, songs=None, parent= None):
         QAbstractListModel.__init__ (self, parent)
+
+        if collections is None:
+            collections= []
+        self.collections= collections
+
         if songs is None:
             self.songs= []
             self.lastIndex= 0
@@ -112,23 +117,21 @@ class PlayListModel (QAbstractListModel):
             self.songs= songs
             self.lastIndex= self.count= len (songs)
 
-        if collections is None:
-            collections= []
-        self.collections= collections
-
-        for collection in self.collections:
-            collection.scanFinished.connect (self.filesAdded)
-            # FIXME: this should be redundant
-            collection.filesAdded.connect (self.filesAdded)
         self.collectionStartIndexes= []
+        for collection in self.collections:
+            collection.scanFinished.connect (self.updateIndexes)
+            # FIXME: this should be redundant
+            collection.filesAdded.connect (self.updateIndexes)
+        self.updateIndexes ()
 
         # self.attrNames= ('index', 'artist', 'year', 'album', 'trackno', 'title', 'length', 'filepath')
         # HINT: attrs from kaa-metadata are all strings
         # TODO: config
         # TODO: optional parts
-        self.format= u"[%(index)d] %(artist)s/%(year)s-%(album)s: %(trackno)s - %(title)s [%(length)s]"
+        self.format= u"%(artist)s/%(year)s-%(album)s: %(trackno)s - %(title)s [%(length)s]"
         self.altFormat= u"%(filepath)s [%(length)s]"
 
+        # FIXME: kinda hacky
         self.fontMetrics= QFontMetrics (KGlobalSettings.generalFont ())
 
     def indexToCollection (self, index):
@@ -158,12 +161,21 @@ class PlayListModel (QAbstractListModel):
 
         return formatted
 
-    def data (self, index, role):
-        song= self.songs[index.row ()]
+    def song (self, index):
+        if len (self.songs)==0:
+            collection, collectionIndex= self.indexToCollectionIndex (index)
+            song= collection.songs[collectionIndex]
+        else:
+            song= self.songs[index.row ()]
 
-        if not index.isValid ():
+        return song
+
+    def data (self, modelIndex, role):
+        song= self.song (modelIndex.row ())
+
+        if not modelIndex.isValid ():
             data= QVariant ()
-        elif index.row ()>=self.count:
+        elif modelIndex.row ()>=self.count:
             data= QVariant ()
         elif role==Qt.DisplayRole:
             # print song
@@ -176,27 +188,14 @@ class PlayListModel (QAbstractListModel):
 
         return data
 
-    def addSong (self, filepath):
+    def addSong (self):
         # convert QString to unicode
-        filepath= unicode (filepath)
+        # filepath= unicode (filepath)
         row= index= self.lastIndex
         self.lastIndex+= 1
 
-        if False:
-            # TODO: integrate this
-            # HINT: it should be in CollectionModel (where is it, anyways?)
-            # we still use filepath because it's what's used when there's no metadata
-            # we save the load of creating two SongModel's
-            index= bisect.bisect (self.filepaths, filepath)
-            # test if it's not already there
-            if index==0 or self.filepaths[index-1]!= filepath:
-                # print "adding %s to the colection" % filepath
-                # self.filepaths.insert (index, filepath)
-                self.newSong.emit (index, filepath)
-                self.count+= 1
-
         self.beginInsertRows (QModelIndex (), row, row)
-        self.songs.append (SongModel (index, filepath))
+        # self.songs.append ()
         self.endInsertRows ()
 
         # again, I know that count and lastIndex are equal,
@@ -210,31 +209,27 @@ class PlayListModel (QAbstractListModel):
     def rowCount (self, parent=None):
         return self.count
 
-    def filesAdded (self):
-        if False:
-            # recalculate the count and the startIndexes
-            # HINT: yes, self.count==startIndex, but the semantic is different
-            # otherwise the update of startIndexes will not be so clear
-            self.count= 0
-            startIndex= 0
-            self.collectionStartIndexes= []
+    def updateIndexes (self):
+        # recalculate the count and the startIndexes
+        # HINT: yes, self.count==startIndex, but the semantic is different
+        # otherwise the update of startIndexes will not be so clear
+        self.count= 0
+        startIndex= 0
+        self.collectionStartIndexes= []
 
-            for collection in self.collections:
-                self.collectionStartIndexes.append ((startIndex, self.collections[0]))
-                startIndex+= collection.count
-                self.count+= collection.count
+        for collection in self.collections:
+            self.collectionStartIndexes.append ((startIndex, collection))
+            startIndex+= collection.count
+            self.count+= collection.count
 
-        print "count:", self.count
-
-
-class CollectionModel (QObject):
-    pass
+        print "PLM: count:", self.count
 
 
-class SongModel (QObject):
-    def __init__ (self, index, filepath, onDemand=True, va=False):
+class Song (QObject):
+    def __init__ (self, collection, filepath, onDemand=True, va=False):
         self.loaded= False
-        self.index= index
+        self.collection= collection
+        # self.index= index
         self.filepath= filepath
         self.variousArtists= va
         if not self.variousArtists:

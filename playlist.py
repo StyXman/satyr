@@ -70,18 +70,22 @@ class PlayList (SatyrObject):
     def setCurrent (self, song=None):
         if song is None:
             try:
-                self.filepath= self.model.songs[self.index].filepath
+                song= self.model.song (self.index)
+                self.filepath= song.filepath
             except IndexError:
                 # the index saved in the config is bigger than the current collection
                 # fall back to 0
                 self.index= 0
-                self.filepath= self.model.songs[self.index].filepath
+                song= self.model.song (self.index)
+                self.filepath= song.filepath
         else:
             self.filepath= song.filepath
             # yes, this is O(n), but hookers!
             # FIXME: maybe we can get it from the modelIndex
             # (we're using it elsewhere anyways)
-            self.index= self.model.songs.index (song)
+            # FIXME: this os O(n)
+            # BUG: this is the Collection index, not the global one
+            self.index= song.collection.songs.index (song)
         self.songChanged.emit (self.index)
 
     def prev (self):
