@@ -103,7 +103,7 @@ class MainWindow (KMainWindow):
         self.ui.songsList.setCurrentIndex (modelIndex)
 
         # set the window title
-        song= self.model.songs[modelIndex.row ()]
+        song= self.model.song (modelIndex.row ())
         # maybe the formatting si too 'deep'
         self.setCaption (self.playlist.model.formatSong (song))
 
