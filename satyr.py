@@ -114,11 +114,13 @@ class MainWindow (KMainWindow):
 
     def scanBegins (self):
         # self.ui.songsList.setEnabled (False)
-        self.ui.songsList.setUpdatesEnabled (False)
+        # self.ui.songsList.setUpdatesEnabled (False)
+        pass
 
     def scanFinished (self):
         # self.ui.songsList.setEnabled (True)
-        self.ui.songsList.setUpdatesEnabled (True)
+        # self.ui.songsList.setUpdatesEnabled (True)
+        pass
 
     def queryClose (self):
         self.player.quit ()

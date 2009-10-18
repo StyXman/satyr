@@ -109,6 +109,7 @@ class PlayListModel (QAbstractListModel):
             collections= []
         self.collections= collections
 
+        # print songs
         if songs is None:
             self.songs= []
             self.lastIndex= 0
@@ -166,7 +167,7 @@ class PlayListModel (QAbstractListModel):
             collection, collectionIndex= self.indexToCollectionIndex (index)
             song= collection.songs[collectionIndex]
         else:
-            song= self.songs[index.row ()]
+            song= self.songs[index]
 
         return song
 
@@ -211,16 +212,18 @@ class PlayListModel (QAbstractListModel):
 
     def updateIndexes (self):
         # recalculate the count and the startIndexes
-        # HINT: yes, self.count==startIndex, but the semantic is different
-        # otherwise the update of startIndexes will not be so clear
-        self.count= 0
-        startIndex= 0
-        self.collectionStartIndexes= []
+        # only if we don't hols the songs ourselves
+        if len (self.songs)==0:
+            # HINT: yes, self.count==startIndex, but the semantic is different
+            # otherwise the update of startIndexes will not be so clear
+            self.count= 0
+            startIndex= 0
+            self.collectionStartIndexes= []
 
-        for collection in self.collections:
-            self.collectionStartIndexes.append ((startIndex, collection))
-            startIndex+= collection.count
-            self.count+= collection.count
+            for collection in self.collections:
+                self.collectionStartIndexes.append ((startIndex, collection))
+                startIndex+= collection.count
+                self.count+= collection.count
 
         print "PLM: count:", self.count
 

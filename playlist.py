@@ -176,7 +176,7 @@ class PlayList (SatyrObject):
         songs= []
         for collection in self.collections:
             songs+= [ song
-                for song in self.model.songs
+                for song in collection.songs
                     if predicate (song.filepath.lower ()) ]
 
         # print songs
