@@ -21,7 +21,7 @@
 from PyKDE4.kdecore import KCmdLineArgs, KAboutData, i18n, ki18n
 from PyKDE4.kdecore import KCmdLineOptions, KMimeType, KUrl, KStandardDirs
 from PyKDE4.kdeui import KApplication, KMainWindow
-from PyQt4.QtCore import pyqtSignal, QTimer, QStringList, QVariant, QByteArray
+from PyQt4.QtCore import pyqtSignal, QTimer, QStringList, QVariant
 from PyQt4.QtGui import QStringListModel, QItemSelectionModel, QAbstractItemView
 
 # dbus
@@ -184,7 +184,7 @@ def main ():
         path= args.arg (index)
 
         # paths must be bytes, not ascii or utf-8
-        path= utils.qstring2str (qba)
+        path= utils.qstring2str (path)
 
         collection= Collection (app, path, busName, "/collection_%04d" % index)
         collections.append (collection)

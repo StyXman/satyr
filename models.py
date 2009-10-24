@@ -262,23 +262,32 @@ class Song (QObject):
         try:
             # tagpy doesn't handle unicode filepaths (somehow makes sense)
             fr= tagpy.FileRef (self.filepath)
-            info= fr.tag ()
+
             props= fr.audioProperties ()
+            # incredibly enough, tagpy also express lenght as a astring
+            # even when taglib uses an int (?!?)
+            self.length= self.formatSeconds (props.length)
+
+            info= fr.tag ()
             # print info.artist, info.album, info.trackno, info.title
-            print repr (info.title)
+            # print repr (info.title)
         except Exception, e:
             print self.filepath
             print e
             print '-----'
+            # we must define info so getattr() works
+            self.length= 0
+            info= None
 
         # tagpy presents trackno as track, so we map them
         for tag, attr in zip (
                 ('artist', 'year', 'album', 'track', 'title'),
                 ('artist', 'year', 'album', 'trackno', 'title')):
-            setattr (self, attr, getattr (info, tag, None))
-        # incredibly enough, tagpy also express lenght as a astring
-        # even when taglib uses an int (?!?)
-        self.length= self.formatSeconds (props.length)
+            datum= getattr (info, tag, None)
+            if isinstance (datum, basestring):
+                datum= datum.strip ()
+            setattr (self, attr, datum)
+
         self.loaded= True
 
     def __getitem__ (self, key):
