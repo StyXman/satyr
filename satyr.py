@@ -183,7 +183,7 @@ def main ():
         path= args.arg (index)
 
         # paths must be bytes, not ascii or utf-8
-        # BUG: this is ugly
+        # BUG: this is ugly; might be properly handled w/PyQt4.6/Python2.6
         # qba= QByteArray ()
         # qba.append (path)
         # path= str (qba)

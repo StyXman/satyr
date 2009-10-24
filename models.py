@@ -262,7 +262,7 @@ class Song (QObject):
             info= fr.tag ()
             props= fr.audioProperties ()
             # print info.artist, info.album, info.trackno, info.title
-            print repr (info.title)
+            # print repr (info.title)
         except Exception, e:
             print self.filepath
             print e
@@ -272,7 +272,10 @@ class Song (QObject):
         for tag, attr in zip (
                 ('artist', 'year', 'album', 'track', 'title'),
                 ('artist', 'year', 'album', 'trackno', 'title')):
-            setattr (self, attr, getattr (info, tag, None))
+            datum= getattr (info, tag)
+            if isinstance (datum, basestring):
+                datum= datum.strip ()
+            setattr (self, attr, datum)
         # incredibly enough, tagpy also express lenght as a astring
         # even when taglib uses an int (?!?)
         self.length= self.formatSeconds (props.length)
