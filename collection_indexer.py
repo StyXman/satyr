@@ -116,7 +116,9 @@ class CollectionIndexer (QThread):
                 self.scanning.emit (root)
                 filepaths= []
                 for filename in files:
-                    filepath= os.path.join (root, filename)
+                    # filepath= os.path.join (root, filename)
+                    filepath= root+'/'+filename
+                    print root, filename
                     # detect mimetype and add only if it's suppourted
                     mimetype= getMimeType (filepath)
                     if mimetype in mimetypes:

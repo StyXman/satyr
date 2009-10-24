@@ -131,7 +131,8 @@ class PlayListModel (QAbstractListModel):
         # TODO: config
         # TODO: optional parts
         self.format= u"%(artist)s/%(year)s-%(album)s: %(trackno)s - %(title)s [%(length)s]"
-        self.altFormat= u"%(filepath)s [%(length)s]"
+        # this must NOT be unicode, 'cause the filepaths might have any vegetable
+        self.altFormat= "%(filepath)s [%(length)s]"
 
         # FIXME: kinda hacky
         self.fontMetrics= QFontMetrics (KGlobalSettings.generalFont ())
@@ -159,7 +160,9 @@ class PlayListModel (QAbstractListModel):
         if song.metadataNotNull ():
             formatted= self.format % song
         else:
-            formatted= self.altFormat % song
+            # I choose latin1 because it's the only one I know
+            # which is full 256 chars
+            formatted= (self.altFormat % song).encode ('latin1')
 
         return formatted
 
@@ -303,7 +306,7 @@ class Song (QObject):
         # we could do it more complex, but I think this is enough
         # tagpy returns u'' or 0 instead of not defining the attr at all
         # so we see that indeed it reurns unicode. see comment in loadMetadata()
-        return (self.title is not None or self.title!=u'')
+        return (self.title is not None and self.title!=u'')
 
     def __cmp__ (self, other):
         # I don't want to implement the myriad of rich comparison
