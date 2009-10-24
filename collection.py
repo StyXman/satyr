@@ -20,9 +20,7 @@
 # qt/kde related
 from PyKDE4.kdecore import KStandardDirs
 from PyKDE4.kio import KDirWatch
-# QAbstractListModel
-# QAbstractItemModel for when we can model albums and group them that way
-from PyQt4.QtCore import pyqtSignal
+from PyQt4.QtCore import pyqtSignal, QString, QByteArray
 
 # dbus
 import dbus.service
@@ -35,6 +33,7 @@ import pdb
 from common import SatyrObject, BUS_NAME
 from collection_indexer import CollectionIndexer
 from models import Song
+import utils
 
 class ErrorNoDatabase (Exception):
     pass
@@ -97,7 +96,8 @@ class Collection (SatyrObject):
             # self.filepaths= [ line[:-1].decode ('utf-8') for line in f.readlines () ]
             filepaths= []
             for line in f.readlines ():
-                filepaths.append (line[:-1].decode ('utf-8'))
+                # filepaths.append (line[:-1].decode ('utf-8'))
+                filepaths.append (line[:-1])
             f.close ()
             self.add (filepaths)
             # print "load finished, found %d songs" % self.count
@@ -115,7 +115,8 @@ class Collection (SatyrObject):
                 # we must add the trailing newline
                 # f.writelines ([ path.encode ('utf-8')+'\n' for path in self.filepaths ])
                 for song in self.songs:
-                    f.write (song.filepath.encode ('utf-8')+'\n')
+                    # f.write (song.filepath.encode ('utf-8')+'\n')
+                    f.write (song.filepath+'\n')
                 f.close ()
             except Exception, e:
                 # any problem we kill the bastard
@@ -131,13 +132,7 @@ class Collection (SatyrObject):
         SatyrObject.saveConfig (self)
 
     def newFiles (self, path):
-        # BUG: this is ugly
-        # qba= QByteArray ()
-        # qba.append (path)
-        # path= str (qba)
-
-        # convert QString to unicode
-        path= unicode (path)
+        path= utils.qstring2str (path)
         self.scan (path)
 
     def scan (self, path=None):
@@ -159,10 +154,15 @@ class Collection (SatyrObject):
         pass
 
     def add (self, filepaths):
-        # pdb.set_trace ()
         # we get a QStringList; convert to a list so we can python-iterate it
         for filepath in list (filepaths):
-            filepath= unicode (filepath)
+            # filepath= unicode (filepath)
+            # filepath= str (filepath)
+            # filepath can be a QString because this method is also connected to a signal
+            if isinstance (filepath, QString):
+                # paths must be bytes, not ascii or utf-8
+                filepath= utils.qstring2str (filepath)
+
             song= Song (self, filepath)
 
             index= bisect.bisect (self.songs, song)

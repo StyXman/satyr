@@ -86,7 +86,7 @@ class CollectionIndexer (QThread):
         dirs, nondirs = [], []
         for name in names:
             try:
-                path= top+u'/'+name
+                path= top+'/'+name
             except UnicodeDecodeError:
                 print repr (top), repr (name)
                 print name, "skipped: bad encoding"
@@ -99,7 +99,7 @@ class CollectionIndexer (QThread):
         yield top, dirs, nondirs
         for name in dirs:
             try:
-                path = top+u'/'+name
+                path = top+'/'+name
             except UnicodeDecodeError:
                 print name, "skipped: bad encoding"
             else:

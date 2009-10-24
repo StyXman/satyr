@@ -28,7 +28,7 @@ from PyQt4.QtCore import QAbstractTableModel
 from PyQt4.QtGui import QFontMetrics
 
 # std python
-# import traceback
+import traceback
 
 # other libs
 # from kaa import metadata
@@ -231,6 +231,9 @@ class PlayListModel (QAbstractListModel):
 
 class Song (QObject):
     def __init__ (self, collection, filepath, onDemand=True, va=False):
+        if not isinstance (filepath, str):
+            print filepath, "is a", type (filepath), "!"
+            traceback.print_stack ()
         self.loaded= False
         self.collection= collection
         # self.index= index
@@ -258,7 +261,7 @@ class Song (QObject):
     def loadMetadata (self):
         try:
             # tagpy doesn't handle unicode filepaths (somehow makes sense)
-            fr= tagpy.FileRef (str (self.filepath.decode ('utf-8')))
+            fr= tagpy.FileRef (self.filepath)
             info= fr.tag ()
             props= fr.audioProperties ()
             # print info.artist, info.album, info.trackno, info.title
