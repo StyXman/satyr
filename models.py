@@ -31,7 +31,8 @@ from PyQt4.QtGui import QFontMetrics
 # import traceback
 
 # other libs
-from kaa import metadata
+# from kaa import metadata
+import tagpy
 
 class PlayListTableModel (QAbstractTableModel):
     """Do not use until finished"""
@@ -255,27 +256,26 @@ class Song (QObject):
             return "???"
 
     def loadMetadata (self):
-        # sigsegv :(
-        # KCrash: Application 'satyr.py' crashing...
-        # sock_file=/home/mdione/.kde/socket-mustang/kdeinit4__0
-        # satyr.py: Fatal IO error: client killed
-        # ms= Phonon.MediaSource (filepath)
-        # mo= Phonon.MediaObject ()
-        # mo.setCurrentSource (ms)
-        # print mo.metadata ()
-
-        # BUG: doesn't say anything if the file doesn't exist!
         try:
-            info= metadata.parse (self.filepath)
+            # tagpy doesn't handle unicode filepaths (somehow makes sense)
+            fr= tagpy.FileRef (str (self.filepath.decode ('utf-8')))
+            info= fr.tag ()
+            props= fr.audioProperties ()
             # print info.artist, info.album, info.trackno, info.title
+            print repr (info.title)
         except Exception, e:
             print self.filepath
             print e
             print '-----'
 
-        for attr in ('artist', 'year', 'album', 'trackno', 'title', 'length'):
-            setattr (self, attr, getattr (info, attr, None))
-        self.length= self.formatSeconds (self.length)
+        # tagpy presents trackno as track, so we map them
+        for tag, attr in zip (
+                ('artist', 'year', 'album', 'track', 'title'),
+                ('artist', 'year', 'album', 'trackno', 'title')):
+            setattr (self, attr, getattr (info, tag, None))
+        # incredibly enough, tagpy also express lenght as a astring
+        # even when taglib uses an int (?!?)
+        self.length= self.formatSeconds (props.length)
         self.loaded= True
 
     def __getitem__ (self, key):
@@ -289,7 +289,9 @@ class Song (QObject):
             self.loadMetadata ()
 
         # we could do it more complex, but I think this is enough
-        return self.title is not None
+        # tagpy returns u'' or 0 instead of not defining the attr at all
+        # so we see that indeed it reurns unicode. see comment in loadMetadata()
+        return (self.title is not None or self.title!=u'')
 
     def __cmp__ (self, other):
         # I don't want to implement the myriad of rich comparison
