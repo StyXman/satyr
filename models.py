@@ -162,7 +162,14 @@ class PlayListModel (QAbstractListModel):
         else:
             # I choose latin1 because it's the only one I know
             # which is full 256 chars
-            formatted= (self.altFormat % song).encode ('latin1')
+            try:
+                s= (self.altFormat % song).decode ('latin1')
+            except UnicodeDecodeError:
+                print song.filepath
+                fp= song.filepath.decode ('iso-8859-1')
+                s= u"%s [%s]" % (fp, song.length)
+
+            formatted= s
 
         return formatted
 
