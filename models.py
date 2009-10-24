@@ -285,13 +285,14 @@ class Song (QObject):
             print self.filepath
             print e
             print '-----'
-            # we must define info so getattr() works
             self.length= 0
+            # we must define info so getattr() works
             info= None
 
         # tagpy presents trackno as track, so we map them
+        # no, I don't want to change everything to match this
         for tag, attr in zip (
-                ('artist', 'year', 'album', 'track', 'title'),
+                ('artist', 'year', 'album', 'track',   'title'),
                 ('artist', 'year', 'album', 'trackno', 'title')):
             datum= getattr (info, tag, None)
             if isinstance (datum, basestring):
