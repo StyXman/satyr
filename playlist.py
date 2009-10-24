@@ -157,6 +157,8 @@ class PlayList (SatyrObject):
 
     @dbus.service.method (BUS_NAME, in_signature='s', out_signature='a(is)')
     def search (self, searchSpec):
+        # encode to utf-8, so we can match str against str
+        searchSpec= searchSpec.encode ('utf-8')
         # print "searching %s" % searchSpec
         def predicate (s):
             foundAny= False
