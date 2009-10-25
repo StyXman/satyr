@@ -25,7 +25,6 @@ class SearchEntry (KLineEdit):
 
     def keyPressEvent (self, event):
         if event.key ()==Qt.Key_Escape:
-            # print "esc!"
             self.setText ('')
         else:
             KLineEdit.keyPressEvent (self, event)

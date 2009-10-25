@@ -94,7 +94,6 @@ class PlayList (SatyrObject):
             random= self.seed
             self.index= (self.index-random) % self.model.count
             random= (self.seed-self.prime) % self.model.count
-            # print random, self.index
             self.seed= random
         else:
             self.index-= 1
@@ -105,12 +104,13 @@ class PlayList (SatyrObject):
         print "next!",
         if len (self.indexQueue)>0:
             print 'from queue!',
+            # BUG: this is destructive, so we can't go back properly
+            # TODO: also, users want semi-ephemeral queues
             self.index= self.indexQueue.pop (0)
         else:
             if self.random:
                 random= (self.seed+self.prime) % self.model.count
                 self.index= (self.index+random) % self.model.count
-                # print random, self.index
                 self.seed= random
             else:
                 self.index+= 1
@@ -146,12 +146,10 @@ class PlayList (SatyrObject):
         try:
             listIndex= self.indexQueue.index (collectionIndex)
             # exists; dequeue
-            # print 'dequeuing index [%d, %d] %s' % (listIndex, collectionIndex, self.collection.filepaths[collectionIndex])
             print 'dequeuing index [%d, %d]' % (listIndex, collectionIndex)
             self.indexQueue.pop (listIndex)
         except ValueError:
             # doesn't exist; append
-            # print 'queuing [%d] %s' % (collectionIndex, self.collection.filepaths[collectionIndex])
             print 'queuing [%d]' % (collectionIndex)
             self.indexQueue.append (collectionIndex)
 
@@ -159,11 +157,9 @@ class PlayList (SatyrObject):
     def search (self, searchSpec):
         # encode to utf-8, so we can match str against str
         searchSpec= searchSpec.encode ('utf-8')
-        # print "searching %s" % searchSpec
         def predicate (s):
             foundAny= False
             for words in searchSpec.split ('+'):
-                # print words
                 if words=='':
                     # the first or last char is +, so the words at its right is ''
                     foundWords= False
@@ -181,7 +177,6 @@ class PlayList (SatyrObject):
                 for song in collection.songs
                     if predicate (song.filepath.lower ()) ]
 
-        # print songs
         return songs
 
     @dbus.service.method (BUS_NAME, in_signature='i', out_signature='')

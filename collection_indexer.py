@@ -72,12 +72,11 @@ class CollectionIndexer (QThread):
         self.path= path
 
     def walk (self, top, relative=False):
-        # TODO: return relative paths
+        # TODO? return relative paths
         # TODO: support single filenames
         # if not os.path.isdir (top):
         #     return top
         try:
-            # names= [ str (x) for x in os.listdir (top)]
             names= os.listdir (top)
         except Exception, err:
             print err
@@ -108,7 +107,6 @@ class CollectionIndexer (QThread):
                         yield x
 
     def run (self):
-        # print "scanning >%s<" % repr (path)
         mode= os.stat (self.path).st_mode
         if stat.S_ISDIR (mode):
             # http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=481795
@@ -116,16 +114,14 @@ class CollectionIndexer (QThread):
                 self.scanning.emit (root)
                 filepaths= []
                 for filename in files:
-                    # filepath= os.path.join (root, filename)
                     filepath= root+'/'+filename
                     print root, filename
                     # detect mimetype and add only if it's suppourted
                     mimetype= getMimeType (filepath)
                     if mimetype in mimetypes:
-                        # Song (filepath)
                         filepaths.append (filepath)
 
-                # pyqt4 cannot make this automatically
+                # pyqt4 doesn't do this automatically
                 self.foundSongs.emit (QStringList (filepaths))
 
         elif stat.S_ISREG (mode):

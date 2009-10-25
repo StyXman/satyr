@@ -20,7 +20,6 @@
 # qt/kde related
 from PyKDE4.kdeui import KGlobalSettings
 from PyQt4.QtCore import QObject
-# from PyQt4.phonon import Phonon
 # QAbstractItemModel for when we can model albums and group them that way
 from PyQt4.QtCore import QAbstractListModel, QModelIndex, QVariant, Qt
 # QAbstractTableModel if we ever change to a table
@@ -31,7 +30,6 @@ from PyQt4.QtGui import QFontMetrics
 import traceback
 
 # other libs
-# from kaa import metadata
 import tagpy
 
 class PlayListTableModel (QAbstractTableModel):
@@ -130,6 +128,7 @@ class PlayListModel (QAbstractListModel):
         # HINT: attrs from kaa-metadata are all strings
         # TODO: config
         # TODO: optional parts
+        # TODO: unify unicode/str
         self.format= u"%(artist)s/%(year)s-%(album)s: %(trackno)s - %(title)s [%(length)s]"
         # this must NOT be unicode, 'cause the filepaths might have any vegetable
         self.altFormat= "%(filepath)s [%(length)s]"
@@ -162,6 +161,7 @@ class PlayListModel (QAbstractListModel):
         else:
             # I choose latin1 because it's the only one I know
             # which is full 256 chars
+            # FIXME: I think (this is not needed|we're not in kansas) anymore
             try:
                 s= (self.altFormat % song).decode ('latin1')
             except UnicodeDecodeError:
@@ -190,7 +190,6 @@ class PlayListModel (QAbstractListModel):
         elif modelIndex.row ()>=self.count:
             data= QVariant ()
         elif role==Qt.DisplayRole:
-            # print song
             data= QVariant (self.formatSong (song))
         elif role==Qt.SizeHintRole:
             # calculate something based on the filepath
@@ -201,13 +200,10 @@ class PlayListModel (QAbstractListModel):
         return data
 
     def addSong (self):
-        # convert QString to unicode
-        # filepath= unicode (filepath)
         row= index= self.lastIndex
         self.lastIndex+= 1
 
         self.beginInsertRows (QModelIndex (), row, row)
-        # self.songs.append ()
         self.endInsertRows ()
 
         # again, I know that count and lastIndex are equal,
@@ -246,7 +242,6 @@ class Song (QObject):
             traceback.print_stack ()
         self.loaded= False
         self.collection= collection
-        # self.index= index
         self.filepath= filepath
         self.variousArtists= va
         if not self.variousArtists:
@@ -279,8 +274,6 @@ class Song (QObject):
             self.length= self.formatSeconds (props.length)
 
             info= fr.tag ()
-            # print info.artist, info.album, info.trackno, info.title
-            # print repr (info.title)
         except Exception, e:
             print self.filepath
             print e

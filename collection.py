@@ -93,14 +93,11 @@ class Collection (SatyrObject):
             # we must remove the trailing newline
             # we could use strip(), but filenames ending with any other whitespace
             # (think of the users!) would be loaded incorrectly
-            # self.filepaths= [ line[:-1].decode ('utf-8') for line in f.readlines () ]
             filepaths= []
             for line in f.readlines ():
-                # filepaths.append (line[:-1].decode ('utf-8'))
                 filepaths.append (line[:-1])
             f.close ()
             self.add (filepaths)
-            # print "load finished, found %d songs" % self.count
             self.filesAdded.emit ()
         except IOError, e:
             print 'FAILED!', e
@@ -113,9 +110,7 @@ class Collection (SatyrObject):
                 print 'saving collection to', self.collectionFile
                 f= open (self.collectionFile, 'w+')
                 # we must add the trailing newline
-                # f.writelines ([ path.encode ('utf-8')+'\n' for path in self.filepaths ])
                 for song in self.songs:
-                    # f.write (song.filepath.encode ('utf-8')+'\n')
                     f.write (song.filepath+'\n')
                 f.close ()
             except Exception, e:
@@ -151,14 +146,14 @@ class Collection (SatyrObject):
 
     def progress (self, path):
         # print 'scanning', path
+        # TODO: emit a signal?
         pass
 
     def add (self, filepaths):
         # we get a QStringList; convert to a list so we can python-iterate it
         for filepath in list (filepaths):
-            # filepath= unicode (filepath)
-            # filepath= str (filepath)
-            # filepath can be a QString because this method is also connected to a signal
+            # filepath can be a QString because this method
+            # is also connected to a signal and they get converted by ptqt4
             if isinstance (filepath, QString):
                 # paths must be bytes, not ascii or utf-8
                 filepath= utils.qstring2str (filepath)
@@ -169,11 +164,9 @@ class Collection (SatyrObject):
             # test if it's not already there
             # FIXME: use another sorting method?
             if index==0 or self.songs[index-1]!= song:
-                # print "adding %s to the colection" % filepath
                 self.songs.insert (index, song)
                 self.count+= 1
 
-                # self.newSong.emit (index, song)
                 self.newSong.emit (filepath)
 
     def log (self, *args):
@@ -181,8 +174,6 @@ class Collection (SatyrObject):
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def rescan (self):
-        # FIXME: now that we don't hold our own filepaths, ...
-        # self.filepaths= []
         self.scan ()
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
