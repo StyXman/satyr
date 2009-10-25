@@ -70,22 +70,28 @@ class PlayList (SatyrObject):
     def setCurrent (self, song=None):
         if song is None:
             try:
-                song= self.model.song (self.index)
+                print "playlist.setCurrent()", self.index
+                song= self.model.songForIndex (self.index)
                 self.filepath= song.filepath
             except IndexError:
                 # the index saved in the config is bigger than the current collection
                 # fall back to 0
                 self.index= 0
-                song= self.model.song (self.index)
+                song= self.model.songForIndex (self.index)
                 self.filepath= song.filepath
         else:
+            print "playlist.setCurrent()", song
             self.filepath= song.filepath
-            # yes, this is O(n), but hookers!
             # FIXME: maybe we can get it from the modelIndex
             # (we're using it elsewhere anyways)
             # FIXME: this os O(n)
             # BUG: this is the Collection index, not the global one
             self.index= song.collection.songs.index (song)
+            print "playlist.setCurrent()", self.index
+
+        # we cannot emit the song because Qt (and I don't mean PyQt4 here)
+        # knows nothing about it, so (with the help of, yes this time, PyQt4)
+        # it basically emits its id(), which is useless
         self.songChanged.emit (self.index)
 
     def prev (self):
@@ -182,6 +188,7 @@ class PlayList (SatyrObject):
     @dbus.service.method (BUS_NAME, in_signature='i', out_signature='')
     def jumpToIndex (self, index):
         # print 'jU..'
+        print "playlist.jumpToIndex()", index
         self.index= index
         self.setCurrent ()
         # print 'Mp!'

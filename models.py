@@ -173,8 +173,9 @@ class PlayListModel (QAbstractListModel):
 
         return formatted
 
-    def song (self, index):
+    def songForIndex (self, index):
         if len (self.songs)==0:
+            # we're not a queue PLM, so we use the collections
             collection, collectionIndex= self.indexToCollectionIndex (index)
             song= collection.songs[collectionIndex]
         else:
@@ -182,8 +183,21 @@ class PlayListModel (QAbstractListModel):
 
         return song
 
+    def indexForSong (self, song):
+        print "PLM.indexForSong", song
+        index= None
+        if len (self.songs)>0:
+            index= self.songs.index (song)
+        else:
+            for startIndex, collection in self.collectionStartIndexes:
+                collectionIndex= collection.indexForSong (song)
+                if collectionIndex is not None:
+                    index= startIndex+collectionIndex
+
+        return index
+
     def data (self, modelIndex, role):
-        song= self.song (modelIndex.row ())
+        song= self.songForIndex (modelIndex.row ())
 
         if not modelIndex.isValid ():
             data= QVariant ()
@@ -333,5 +347,8 @@ class Song (QObject):
                 ans= -1
 
         return ans
+
+    def __repr__ (self):
+        return "Song: "+self.filepath
 
 # end

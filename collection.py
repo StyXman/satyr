@@ -163,11 +163,20 @@ class Collection (SatyrObject):
             index= bisect.bisect (self.songs, song)
             # test if it's not already there
             # FIXME: use another sorting method?
-            if index==0 or self.songs[index-1]!= song:
+            if index==0 or self.songs[index-1]!=song:
                 self.songs.insert (index, song)
                 self.count+= 1
 
                 self.newSong.emit (filepath)
+
+    def indexForSong (self, song):
+        index= bisect.bisect (self.songs, song)
+        # test if it's not already there
+        if index==0 or self.songs[index-1]!=song:
+            # 404 not found
+            index= None
+
+        return index
 
     def log (self, *args):
         print "logging", args

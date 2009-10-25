@@ -21,7 +21,7 @@
 # qt/kde related
 # from PyKDE4.phonon import Phonon
 from PyQt4.phonon import Phonon
-from PyQt4.QtCore import pyqtSignal
+from PyQt4.QtCore import pyqtSignal, QString
 
 # dbus
 import dbus.service
@@ -62,6 +62,14 @@ class Player (SatyrObject):
     def stateChanged (self, new, old):
         print "state changed from %d to %d" % (old, new)
         if new==Phonon.ErrorState:
+            # playing /home/mdione/media/music//Patricio Rey Y Sus Redonditos De Ricota/Último bondi a Finisterre/07- La peque�a novia del carioca.wav
+            # state changed from 0 to 5
+            # ERROR: 0:
+            # next! playing /home/mdione/media/music//D/Dire Straits/On the night/Brothers in arms.mp3
+            # state changed from 0 to 5
+            # ERROR: 0:
+            # next! playing /home/mdione/media/music//B/Blur/Stereotypes.mp3
+            # state changed from 5 to 0
             print "ERROR: %d: %s" % (self.media.errorType (), self.media.errorString ())
             # just skip it
             self.next ()
@@ -92,12 +100,13 @@ class Player (SatyrObject):
             # >>> 0!=False
             # False
             if song is not None:
+                print "player.play()", song
                 self.playlist.jumpToSong (song)
 
             self.filepath= self.playlist.filepath
 
             print "playing", self.filepath
-            self.media.setCurrentSource (Phonon.MediaSource (self.filepath))
+            self.media.setCurrentSource (Phonon.MediaSource (QString (self.filepath)))
             self.media.play ()
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')

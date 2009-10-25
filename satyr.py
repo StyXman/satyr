@@ -95,8 +95,13 @@ class MainWindow (KMainWindow):
         print args
 
     def showSong (self, index):
+        print "satyr.showSong()", index
+        # index= self.model.indexForSong (song)
+        # we use the playlist model because the index is *always* refering
+        # to that model
+        song= self.playlist.model.songForIndex (index)
+        print "satyr.showSong()", song
         modelIndex= self.model.index (index, 0)
-        # print "showSong()", modelIndex.row ()
         self.selection.select (modelIndex, QItemSelectionModel.SelectCurrent)
         # FIXME? QAbstractItemView.EnsureVisible config?
         self.ui.songsList.scrollTo (modelIndex, QAbstractItemView.PositionAtCenter)
@@ -104,13 +109,12 @@ class MainWindow (KMainWindow):
         self.ui.songsList.setCurrentIndex (modelIndex)
 
         # set the window title
-        song= self.model.song (modelIndex.row ())
-        # maybe the formatting si too 'deep'
         self.setCaption (self.playlist.model.formatSong (song))
 
     def changeSong (self, modelIndex):
         # FIXME: later we ask for the index... doesn't make sense!
-        song= self.model.song (modelIndex.row ())
+        print "satyr.changeSong()", modelIndex.row ()
+        song= self.model.songForIndex (modelIndex.row ())
         self.player.play (song)
 
     def scanBegins (self):
