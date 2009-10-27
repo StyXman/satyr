@@ -31,6 +31,7 @@ import time
 
 # local
 from common import SatyrObject, BUS_NAME, configBoolToBool
+import utils
 
 class Player (SatyrObject):
     finished= pyqtSignal ()
@@ -106,7 +107,12 @@ class Player (SatyrObject):
             self.filepath= self.playlist.filepath
 
             print "playing", self.filepath
-            self.media.setCurrentSource (Phonon.MediaSource (QString (self.filepath)))
+            # to make sure the filepath is preserved, we convert it to a QByteArray,
+            # use toPercentEncoding() and create a QUrl with that.
+            # url= utils.path2qurl (self.filepath)
+            # TODO: fix the above
+            url= QString (self.filepath)
+            self.media.setCurrentSource (Phonon.MediaSource (url))
             self.media.play ()
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')

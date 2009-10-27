@@ -17,7 +17,7 @@
 # along with satyr.  If not, see <http://www.gnu.org/licenses/>.
 
 # qt/kde related
-from PyQt4.QtCore import QByteArray
+from PyQt4.QtCore import QByteArray, QString, QUrl
 
 def qstring2str (qs):
     # BUG: this is ugly; might be properly handled w/PyQt4.6/Python2.6
@@ -26,5 +26,26 @@ def qstring2str (qs):
     s= str (qba)
 
     return s
+
+def path2qurl (s):
+    qba1= QByteArray ('file://')
+    print "srt2qurl()", qba1
+    qba2= QByteArray (s)
+    print "srt2qurl()", qba2
+    # QBA.tPE() retuens another QBA. we have to pass through QString!
+    urlenc= qba2.toPercentEncoding ()
+    print "srt2qurl()", urlenc
+    qba1.append (urlenc)
+    print "srt2qurl()", qba1
+    # qs= QString (urlenc)
+    # print "srt2qurl()", qs
+    # qu= QUrl.fromEncoded (qs)
+    qu= QUrl ()
+    # qu.setEncodedUrl (qba1, QUrl.StrictMode)
+    qu.setEncodedPath (qba2)
+    qu.setScheme ('file')
+    print "srt2qurl()", qstring2str (qu.toString ())
+
+    return qu
 
 # end

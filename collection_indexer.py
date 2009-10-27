@@ -32,10 +32,18 @@ import sys, os, os.path, time, bisect, stat, random
 # local
 from common import SatyrObject, BUS_NAME
 
+mimetypes= None
+
 def validMimetype (mimetype):
     """Phonon.BackendCapabilities.availableMimeTypes() returns a lot of nonsense,
     like image/png or so.
     Filter only interesting mimetypes."""
+
+    # init the mimetypes the first time
+    if mimetypes is None:
+        mimetypes= [ str (mimetype)
+            for mimetype in Phonon.BackendCapabilities.availableMimeTypes ()
+                if validMimetype (str (mimetype)) ]
 
     valid= False
     valid= valid or mimetype.startswith ('audio')
@@ -47,10 +55,6 @@ def validMimetype (mimetype):
     valid= valid or mimetype=='application/ogg'
 
     return valid
-
-mimetypes= [ str (mimetype)
-    for mimetype in Phonon.BackendCapabilities.availableMimeTypes ()
-        if validMimetype (str (mimetype)) ]
 
 def getMimeType (filepath):
     mimetype, accuracy= KMimeType.findByFileContent (filepath)
