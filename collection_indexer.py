@@ -33,17 +33,18 @@ import sys, os, os.path, time, bisect, stat, random
 from common import SatyrObject, BUS_NAME
 
 mimetypes= None
-
-def validMimetype (mimetype):
-    """Phonon.BackendCapabilities.availableMimeTypes() returns a lot of nonsense,
-    like image/png or so.
-    Filter only interesting mimetypes."""
-
+def initMimetypes ():
     # init the mimetypes the first time
     if mimetypes is None:
         mimetypes= [ str (mimetype)
             for mimetype in Phonon.BackendCapabilities.availableMimeTypes ()
                 if validMimetype (str (mimetype)) ]
+
+
+def validMimetype (mimetype):
+    """Phonon.BackendCapabilities.availableMimeTypes() returns a lot of nonsense,
+    like image/png or so.
+    Filter only interesting mimetypes."""
 
     valid= False
     valid= valid or mimetype.startswith ('audio')
@@ -74,6 +75,7 @@ class CollectionIndexer (QThread):
     def __init__ (self, path, parent=None):
         QThread.__init__ (self, parent)
         self.path= path
+        initMimetypes ()
 
     def walk (self, top, relative=False):
         # TODO? return relative paths
