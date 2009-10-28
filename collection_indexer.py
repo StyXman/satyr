@@ -34,6 +34,7 @@ from common import SatyrObject, BUS_NAME
 
 mimetypes= None
 def initMimetypes ():
+    global mimetypes
     # init the mimetypes the first time
     if mimetypes is None:
         mimetypes= [ str (mimetype)
