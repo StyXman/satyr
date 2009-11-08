@@ -45,6 +45,7 @@ class SatyrObject (dbus.service.Object, QObject):
     __metaclass__= MetaObject
 
     def __init__ (self, parent, busName=None, busPath=None):
+        print busName, busPath
         dbus.service.Object.__init__ (self, busName, busPath)
         QObject.__init__ (self, parent)
 

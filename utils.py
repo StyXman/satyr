@@ -18,6 +18,7 @@
 
 # qt/kde related
 from PyQt4.QtCore import QByteArray, QString, QUrl
+import urllib
 
 def qstring2str (qs):
     # BUG: this is ugly; might be properly handled w/PyQt4.6/Python2.6
@@ -27,24 +28,13 @@ def qstring2str (qs):
 
     return s
 
-def path2qurl (s):
-    qba1= QByteArray ('file://')
-    print "srt2qurl()", qba1
-    qba2= QByteArray (s)
-    print "srt2qurl()", qba2
-    # QBA.tPE() retuens another QBA. we have to pass through QString!
-    urlenc= qba2.toPercentEncoding ()
-    print "srt2qurl()", urlenc
-    qba1.append (urlenc)
-    print "srt2qurl()", qba1
-    # qs= QString (urlenc)
-    # print "srt2qurl()", qs
-    # qu= QUrl.fromEncoded (qs)
-    qu= QUrl ()
-    # qu.setEncodedUrl (qba1, QUrl.StrictMode)
-    qu.setEncodedPath (qba2)
-    qu.setScheme ('file')
-    print "srt2qurl()", qstring2str (qu.toString ())
+def path2qurl (path):
+    # path= '/home/mdione/media/music/Patricio Rey Y Sus Redonditos De Ricota/\xc3\x9altimo bondi a Finisterre/07- La peque\xf1a novia del carioca.wav'
+    # BUG: (in phonon) I should not take care of MRL encoding
+    # (it would not work for other backends)
+    qba= QByteArray (path)
+    qu= QUrl.fromEncoded (qba.toPercentEncoding ())
+    # print "srt2qurl()", qstring2str (qu.toEncoded ())
 
     return qu
 

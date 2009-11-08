@@ -19,8 +19,8 @@
 
 
 # qt/kde related
-# from PyKDE4.phonon import Phonon
-from PyQt4.phonon import Phonon
+from PyKDE4.phonon import Phonon
+# from PyQt4.phonon import Phonon
 from PyQt4.QtCore import pyqtSignal, QString
 
 # dbus
@@ -52,13 +52,15 @@ class Player (SatyrObject):
 
         self.playlist= playlist
 
-        self.media= Phonon.MediaObject ()
+        # self.media= Phonon.MediaObject ()
+        self.media= Phonon.createPlayer (Phonon.MusicCategory)
         # god bless PyQt4.5
         self.media.finished.connect (self.next)
         self.media.stateChanged.connect (self.stateChanged)
 
-        self.ao= Phonon.AudioOutput (Phonon.MusicCategory, parent)
-        Phonon.createPath (self.media, self.ao)
+        # self.ao= Phonon.AudioOutput (Phonon.MusicCategory, parent)
+        # BUG: argument 2 of createPath() has an invalid type
+        # Phonon.createPath (self.media, self.ao)
 
     def stateChanged (self, new, old):
         print "state changed from %d to %d" % (old, new)
@@ -107,11 +109,7 @@ class Player (SatyrObject):
             self.filepath= self.playlist.filepath
 
             print "playing", self.filepath
-            # to make sure the filepath is preserved, we convert it to a QByteArray,
-            # use toPercentEncoding() and create a QUrl with that.
-            # url= utils.path2qurl (self.filepath)
-            # TODO: fix the above
-            url= QString (self.filepath)
+            url= utils.path2qurl (self.filepath)
             self.media.setCurrentSource (Phonon.MediaSource (url))
             self.media.play ()
 

@@ -101,12 +101,12 @@ class MainWindow (KMainWindow):
         # to that model
         song= self.playlist.model.songForIndex (index)
         print "satyr.showSong()", song
-        modelIndex= self.model.index (index, 0)
-        self.selection.select (modelIndex, QItemSelectionModel.SelectCurrent)
+        self.modelIndex= self.model.index (index, 0)
+        self.selection.select (self.modelIndex, QItemSelectionModel.SelectCurrent)
         # FIXME? QAbstractItemView.EnsureVisible config?
-        self.ui.songsList.scrollTo (modelIndex, QAbstractItemView.PositionAtCenter)
+        self.ui.songsList.scrollTo (self.modelIndex, QAbstractItemView.PositionAtCenter)
         # move the selection cursor too
-        self.ui.songsList.setCurrentIndex (modelIndex)
+        self.ui.songsList.setCurrentIndex (self.modelIndex)
 
         # set the window title
         self.setCaption (self.playlist.model.formatSong (song))
@@ -134,18 +134,24 @@ class MainWindow (KMainWindow):
     def search (self, text):
         # below 3 chars is too slow (and with big playlists, useless)
         if len (text)>2:
+            #                            QString->unicode
             songs= self.playlist.search (unicode (text))
             # we have to keep it
             # otherwise it pufs into inexistence after the function ends
             self.setModel (PlayListModel (songs=songs))
         else:
             self.setModel (self.playlist.model)
+            # ensure the current song is shown
+            self.ui.songsList.scrollTo (self.modelIndex, QAbstractItemView.PositionAtCenter)
 
 
 def createApp ():
     #########################################
     # all the bureaucratic init of a KDE App
-    appName     = "satyr.py"
+    # the appName must not contain any chars besides a-zA-Z0-9_
+    # because KMainWindowPrivate::polish() calls QDBusConnection::sessionBus().registerObject()
+    # see QDBusUtil::isValidCharacterNoDash()
+    appName     = "satyr"
     catalog     = ""
     programName = ki18n ("satyr")                 #ki18n required here
     version     = "0.1a"
@@ -153,7 +159,7 @@ def createApp ():
     license     = KAboutData.License_GPL
     copyright   = ki18n ("(c) 2009 Marcos Dione")    #ki18n required here
     text        = ki18n ("none")                    #ki18n required here
-    homePage    = ""
+    homePage    = "http://savannah.nongnu.org/projects/satyr/"
     bugEmail    = "mdione@grulic.org.ar"
 
     aboutData   = KAboutData (appName, catalog, programName, version, description,
@@ -161,10 +167,11 @@ def createApp ():
 
     # ki18n required for first two addAuthor () arguments
     aboutData.addAuthor (ki18n ("Marcos Dione"), ki18n ("design and implementation"))
+    aboutData.addAuthor (ki18n ("Sebastián Álvarez"), ki18n ("features and bugfixes"))
 
     KCmdLineArgs.init (sys.argv, aboutData)
     options= KCmdLineOptions ()
-    options.add ("+path", ki18n ("path to your music collection"))
+    options.add ("+path", ki18n ("paths to your music collections"))
     KCmdLineArgs.addCmdLineOptions (options)
 
     app= KApplication ()
@@ -206,9 +213,9 @@ def main ():
     mw.connectUi (player, playlist)
     mw.show ()
 
-    app.exec_ ()
+    return app.exec_ ()
 
 if __name__=='__main__':
-    main ()
+    sys.exit (main ())
 
 # end

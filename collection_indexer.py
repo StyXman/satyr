@@ -20,8 +20,8 @@
 # qt/kde related
 from PyKDE4.kdecore import KMimeType, KUrl
 from PyQt4.QtCore import pyqtSignal, QThread, QStringList
-# from PyKDE4.phonon import Phonon
-from PyQt4.phonon import Phonon
+from PyKDE4.phonon import Phonon
+# from PyQt4.phonon import Phonon
 
 # dbus
 import dbus.service
@@ -122,7 +122,7 @@ class CollectionIndexer (QThread):
                 filepaths= []
                 for filename in files:
                     filepath= root+'/'+filename
-                    print root, filename
+                    # print root, filename
                     # detect mimetype and add only if it's suppourted
                     mimetype= getMimeType (filepath)
                     if mimetype in mimetypes:
