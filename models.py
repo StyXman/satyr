@@ -289,9 +289,10 @@ class Song (QObject):
 
             info= fr.tag ()
         except Exception, e:
+            print '----- loadMetadata()'
             print self.filepath
             print e
-            print '-----'
+            print '----- loadMetadata()'
             self.length= 0
             # we must define info so getattr() works
             info= None
@@ -310,9 +311,12 @@ class Song (QObject):
 
     def __getitem__ (self, key):
         """dict iface so we can simply % it to a pattern"""
+        # print self.filepath, key,
         if not self.loaded:
             self.loadMetadata ()
-        return getattr (self, key)
+        val= getattr (self, key)
+        # print val
+        return val
 
     def metadataNotNull (self):
         if not self.loaded:
@@ -330,6 +334,12 @@ class Song (QObject):
             # this would force it very soon at boot time
             # so use the only reasonable thing: the filepath
             ans= cmp (self.filepath, other.filepath)
+        elif not other.loaded:
+            print '===== cmp()'
+            print other.filepath
+            print '===== cmp()'
+            # this is not so much a lie as a decision
+            ans= -1
         else:
             try:
                 for attr1, attr2 in zip (self.cmpOrder, other.cmpOrder):
@@ -340,9 +350,10 @@ class Song (QObject):
                         break
 
             except Exception, e:
+                print '----- cmp()'
                 print self.filepath
                 print e
-                print '-----'
+                print '----- cmp()'
                 # any lie is good as any
                 ans= -1
 

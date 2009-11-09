@@ -17,8 +17,7 @@
 # along with satyr.  If not, see <http://www.gnu.org/licenses/>.
 
 # qt/kde related
-from PyQt4.QtCore import QByteArray, QString, QUrl
-import urllib
+from PyQt4.QtCore import QByteArray, QUrl
 
 def qstring2str (qs):
     # BUG: this is ugly; might be properly handled w/PyQt4.6/Python2.6
@@ -30,11 +29,8 @@ def qstring2str (qs):
 
 def path2qurl (path):
     # path= '/home/mdione/media/music/Patricio Rey Y Sus Redonditos De Ricota/\xc3\x9altimo bondi a Finisterre/07- La peque\xf1a novia del carioca.wav'
-    # BUG: (in phonon) I should not take care of MRL encoding
-    # (it would not work for other backends)
     qba= QByteArray (path)
     qu= QUrl.fromEncoded (qba.toPercentEncoding ())
-    # print "srt2qurl()", qstring2str (qu.toEncoded ())
 
     return qu
 

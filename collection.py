@@ -187,7 +187,7 @@ class Collection (SatyrObject):
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def dump (self):
-        for filepath in self.filepaths:
-            print filepath
+        for song in self.songs:
+            print song.filepath
 
 # end

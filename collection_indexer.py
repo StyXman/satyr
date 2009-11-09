@@ -31,6 +31,7 @@ import sys, os, os.path, time, bisect, stat, random
 
 # local
 from common import SatyrObject, BUS_NAME
+import utils
 
 mimetypes= None
 def initMimetypes ():
@@ -60,11 +61,13 @@ def validMimetype (mimetype):
 
 def getMimeType (filepath):
     mimetype, accuracy= KMimeType.findByFileContent (filepath)
-    # print mimetype.name (), accuracy,
+    # print filepath, mimetype.name (), accuracy,
     if accuracy<50:
         # try harder?
-        mimetype, accuracy= KMimeType.findByUrl (KUrl (filepath))
+        # BUG: (in KMimeType) gets confused by filenames with #'s
+        mimetype, accuracy= KMimeType.findByUrl (KUrl (utils.path2qurl (filepath)), 0, False, True)
         # print mimetype.name (), accuracy,
+
     # print
     return str (mimetype.name ())
 
@@ -91,27 +94,18 @@ class CollectionIndexer (QThread):
 
         dirs, nondirs = [], []
         for name in names:
-            try:
-                path= top+'/'+name
-            except UnicodeDecodeError:
-                print repr (top), repr (name)
-                print name, "skipped: bad encoding"
+            path= top+'/'+name
+            if os.path.isdir(path):
+                dirs.append(name)
             else:
-                if os.path.isdir(path):
-                    dirs.append(name)
-                else:
-                    nondirs.append(name)
+                nondirs.append(name)
 
         yield top, dirs, nondirs
         for name in dirs:
-            try:
-                path = top+'/'+name
-            except UnicodeDecodeError:
-                print name, "skipped: bad encoding"
-            else:
-                if not os.path.islink(path):
-                    for x in self.walk(path):
-                        yield x
+            path = top+'/'+name
+            if not os.path.islink(path):
+                for x in self.walk(path):
+                    yield x
 
     def run (self):
         mode= os.stat (self.path).st_mode
