@@ -335,6 +335,7 @@ class Song (QObject):
             # so use the only reasonable thing: the filepath
             ans= cmp (self.filepath, other.filepath)
         elif not other.loaded:
+            # (is this a) BUG?
             print '===== cmp()'
             print other.filepath
             print '===== cmp()'
