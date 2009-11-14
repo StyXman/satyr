@@ -110,6 +110,7 @@ class Player (SatyrObject):
 
             print "playing", self.filepath
             url= utils.path2qurl (self.filepath)
+            url.setScheme ('file')
             self.media.setCurrentSource (Phonon.MediaSource (url))
             self.media.play ()
 

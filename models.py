@@ -177,7 +177,7 @@ class PlayListModel (QAbstractListModel):
         if len (self.songs)==0:
             # we're not a queue PLM, so we use the collections
             collection, collectionIndex= self.indexToCollectionIndex (index)
-            print collection, collectionIndex, len (collection.songs)
+            # print collection, collectionIndex, len (collection.songs)
             song= collection.songs[collectionIndex]
         else:
             song= self.songs[index]
