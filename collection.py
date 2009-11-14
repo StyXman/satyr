@@ -127,7 +127,7 @@ class Collection (SatyrObject):
         SatyrObject.saveConfig (self)
 
     def newFiles (self, path):
-        path= utils.qstring2str (path)
+        path= utils.qstring2path (path)
         self.scan (path)
 
     def scan (self, path=None):
@@ -156,7 +156,7 @@ class Collection (SatyrObject):
             # is also connected to a signal and they get converted by ptqt4
             if isinstance (filepath, QString):
                 # paths must be bytes, not ascii or utf-8
-                filepath= utils.qstring2str (filepath)
+                filepath= utils.qstring2path (filepath)
 
             song= Song (self, filepath)
 
