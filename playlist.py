@@ -62,7 +62,7 @@ class PlayList (SatyrObject):
         # File "/home/mdione/src/projects/satyr/playlist-listmodel/models.py", line 180, in songForIndex
         #     song= collection.songs[collectionIndex]
         # IndexError: list index out of range
-        self.setCurrent ()
+        # self.setCurrent ()
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def toggleRandom (self):

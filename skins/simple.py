@@ -20,9 +20,6 @@
 from PyKDE4.kdeui import KMainWindow
 from PyQt4 import uic
 
-# local
-from models import PlayListModel
-
 class MainWindow (KMainWindow):
     def __init__ (self, parent=None):
         KMainWindow.__init__ (self, parent)
@@ -81,8 +78,6 @@ class MainWindow (KMainWindow):
     # AttributeError: 'MainWindow' object has no attribute 'collectionAdded'
     def collectionAdded (self):
         pass
-
-    # def collectionLoaded (self):
 
     def queryClose (self):
         self.player.quit ()

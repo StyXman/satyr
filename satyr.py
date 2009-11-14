@@ -42,10 +42,6 @@ import utils
 #  7300 mdione    20   0  171M 52604 20004 S  0.0  2.5  0:18.42 python satyr.py /home/mdione/media/music/
 # 19204 mdione    20   0  249M 42828 12084 S  0.0  2.1  0:22.61 python satyr.py /home/mdione/media/music/
 
-# ui
-# from skins.default import MainWindow
-# from skins.simple import MainWindow
-
 def createApp (args=sys.argv):
     #########################################
     # all the bureaucratic init of a KDE App
@@ -81,8 +77,6 @@ def createApp (args=sys.argv):
 
     return app, args
 
-import pdb
-
 def main ():
     app, args= createApp ()
 
@@ -90,8 +84,7 @@ def main ():
     bus= dbus.SessionBus ()
     busName= dbus.service.BusName (BUS_NAME, bus=bus)
 
-    #########################################
-    # the app itself!
+    # TODO: add the app dir to sys.path so we can load skins
     skin= str (args.getOption ("skin"))
     # do the import magic
     parent= __import__ ('skins.'+skin)
