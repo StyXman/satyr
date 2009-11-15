@@ -89,14 +89,13 @@ class Collection (SatyrObject):
     def load (self):
         print 'loading from', self.collectionFile
         try:
-            f= open (self.collectionFile)
             # we must remove the trailing newline
             # we could use strip(), but filenames ending with any other whitespace
             # (think of the users!) would be loaded incorrectly
-            filepaths= []
-            for line in f.readlines ():
-                filepaths.append (line[:-1])
-            f.close ()
+            # this oneliner seems to be the fastest against:
+            # * fp= []; f= open(); for line in f.readlines(): fp.append (line)
+            # * fp= []; f= open(); for line in f: fp.append (line)
+            filepaths= [ line[:-1] for line in open (self.collectionFile) ]
             self.add (filepaths)
             self.filesAdded.emit ()
         except IOError, e:
