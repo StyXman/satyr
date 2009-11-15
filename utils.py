@@ -31,6 +31,7 @@ def path2qurl (path):
     # path= '/home/mdione/media/music/Patricio Rey Y Sus Redonditos De Ricota/\xc3\x9altimo bondi a Finisterre/07- La peque\xf1a novia del carioca.wav'
     qba= QByteArray (path)
     qu= QUrl.fromEncoded (qba.toPercentEncoding ("/ "))
+    qu.setScheme ('file')
 
     return qu
 
