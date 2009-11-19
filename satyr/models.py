@@ -26,9 +26,6 @@ from PyQt4.QtCore import QAbstractListModel, QModelIndex, QVariant, Qt
 from PyQt4.QtCore import QAbstractTableModel
 from PyQt4.QtGui import QFontMetrics
 
-# std python
-import traceback
-
 # other libs
 import tagpy
 
