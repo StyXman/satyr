@@ -34,7 +34,7 @@ def path2qurl (path):
     qba= QByteArray (path)
     qu= QUrl.fromEncoded (qba.toPercentEncoding ("/ "))
     majV, minV, patchL= map (int, Phonon.phononVersion ().split ('.'))
-    # older versions need this
+    # older versions need this, at least for the gstreamer backend
     if (majV<4) or (majV==4 and minV<3) or (majV==4 and minV==3 and patchL<51):
         qu.setScheme ('file')
 

@@ -37,6 +37,7 @@ class PlayListTableModel (QAbstractTableModel):
         self.lastIndex= 0
         self.count= 0
         # FIXME? hardcoded
+        # TODO: use comments for disc#
         self.attrNames= ('index', 'artist', 'year', 'album', 'trackno', 'title', 'length', 'filepath')
 
     def data (self, index, role):
@@ -122,7 +123,6 @@ class PlayListModel (QAbstractListModel):
         self.updateIndexes ()
 
         # self.attrNames= ('index', 'artist', 'year', 'album', 'trackno', 'title', 'length', 'filepath')
-        # HINT: attrs from kaa-metadata are all strings
         # TODO: config
         # TODO: optional parts
         # TODO: unify unicode/str
@@ -195,24 +195,23 @@ class PlayListModel (QAbstractListModel):
         return index
 
     def data (self, modelIndex, role):
-        song= self.songForIndex (modelIndex.row ())
+        if modelIndex.isValid () and modelIndex.row ()<self.count:
+            song= self.songForIndex (modelIndex.row ())
 
-        if not modelIndex.isValid ():
-            data= QVariant ()
-        elif modelIndex.row ()>=self.count:
-            data= QVariant ()
-        elif role==Qt.DisplayRole:
-            data= QVariant (self.formatSong (song))
-        elif role==Qt.SizeHintRole:
-            # calculate something based on the filepath
-            data= QVariant (self.fontMetrics.size (Qt.TextSingleLine, song.filepath))
+            if role==Qt.DisplayRole:
+                data= QVariant (self.formatSong (song))
+            elif role==Qt.SizeHintRole:
+                # calculate something based on the filepath
+                data= QVariant (self.fontMetrics.size (Qt.TextSingleLine, song.filepath))
+            else:
+                data= QVariant ()
         else:
             data= QVariant ()
 
         return data
 
     def addSong (self):
-        row= index= self.lastIndex
+        row= self.lastIndex
         self.lastIndex+= 1
 
         self.beginInsertRows (QModelIndex (), row, row)

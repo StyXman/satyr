@@ -37,7 +37,7 @@ satyr pretends to have the following features (some are not implemented yet):
  * The collection discovers new files and adds them to the playlist on the fly.
  * Be able to use all the program only with your keyboard (die, mouse, die!).
 """,
-    author='Marcos D. Dione',
+    author='Marcos Dione',
     author_email='mdione@grulic.org.ar',
     url='http://savannah.nongnu.org/projects/satyr/',
     license='GPL',
