@@ -27,9 +27,9 @@ import dbus.service
 import random, bisect
 
 # local
-from common import SatyrObject, BUS_NAME, configBoolToBool
-from primes import primes
-from models import PlayListModel
+from satyr.common import SatyrObject, BUS_NAME, configBoolToBool
+from satyr.primes import primes
+from satyr.models import PlayListModel
 
 class StopAfter (Exception):
     pass

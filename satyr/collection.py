@@ -20,20 +20,19 @@
 # qt/kde related
 from PyKDE4.kdecore import KStandardDirs
 from PyKDE4.kio import KDirWatch
-from PyQt4.QtCore import pyqtSignal, QString, QByteArray
+from PyQt4.QtCore import pyqtSignal, QString
 
 # dbus
 import dbus.service
 
 # std python
 import os, bisect
-import pdb
 
 # local
-from common import SatyrObject, BUS_NAME
-from collection_indexer import CollectionIndexer
-from models import Song
-import utils
+from satyr.common import SatyrObject, BUS_NAME
+from satyr.collection_indexer import CollectionIndexer
+from satyr.models import Song
+from satyr import utils
 
 class ErrorNoDatabase (Exception):
     pass

@@ -30,8 +30,8 @@ import dbus.service
 import sys, os, os.path, time, bisect, stat, random
 
 # local
-from common import SatyrObject, BUS_NAME
-import utils
+from satyr.common import SatyrObject, BUS_NAME
+from satyr import utils
 
 mimetypes= None
 def initMimetypes ():

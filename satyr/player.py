@@ -30,8 +30,8 @@ import dbus.service
 import time
 
 # local
-from common import SatyrObject, BUS_NAME, configBoolToBool
-import utils
+from satyr.common import SatyrObject, BUS_NAME, configBoolToBool
+from satyr import utils
 
 class Player (SatyrObject):
     finished= pyqtSignal ()

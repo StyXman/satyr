@@ -31,11 +31,11 @@ import dbus.service
 import sys
 
 # local
-from common import BUS_NAME
-from player import Player
-from playlist import PlayList
-from collection import Collection
-import utils
+from satyr.common import BUS_NAME
+from satyr.player import Player
+from satyr.playlist import PlayList
+from satyr.collection import Collection
+from satyr import utils
 
 #   PID USER     PRI  NI  VIRT   RES   SHR S CPU% MEM%   TIME+  Command
 # 24979 mdione    20   0  216M 46132 17380 S  1.0  2.2  4:01.62 python satyr.py /home/mdione/media/music/
