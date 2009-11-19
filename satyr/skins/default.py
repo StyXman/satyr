@@ -22,7 +22,7 @@ from PyQt4.QtGui import QItemSelectionModel, QAbstractItemView
 from PyQt4 import uic
 
 # local
-from models import PlayListModel
+from satyr.models import PlayListModel
 
 class MainWindow (KMainWindow):
     def __init__ (self, parent=None):

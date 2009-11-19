@@ -87,13 +87,7 @@ def main ():
     # TODO: add the app dir to sys.path so we can load skins
     skin= str (args.getOption ("skin"))
     # do the import magic
-    parent= __import__ ('skins.'+skin)
-    # print mod.__file__
-    # pdb.set_trace ()
-    # When the name variable is of the form package.module, normally,
-    # the top-level package (the name up till the first dot) is returned,
-    # not the module named by name
-    mod= getattr (parent, skin)
+    mod= utils.import_ ('satyr.skins.'+skin)
     mw= mod.MainWindow ()
 
     collections= []
