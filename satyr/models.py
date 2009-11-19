@@ -20,83 +20,11 @@
 # qt/kde related
 from PyKDE4.kdeui import KGlobalSettings
 from PyQt4.QtCore import QObject
-# QAbstractItemModel for when we can model albums and group them that way
 from PyQt4.QtCore import QAbstractListModel, QModelIndex, QVariant, Qt
-# QAbstractTableModel if we ever change to a table
-from PyQt4.QtCore import QAbstractTableModel
 from PyQt4.QtGui import QFontMetrics
 
 # other libs
 import tagpy
-
-class PlayListTableModel (QAbstractTableModel):
-    """Do not use until finished"""
-    def __init__ (self, collection, parent= None):
-        QAbstractListModel.__init__ (self, parent)
-        self.songs= []
-        self.lastIndex= 0
-        self.count= 0
-        # FIXME? hardcoded
-        # TODO: use comments for disc#
-        self.attrNames= ('index', 'artist', 'year', 'album', 'trackno', 'title', 'length', 'filepath')
-
-    def data (self, index, role):
-        if not index.isValid ():
-            return QVariant ()
-
-        if index.row ()>=self.count:
-            return QVariant ()
-
-        if role==Qt.DisplayRole:
-            # this defines the order of the data
-            attrName= [index.column ()]
-            data= getattr (self.songs[index.row ()], attrName, None)
-            return QVariant (data)
-        else:
-            return QVariant ()
-
-    #def insertRow (self, row, count, parent=None):
-        #if parent is None:
-            #parent= QModelIndex ()
-
-        #if count<1 or row<0 or row>self.rowCount(parent):
-            #return False
-
-        #for (int r = 0; r < count; ++r)
-            #lst.insert(row, QString());
-
-        #return true;
-
-    def addSong (self, filepath):
-        row= index= self.lastIndex
-        self.lastIndex+= 1
-
-        self.beginInsertRows (QModelIndex (), row, row)
-        self.songs.append (SongModel (index, filepath))
-        self.endInsertRows ();
-
-        # again, I know that count and lastIndex are equal,
-        # but again, it's better for the intiutive semantics of the code
-        # (readability, they call it)
-        self.count+= 1
-
-        # FIXME? this sucks?
-        for column in xrange (7):
-            modelIndex= self.index (row, column)
-            self.dataChanged.emit (modelIndex, modelIndex)
-
-    def rowCount (self, parent=None):
-        return self.count
-
-    def columnCount (self, parent=None):
-        return len (self.attrNames)
-
-    def headerData (self, section, orientation, role=Qt.DisplayRole):
-        if orientation==Qt.Horizontal:
-            return self.attrNames[section]
-        else:
-            return section
-
 
 class PlayListModel (QAbstractListModel):
     def __init__ (self, collections= None, songs=None, parent= None):
