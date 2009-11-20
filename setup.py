@@ -68,6 +68,7 @@ satyr pretends to have the following features (some are not implemented yet):
 
     requires= ['PyKDE4(>=4.3)', 'tagpy(>=0.94)', 'PyQt4(>=4.5, <4.6)'],
     packages= ['satyr', 'satyr.skins'],
+    # package_data= {'satyr.skins': ['satry/skins/*.ui']},
     # this kinda suck
     data_files= [
         ('lib/python%s/site-packages/satyr/skins/' % python_version,

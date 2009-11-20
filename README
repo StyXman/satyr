@@ -2,7 +2,7 @@
 This is such a program.»
 
 satyr is a rather minimalistic audio player based in KDE technologies, and
-developed in the python language.
+developed in the Python language.
 
 it has very few, if maybe big, dependencies:
 
@@ -18,9 +18,9 @@ pyqt4-dev-tools[3]	4.5.4[4][5]
 [4] I think any 4.5.x is enough.
 [5] I'm currently not implementing any compatibility with 4.6
 
-once installed, run 'make' and then 'python satyr.py <path to collection>'.
-more advanced installation instructions will come later. remember this is
-version 0.1alpha.
+once unpacked, run 'python setup.py --help', follow instructions, and then
+'satyr_main <path to collection>'. more advanced installation instructions will
+come later. remember this is version 0.1beta1.
 
 if you have any question or suggestion and you want to contact me, you can
 send me an e-mail to:
