@@ -47,7 +47,7 @@ satyr pretends to have the following features (some are not implemented yet):
     classifiers=[
         'Development Status :: 4 - Beta',
 
-        'Environment :: Console',
+        'Environment :: X11 Applications :: KDE',
         'Intended Audience :: End Users/Desktop',
 
         'License :: OSI Approved :: GNU General Public License (GPL)',
@@ -59,11 +59,9 @@ satyr pretends to have the following features (some are not implemented yet):
         'Operating System :: Microsoft :: Windows',
         'Operating System :: POSIX',
 
-        'Programming Language :: Python',
+        'Programming Language :: Python :: 2.5',
 
-        'Topic :: Internet',
-        'Topic :: System :: Archiving :: Mirroring',
-        'Topic :: Utilities',
+        'Topic :: Multimedia :: Sound/Audio :: Players',
         ],
 
     requires= ['PyKDE4(>=4.3)', 'tagpy(>=0.94)', 'PyQt4(>=4.5, <4.6)'],
