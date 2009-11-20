@@ -72,7 +72,7 @@ satyr pretends to have the following features (some are not implemented yet):
     data_files= [
         ('lib/python%s/site-packages/satyr/skins/' % python_version,
             ('satyr/skins/default.ui', 'satyr/skins/simple.ui'))],
-    scripts= ['satyr.py'],
+    scripts= ['satyr_main'],
     )
 
 if __name__=='__main__':
