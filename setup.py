@@ -18,6 +18,9 @@
 # along with satyr.  If not, see <http://www.gnu.org/licenses/>.
 
 from distutils.core import setup
+import sys
+
+python_version='%d.%d' % sys.version_info[:2]
 
 data= dict (
     name='satyr',
@@ -64,7 +67,11 @@ satyr pretends to have the following features (some are not implemented yet):
         ],
 
     requires= ['PyKDE4(>=4.3)', 'tagpy(>=0.94)', 'PyQt4(>=4.5, <4.6)'],
-    packages= ['satyr'],
+    packages= ['satyr', 'satyr.skins'],
+    # this kinda suck
+    data_files= [
+        ('lib/python%s/site-packages/satyr/skins/' % python_version,
+            ('satyr/skins/default.ui', 'satyr/skins/simple.ui'))],
     scripts= ['satyr.py'],
     )
 
