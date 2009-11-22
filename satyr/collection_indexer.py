@@ -109,28 +109,37 @@ class CollectionIndexer (QThread):
                     yield x
 
     def run (self):
-        mode= os.stat (self.path).st_mode
-        if stat.S_ISDIR (mode):
-            # http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=481795
-            for root, dirs, files in self.walk (self.path):
-                self.scanning.emit (root)
-                filepaths= []
-                for filename in files:
-                    filepath= root+'/'+filename
-                    # print root, filename
-                    # detect mimetype and add only if it's suppourted
-                    mimetype= getMimeType (filepath)
-                    if mimetype in mimetypes:
-                        filepaths.append (filepath)
+        # BUG:
+        # Traceback (most recent call last):
+        # File "/home/mdione/src/projects/satyr/playlist-listmodel/collection_indexer.py", line 112, in run
+        #     mode= os.stat (self.path).st_mode
+        # OSError: [Errno 2] No such file or directory: '/home/mdione/media/music/Various Artists/abcde.de10c40e/track01.ogg'
+        try:
+            mode= os.stat (self.path).st_mode
+        except OSError, e:
+            print e
+        else:
+            if stat.S_ISDIR (mode):
+                # http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=481795
+                for root, dirs, files in self.walk (self.path):
+                    self.scanning.emit (root)
+                    filepaths= []
+                    for filename in files:
+                        filepath= root+'/'+filename
+                        # print root, filename
+                        # detect mimetype and add only if it's suppourted
+                        mimetype= getMimeType (filepath)
+                        if mimetype in mimetypes:
+                            filepaths.append (filepath)
 
-                # pyqt4 doesn't do this automatically
-                self.foundSongs.emit (QStringList (filepaths))
+                    # pyqt4 doesn't do this automatically
+                    self.foundSongs.emit (QStringList (filepaths))
 
-        elif stat.S_ISREG (mode):
-            # HINT: collection_indexer.py:110: Local variable (mimetype) shadows global defined on line 37
-            # it's not a global
-            mimetype= getMimeType (self.path)
-            if mimetype in mimetypes:
-                self.foundSongs.emit (QStringList ([self.path]))
+            elif stat.S_ISREG (mode):
+                # HINT: collection_indexer.py:110: Local variable (mimetype) shadows global defined on line 37
+                # it's not a global
+                mimetype= getMimeType (self.path)
+                if mimetype in mimetypes:
+                    self.foundSongs.emit (QStringList ([self.path]))
 
 # end

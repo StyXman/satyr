@@ -18,7 +18,12 @@
 
 # qt/kde related
 from PyKDE4.kdeui import KMainWindow
-from PyQt4.QtGui import QItemSelectionModel, QAbstractItemView
+from PyKDE4.kdeui import KGlobalSettings
+# QAbstractItemModel for when we can model albums and group them that way
+from PyQt4.QtCore import QAbstractListModel, QModelIndex, QVariant, Qt
+# QAbstractTableModel if we ever change to a table
+from PyQt4.QtCore import QAbstractTableModel
+from PyQt4.QtGui import QItemSelectionModel, QAbstractItemView, QFontMetrics
 from PyQt4 import uic
 
 # local
@@ -39,27 +44,27 @@ class MainWindow (KMainWindow):
         self.ui.setupUi (self)
         self.collectionsAwaited= 0
 
-    def connectUi (self, player, playlist):
+    def connectUi (self, player):
         self.player= player
-        self.playlist= playlist
+        self.playlist= player.playlist
 
         # connect buttons!
-        self.ui.prevButton.clicked.connect (player.prev)
+        self.ui.prevButton.clicked.connect (self.player.prev)
         # the QPushButton.clicked() emits a bool,
         # and it's False on normal (non-checkable) buttons
         # no, it's not false, it's 0, which is indistinguishable from play(0)
         # so lambda the 'bool' away
-        self.ui.playButton.clicked.connect (lambda b: player.play ())
-        self.ui.pauseButton.clicked.connect (player.pause)
-        self.ui.stopButton.clicked.connect (player.stop)
-        self.ui.nextButton.clicked.connect (player.next)
+        self.ui.playButton.clicked.connect (lambda b: self.player.play ())
+        self.ui.pauseButton.clicked.connect (self.player.pause)
+        self.ui.stopButton.clicked.connect (self.player.stop)
+        self.ui.nextButton.clicked.connect (self.player.next)
 
-        self.ui.randomCheck.setChecked (playlist.random)
-        self.ui.randomCheck.clicked.connect (playlist.toggleRandom)
+        self.ui.randomCheck.setChecked (self.playlist.random)
+        self.ui.randomCheck.clicked.connect (self.playlist.toggleRandom)
         self.playlist.randomChanged.connect (self.ui.randomCheck.setChecked)
 
-        self.ui.stopAfterCheck.setChecked (player.stopAfter)
-        self.ui.stopAfterCheck.clicked.connect (player.toggleStopAfter)
+        self.ui.stopAfterCheck.setChecked (self.player.stopAfter)
+        self.ui.stopAfterCheck.clicked.connect (self.player.toggleStopAfter)
         self.player.stopAfterChanged.connect (self.ui.stopAfterCheck.setChecked)
 
         self.playlist.songChanged.connect (self.showSong)
@@ -68,7 +73,9 @@ class MainWindow (KMainWindow):
 
         self.ui.searchEntry.textChanged.connect (self.search)
 
-        self.setModel (self.playlist.model)
+        # TODO: better name?
+        self.localModel= QPlayListModel (model=self.playlist.model, parent=self)
+        self.setModel (self.localModel)
 
     def setModel (self, model):
         self.model= model
@@ -93,12 +100,12 @@ class MainWindow (KMainWindow):
         self.ui.songsList.setCurrentIndex (self.modelIndex)
 
         # set the window title
-        self.setCaption (self.playlist.model.formatSong (song))
+        self.setCaption (self.localModel.formatSong (song))
 
     def changeSong (self, modelIndex):
         # FIXME: later we ask for the index... doesn't make sense!
         print "satyr.changeSong()", modelIndex.row ()
-        song= self.model.songForIndex (modelIndex.row ())
+        song= self.playlist.model.songForIndex (modelIndex.row ())
         self.player.play (song)
 
     def scanBegins (self):
@@ -122,9 +129,9 @@ class MainWindow (KMainWindow):
             songs= self.playlist.search (unicode (text))
             # we have to keep it
             # otherwise it pufs into inexistence after the function ends
-            self.setModel (PlayListModel (songs=songs))
+            self.setModel (QPlayListModel (songs=songs))
         else:
-            self.setModel (self.playlist.model)
+            self.setModel (self.localModel)
             # ensure the current song is shown
             # BUG:
             # Traceback (most recent call last):
@@ -143,3 +150,78 @@ class MainWindow (KMainWindow):
         self.collectionsAwaited-= 1
         if self.collectionsAwaited==0:
             self.showSong (self.playlist.index)
+
+
+class QPlayListModel (QAbstractListModel):
+    def __init__ (self, model=None, songs=None, parent=None):
+        QAbstractListModel.__init__ (self, parent)
+
+        if songs is None:
+            self.model= model
+            self.lastIndex= model.count
+        else:
+            self.model= PlayListModel (songs=songs)
+            self.lastIndex= len (songs)
+
+        # self.attrNames= ('index', 'artist', 'year', 'album', 'trackno', 'title', 'length', 'filepath')
+        # HINT: attrs from kaa-metadata are all strings
+        # TODO: config
+        # TODO: optional parts
+        # TODO: unify unicode/str
+        self.format= u"%(artist)s/%(year)s-%(album)s: %(trackno)s - %(title)s [%(length)s]"
+        # this must NOT be unicode, 'cause the filepaths might have any vegetable
+        self.altFormat= "%(filepath)s [%(length)s]"
+
+        # FIXME: kinda hacky
+        self.fontMetrics= QFontMetrics (KGlobalSettings.generalFont ())
+
+    def formatSong (self, song):
+        if song.metadataNotNull ():
+            formatted= self.format % song
+        else:
+            # I choose latin1 because it's the only one I know
+            # which is full 256 chars
+            # FIXME: I think (this is not needed|we're not in kansas) anymore
+            try:
+                s= (self.altFormat % song).decode ('latin1')
+            except UnicodeDecodeError:
+                print song.filepath
+                fp= song.filepath.decode ('iso-8859-1')
+                s= u"%s [%s]" % (fp, song.length)
+
+            formatted= s
+
+        return formatted
+
+    def data (self, modelIndex, role):
+        song= self.model.songForIndex (modelIndex.row ())
+
+        if not modelIndex.isValid ():
+            data= QVariant ()
+        elif modelIndex.row ()>=self.model.count:
+            data= QVariant ()
+        elif role==Qt.DisplayRole:
+            data= QVariant (self.formatSong (song))
+        elif role==Qt.SizeHintRole:
+            # calculate something based on the filepath
+            data= QVariant (self.fontMetrics.size (Qt.TextSingleLine, song.filepath))
+        else:
+            data= QVariant ()
+
+        return data
+
+    def addSong (self):
+        print "QPLM.addSong()"
+        row= self.lastIndex
+        self.lastIndex+= 1
+
+        self.beginInsertRows (QModelIndex (), row, row)
+        self.endInsertRows ()
+
+        modelIndex= self.index (row, 0)
+        self.dataChanged.emit (modelIndex, modelIndex)
+
+    def rowCount (self, parent=None):
+        return self.model.count
+
+# end

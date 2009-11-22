@@ -114,7 +114,7 @@ def main ():
     player= Player (app, playlist, busName, '/player')
     player.finished.connect (app.quit)
 
-    mw.connectUi (player, playlist)
+    mw.connectUi (player)
     mw.show ()
 
     return app.exec_ ()

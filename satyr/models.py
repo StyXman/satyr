@@ -18,30 +18,30 @@
 
 
 # qt/kde related
-from PyKDE4.kdeui import KGlobalSettings
-from PyQt4.QtCore import QObject
-from PyQt4.QtCore import QAbstractListModel, QModelIndex, QVariant, Qt
-from PyQt4.QtGui import QFontMetrics
+from PyQt4.QtCore import QObject, pyqtSignal
 
 # other libs
 import tagpy
 
-class PlayListModel (QAbstractListModel):
-    def __init__ (self, collections= None, songs=None, parent= None):
-        QAbstractListModel.__init__ (self, parent)
+# CollectionAgregator
+class PlayListModel (object):
+    songAdded= pyqtSignal ()
+
+    def __init__ (self, collections= None, songs=None):
+        object.__init__ (self)
 
         if collections is None:
             collections= []
         self.collections= collections
 
-        # print songs
         if songs is None:
             self.songs= []
-            self.lastIndex= 0
+            # self.lastIndex= 0
             self.count= 0
         else:
             self.songs= songs
-            self.lastIndex= self.count= len (songs)
+            # self.lastIndex=
+            self.count= len (songs)
 
         self.collectionStartIndexes= []
         for collection in self.collections:
@@ -49,17 +49,6 @@ class PlayListModel (QAbstractListModel):
             # FIXME: this should be redundant
             collection.filesAdded.connect (self.updateIndexes)
         self.updateIndexes ()
-
-        # self.attrNames= ('index', 'artist', 'year', 'album', 'trackno', 'title', 'length', 'filepath')
-        # TODO: config
-        # TODO: optional parts
-        # TODO: unify unicode/str
-        self.format= u"%(artist)s/%(year)s-%(album)s: %(trackno)s - %(title)s [%(length)s]"
-        # this must NOT be unicode, 'cause the filepaths might have any vegetable
-        self.altFormat= "%(filepath)s [%(length)s]"
-
-        # FIXME: kinda hacky
-        self.fontMetrics= QFontMetrics (KGlobalSettings.generalFont ())
 
     def indexToCollection (self, index):
         """Selects the collection that contains the index"""
@@ -79,24 +68,6 @@ class PlayListModel (QAbstractListModel):
         collectionIndex= index-startIndex
 
         return collection, collectionIndex
-
-    def formatSong (self, song):
-        if song.metadataNotNull ():
-            formatted= self.format % song
-        else:
-            # I choose latin1 because it's the only one I know
-            # which is full 256 chars
-            # FIXME: I think (this is not needed|we're not in kansas) anymore
-            try:
-                s= (self.altFormat % song).decode ('latin1')
-            except UnicodeDecodeError:
-                print song.filepath
-                fp= song.filepath.decode ('iso-8859-1')
-                s= u"%s [%s]" % (fp, song.length)
-
-            formatted= s
-
-        return formatted
 
     def songForIndex (self, index):
         if len (self.songs)==0:
@@ -122,39 +93,8 @@ class PlayListModel (QAbstractListModel):
 
         return index
 
-    def data (self, modelIndex, role):
-        if modelIndex.isValid () and modelIndex.row ()<self.count:
-            song= self.songForIndex (modelIndex.row ())
-
-            if role==Qt.DisplayRole:
-                data= QVariant (self.formatSong (song))
-            elif role==Qt.SizeHintRole:
-                # calculate something based on the filepath
-                data= QVariant (self.fontMetrics.size (Qt.TextSingleLine, song.filepath))
-            else:
-                data= QVariant ()
-        else:
-            data= QVariant ()
-
-        return data
-
     def addSong (self):
-        row= self.lastIndex
-        self.lastIndex+= 1
-
-        self.beginInsertRows (QModelIndex (), row, row)
-        self.endInsertRows ()
-
-        # again, I know that count and lastIndex are equal,
-        # but again, it's better for the intiutive semantics of the code
-        # (readability, they call it)
         self.count+= 1
-
-        modelIndex= self.index (row, 0)
-        self.dataChanged.emit (modelIndex, modelIndex)
-
-    def rowCount (self, parent=None):
-        return self.count
 
     def updateIndexes (self):
         # recalculate the count and the startIndexes
