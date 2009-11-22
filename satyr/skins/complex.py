@@ -20,9 +20,7 @@
 from PyKDE4.kdeui import KMainWindow
 from PyKDE4.kdeui import KGlobalSettings
 # QAbstractItemModel for when we can model albums and group them that way
-from PyQt4.QtCore import QAbstractListModel, QModelIndex, QVariant, Qt
-# QAbstractTableModel if we ever change to a table
-from PyQt4.QtCore import QAbstractTableModel
+from PyQt4.QtCore import QAbstractTableModel, QModelIndex, QVariant, Qt
 from PyQt4.QtGui import QItemSelectionModel, QAbstractItemView, QFontMetrics
 from PyQt4 import uic
 
@@ -73,9 +71,11 @@ class MainWindow (KMainWindow):
 
         self.ui.searchEntry.textChanged.connect (self.search)
 
-        # TODO: better name?
         self.appModel= QPlayListModel (model=self.playlist.model, parent=self)
         self.setModel (self.appModel)
+
+        # TODO:
+        # self.ui.songsList.horizontalHeader. (['Artist', 'Year', 'Album', 'Track', 'Title', 'Length', 'Path'])
 
     def setModel (self, model):
         self.model= model
@@ -152,9 +152,9 @@ class MainWindow (KMainWindow):
             self.showSong (self.playlist.index)
 
 
-class QPlayListModel (QAbstractListModel):
+class QPlayListModel (QAbstractTableModel):
     def __init__ (self, model=None, songs=None, parent=None):
-        QAbstractListModel.__init__ (self, parent)
+        QAbstractTableModel.__init__ (self, parent)
 
         if songs is None:
             self.model= model
@@ -163,6 +163,9 @@ class QPlayListModel (QAbstractListModel):
             self.model= CollectionAgregator (songs=songs)
             self.lastIndex= len (songs)
 
+        self.attrNames= ('artist', 'year', 'album', 'trackno', 'title', 'length', 'filepath')
+        # FIXME: hackish
+        self.columnWidths= ("M"*15, "M"*4, "M"*20, "M"*2, "M"*25, "M"*5, "M"*100)
         # TODO: config
         # TODO: optional parts
         # TODO: unify unicode/str
@@ -196,13 +199,16 @@ class QPlayListModel (QAbstractListModel):
             song= self.model.songForIndex (modelIndex.row ())
 
             if role==Qt.DisplayRole:
-                data= QVariant (self.formatSong (song))
+                attr= self.attrNames [modelIndex.column ()]
+                data= QVariant (song[attr])
             elif role==Qt.SizeHintRole:
-                # calculate something based on the filepath
-                data= QVariant (self.fontMetrics.size (Qt.TextSingleLine, attrValue))
+                # print "QPLM.data()[size]:", modelIndex.row(), modelIndex.column ()
+                data= QVariant (self.fontMetrics.size (Qt.TextSingleLine, self.columnWidths[modelIndex.column ()]))
             else:
+                # print "QPLM.data()[role]:", role
                 data= QVariant ()
         else:
+            # print "QPLM.data()[row]:", modelIndex.row ()
             data= QVariant ()
 
         return data
@@ -220,5 +226,8 @@ class QPlayListModel (QAbstractListModel):
 
     def rowCount (self, parent=None):
         return self.model.count
+
+    def columnCount (self, parent=None):
+        return len (self.attrNames)
 
 # end
