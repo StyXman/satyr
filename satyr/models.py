@@ -23,8 +23,7 @@ from PyQt4.QtCore import QObject, pyqtSignal
 # other libs
 import tagpy
 
-# CollectionAgregator
-class PlayListModel (object):
+class CollectionAgregator (object):
     songAdded= pyqtSignal ()
 
     def __init__ (self, collections= None, songs=None):

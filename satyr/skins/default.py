@@ -27,7 +27,7 @@ from PyQt4.QtGui import QItemSelectionModel, QAbstractItemView, QFontMetrics
 from PyQt4 import uic
 
 # local
-from satyr.models import PlayListModel
+from satyr.models import CollectionAgregator
 
 class MainWindow (KMainWindow):
     def __init__ (self, parent=None):
@@ -74,8 +74,8 @@ class MainWindow (KMainWindow):
         self.ui.searchEntry.textChanged.connect (self.search)
 
         # TODO: better name?
-        self.localModel= QPlayListModel (model=self.playlist.model, parent=self)
-        self.setModel (self.localModel)
+        self.appModel= QPlayListModel (model=self.playlist.model, parent=self)
+        self.setModel (self.appModel)
 
     def setModel (self, model):
         self.model= model
@@ -100,7 +100,7 @@ class MainWindow (KMainWindow):
         self.ui.songsList.setCurrentIndex (self.modelIndex)
 
         # set the window title
-        self.setCaption (self.localModel.formatSong (song))
+        self.setCaption (self.model.formatSong (song))
 
     def changeSong (self, modelIndex):
         # FIXME: later we ask for the index... doesn't make sense!
@@ -131,7 +131,7 @@ class MainWindow (KMainWindow):
             # otherwise it pufs into inexistence after the function ends
             self.setModel (QPlayListModel (songs=songs))
         else:
-            self.setModel (self.localModel)
+            self.setModel (self.appModel)
             # ensure the current song is shown
             # BUG:
             # Traceback (most recent call last):
@@ -160,7 +160,7 @@ class QPlayListModel (QAbstractListModel):
             self.model= model
             self.lastIndex= model.count
         else:
-            self.model= PlayListModel (songs=songs)
+            self.model= CollectionAgregator (songs=songs)
             self.lastIndex= len (songs)
 
         # self.attrNames= ('index', 'artist', 'year', 'album', 'trackno', 'title', 'length', 'filepath')
