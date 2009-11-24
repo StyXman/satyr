@@ -22,7 +22,7 @@ from PyKDE4.kdeui import KGlobalSettings
 # QAbstractItemModel for when we can model albums and group them that way
 from PyQt4.QtCore import QAbstractListModel, QModelIndex, QVariant, Qt
 # QAbstractTableModel if we ever change to a table
-from PyQt4.QtCore import QAbstractTableModel
+from PyQt4.QtCore import QAbstractTableModel, QSignalMapper
 from PyQt4.QtGui import QItemSelectionModel, QAbstractItemView, QFontMetrics
 from PyQt4 import uic
 
@@ -158,10 +158,16 @@ class QPlayListModel (QAbstractListModel):
 
         if songs is None:
             self.model= model
-            self.lastIndex= model.count
+            self.collections= self.model.collections
+
+            self.signalMapper= QSignalMapper ()
+            for collNo, collection in enumerate (self.collections):
+                collection.newSongs.connect (self.signalMapper.map)
+                self.signalMapper.setMapping (collection, collNo)
+
+            self.signalMapper.mapped.connect (self.addRows)
         else:
             self.model= CollectionAgregator (songs=songs)
-            self.lastIndex= len (songs)
 
         # TODO: config
         # TODO: optional parts
@@ -199,7 +205,7 @@ class QPlayListModel (QAbstractListModel):
                 data= QVariant (self.formatSong (song))
             elif role==Qt.SizeHintRole:
                 # calculate something based on the filepath
-                data= QVariant (self.fontMetrics.size (Qt.TextSingleLine, attrValue))
+                data= QVariant (self.fontMetrics.size (Qt.TextSingleLine, song.filepath))
             else:
                 data= QVariant ()
         else:
@@ -207,16 +213,15 @@ class QPlayListModel (QAbstractListModel):
 
         return data
 
-    def addSong (self):
-        print "QPLM.addSong()"
-        row= self.lastIndex
-        self.lastIndex+= 1
+    def addRows (self, collNo):
+        collection= self.collections[collNo]
 
-        self.beginInsertRows (QModelIndex (), row, row)
-        self.endInsertRows ()
+        for index, filepath in collection.newSongs_:
+            self.beginInsertRows (QModelIndex (), index, index)
+            self.endInsertRows ()
 
-        modelIndex= self.index (row, 0)
-        self.dataChanged.emit (modelIndex, modelIndex)
+            modelIndex= self.index (index, 0)
+            self.dataChanged.emit (modelIndex, modelIndex)
 
     def rowCount (self, parent=None):
         return self.model.count

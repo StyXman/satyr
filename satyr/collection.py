@@ -20,7 +20,7 @@
 # qt/kde related
 from PyKDE4.kdecore import KStandardDirs
 from PyKDE4.kio import KDirWatch
-from PyQt4.QtCore import pyqtSignal, QString
+from PyQt4.QtCore import pyqtSignal, pyqtSlot, QString, QStringList
 
 # dbus
 import dbus.service
@@ -39,8 +39,8 @@ class ErrorNoDatabase (Exception):
 
 class Collection (SatyrObject):
     """A Collection of Albums"""
-    newSong= pyqtSignal (unicode)
-    filesAdded= pyqtSignal ()
+    newSongs= pyqtSignal ()
+    # filesAdded= pyqtSignal ()
     scanBegins= pyqtSignal ()
     scanFinished= pyqtSignal ()
 
@@ -96,7 +96,7 @@ class Collection (SatyrObject):
             # * fp= []; f= open(); for line in f: fp.append (line)
             filepaths= [ line[:-1] for line in open (self.collectionFile) ]
             self.add (filepaths)
-            self.filesAdded.emit ()
+            # self.filesAdded.emit ()
         except IOError, e:
             print 'FAILED!', e
             raise ErrorNoDatabase
@@ -124,6 +124,7 @@ class Collection (SatyrObject):
         self.save ()
         SatyrObject.saveConfig (self)
 
+    # @pyqtSlot ()
     def newFiles (self, path):
         path= utils.qstring2path (path)
         self.scan (path)
@@ -140,6 +141,7 @@ class Collection (SatyrObject):
         self.scanBegins.emit ()
         scanner.start ()
         # hold it or it gets destroyed before it finishes
+        # BUG: they're never destroyed!
         self.scanners.append (scanner)
 
     def progress (self, path):
@@ -148,6 +150,7 @@ class Collection (SatyrObject):
         pass
 
     def add (self, filepaths):
+        self.newSongs_= []
         # we get a QStringList; convert to a list so we can python-iterate it
         for filepath in list (filepaths):
             # filepath can be a QString because this method
@@ -164,8 +167,9 @@ class Collection (SatyrObject):
             if index==0 or self.songs[index-1]!=song:
                 self.songs.insert (index, song)
                 self.count+= 1
+                self.newSongs_.append ((index, filepath))
 
-                self.newSong.emit (filepath)
+        self.newSongs.emit ()
 
     def indexForSong (self, song):
         index= bisect.bisect (self.songs, song)

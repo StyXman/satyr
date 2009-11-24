@@ -18,13 +18,13 @@
 
 
 # qt/kde related
-from PyQt4.QtCore import QObject, pyqtSignal
+from PyQt4.QtCore import QObject, pyqtSignal, QSignalMapper
 
 # other libs
 import tagpy
 
 class CollectionAgregator (object):
-    songAdded= pyqtSignal ()
+    # songAdded= pyqtSignal ()
 
     def __init__ (self, collections= None, songs=None):
         object.__init__ (self)
@@ -42,11 +42,17 @@ class CollectionAgregator (object):
             # self.lastIndex=
             self.count= len (songs)
 
+        self.signalMapper= QSignalMapper ()
         self.collectionStartIndexes= []
-        for collection in self.collections:
+        for collNo, collection in enumerate (self.collections):
+            # collection.newSongs.connect (self.addSongs)
+            collection.newSongs.connect (self.signalMapper.map)
+            self.signalMapper.setMapping (collection, collNo)
             collection.scanFinished.connect (self.updateIndexes)
             # FIXME: this should be redundant
-            collection.filesAdded.connect (self.updateIndexes)
+            # collection.filesAdded.connect (self.updateIndexes)
+
+        self.signalMapper.mapped.connect (self.addSongs)
         self.updateIndexes ()
 
     def indexToCollection (self, index):
@@ -92,8 +98,13 @@ class CollectionAgregator (object):
 
         return index
 
-    def addSong (self):
-        self.count+= 1
+    def addSongs (self, collNo):
+        # sender= QObject.sender ()
+        # print sender
+        collection= self.collections[collNo]
+        # BUG? shouldn't we call updateIndexes?
+        # HINT: we call it when scanFinished()
+        self.count+= len (collection.newSongs_)
 
     def updateIndexes (self):
         # recalculate the count and the startIndexes

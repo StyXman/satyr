@@ -45,7 +45,6 @@ class PlayList (SatyrObject):
         self.model= CollectionAgregator (collections)
         self.collections= collections
         for collection in self.collections:
-            collection.newSong.connect (self.model.addSong)
             collection.scanFinished.connect (self.filesAdded)
 
         self.indexQueue= []

@@ -21,6 +21,7 @@ from PyKDE4.kdeui import KMainWindow
 from PyKDE4.kdeui import KGlobalSettings
 # QAbstractItemModel for when we can model albums and group them that way
 from PyQt4.QtCore import QAbstractTableModel, QModelIndex, QVariant, Qt
+from PyQt4.QtCore import QSignalMapper
 from PyQt4.QtGui import QItemSelectionModel, QAbstractItemView, QFontMetrics
 from PyQt4 import uic
 
@@ -80,20 +81,20 @@ class MainWindow (KMainWindow):
     def setModel (self, model):
         self.model= model
         self.ui.songsList.setModel (self.model)
-        self.selection= self.ui.songsList.selectionModel ()
 
     def log (self, *args):
         print args
 
     def showSong (self, index):
         print "satyr.showSong()", index
-        # index= self.model.indexForSong (song)
         # we use the playlist model because the index is *always* refering
         # to that model
         song= self.playlist.model.songForIndex (index)
         print "satyr.showSong()", song
+
+        # BUG: doesn't work
+        self.ui.songsList.selectRow (index)
         self.modelIndex= self.model.index (index, 0)
-        self.selection.select (self.modelIndex, QItemSelectionModel.SelectCurrent)
         # FIXME? QAbstractItemView.EnsureVisible config?
         self.ui.songsList.scrollTo (self.modelIndex, QAbstractItemView.PositionAtCenter)
         # move the selection cursor too
@@ -105,7 +106,9 @@ class MainWindow (KMainWindow):
     def changeSong (self, modelIndex):
         # FIXME: later we ask for the index... doesn't make sense!
         print "satyr.changeSong()", modelIndex.row ()
-        song= self.playlist.model.songForIndex (modelIndex.row ())
+        # song= self.playlist.model.songForIndex (modelIndex.row ())
+        # FIXME: this is ugly... model.model?!?
+        song= self.model.model.songForIndex (modelIndex.row ())
         self.player.play (song)
 
     def scanBegins (self):
@@ -158,10 +161,18 @@ class QPlayListModel (QAbstractTableModel):
 
         if songs is None:
             self.model= model
-            self.lastIndex= model.count
+            self.collections= self.model.collections
+
+            self.signalMapper= QSignalMapper ()
+            for collNo, collection in enumerate (self.collections):
+                # collection.newSongs.connect (self.addSongs)
+                collection.newSongs.connect (self.signalMapper.map)
+                self.signalMapper.setMapping (collection, collNo)
+
+            self.signalMapper.mapped.connect (self.addRows)
+            # self.model.newSongs.connect (self.addRows)
         else:
             self.model= CollectionAgregator (songs=songs)
-            self.lastIndex= len (songs)
 
         self.attrNames= ('artist', 'year', 'album', 'trackno', 'title', 'length', 'filepath')
         # FIXME: hackish
@@ -213,16 +224,16 @@ class QPlayListModel (QAbstractTableModel):
 
         return data
 
-    def addSong (self):
-        print "QPLM.addSong()"
-        row= self.lastIndex
-        self.lastIndex+= 1
+    def addRows (self, collNo):
+        collection= self.collections[collNo]
+        # print "QPLM.addRows()", collection
 
-        self.beginInsertRows (QModelIndex (), row, row)
-        self.endInsertRows ()
+        for index, filepath in collection.newSongs_:
+            self.beginInsertRows (QModelIndex (), index, index)
+            self.endInsertRows ()
 
-        modelIndex= self.index (row, 0)
-        self.dataChanged.emit (modelIndex, modelIndex)
+            modelIndex= self.index (index, 0)
+            self.dataChanged.emit (modelIndex, modelIndex)
 
     def rowCount (self, parent=None):
         return self.model.count
