@@ -77,6 +77,8 @@ class MainWindow (KMainWindow):
         self.appModel= QPlayListModel (aggr=self.playlist.aggr, parent=self)
         self.setModel (self.appModel)
 
+        self.songIndexSelectedByUser= None
+
     def setModel (self, model):
         self.model= model
         self.ui.songsList.setModel (self.model)
@@ -86,18 +88,30 @@ class MainWindow (KMainWindow):
         print args
 
     def showSong (self, index):
-        print "satyr.showSong()", index
-        # index= self.model.indexForSong (song)
-        # we use the playlist model because the index is *always* refering
-        # to that model
-        song= self.playlist.aggr.songForIndex (index)
+        if self.songIndexSelectedByUser is None:
+            print "satyr.showSong()", index
+            # we use the playlist model because the index is *always* refering
+            # to that model
+            song= self.playlist.aggr.songForIndex (index)
+            # we save the modelindex in the instance so we can show it
+            # when we come back from searching
+            modelIndex= self.modelIndex= self.model.index (index, 0)
+        else:
+            (song, modelIndex)= self.songIndexSelectedByUser
+            # I also have to save it for the same reason
+            # but using the other model!
+            # BUG: this is getting ugly
+            self.modelIndex= self.appModel.index (index, 0)
+            # we uesd it so we discard it
+            # it will be set again by changeSong()
+            self.songIndexSelectedByUser= None
+
         print "satyr.showSong()", song
-        self.modelIndex= self.model.index (index, 0)
-        self.selection.select (self.modelIndex, QItemSelectionModel.SelectCurrent)
+        self.selection.select (modelIndex, QItemSelectionModel.SelectCurrent)
         # FIXME? QAbstractItemView.EnsureVisible config?
-        self.ui.songsList.scrollTo (self.modelIndex, QAbstractItemView.PositionAtCenter)
+        self.ui.songsList.scrollTo (modelIndex, QAbstractItemView.PositionAtCenter)
         # move the selection cursor too
-        self.ui.songsList.setCurrentIndex (self.modelIndex)
+        self.ui.songsList.setCurrentIndex (modelIndex)
 
         # set the window title
         self.setCaption (self.model.formatSong (song))
@@ -106,6 +120,7 @@ class MainWindow (KMainWindow):
         # FIXME: later we ask for the index... doesn't make sense!
         print "satyr.changeSong()", modelIndex.row ()
         song= self.model.aggr.songForIndex (modelIndex.row ())
+        self.songIndexSelectedByUser= (song, modelIndex)
         self.player.play (song)
 
     def scanBegins (self):
@@ -133,12 +148,7 @@ class MainWindow (KMainWindow):
         else:
             self.setModel (self.appModel)
             # ensure the current song is shown
-            # BUG:
-            # Traceback (most recent call last):
-            # File "satyr.py", line 145, in search
-            #     self.ui.songsList.scrollTo (self.modelIndex, QAbstractItemView.PositionAtCenter)
-            # AttributeError: 'MainWindow' object has no attribute 'modelIndex'
-            self.ui.songsList.scrollTo (self.modelIndex, QAbstractItemView.PositionAtCenter)
+            self.showSong (self.modelIndex.row ())
 
     def collectionAdded (self):
         self.collectionsAwaited+= 1
