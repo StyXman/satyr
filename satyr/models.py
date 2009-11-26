@@ -24,8 +24,6 @@ from PyQt4.QtCore import QObject, pyqtSignal, QSignalMapper
 import tagpy
 
 class CollectionAgregator (object):
-    # songAdded= pyqtSignal ()
-
     def __init__ (self, collections= None, songs=None):
         object.__init__ (self)
 
@@ -35,22 +33,17 @@ class CollectionAgregator (object):
 
         if songs is None:
             self.songs= []
-            # self.lastIndex= 0
             self.count= 0
         else:
             self.songs= songs
-            # self.lastIndex=
             self.count= len (songs)
 
         self.signalMapper= QSignalMapper ()
         self.collectionStartIndexes= []
         for collNo, collection in enumerate (self.collections):
-            # collection.newSongs.connect (self.addSongs)
             collection.newSongs.connect (self.signalMapper.map)
             self.signalMapper.setMapping (collection, collNo)
             collection.scanFinished.connect (self.updateIndexes)
-            # FIXME: this should be redundant
-            # collection.filesAdded.connect (self.updateIndexes)
 
         self.signalMapper.mapped.connect (self.addSongs)
         self.updateIndexes ()

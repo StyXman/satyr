@@ -74,7 +74,7 @@ class MainWindow (KMainWindow):
         self.ui.searchEntry.textChanged.connect (self.search)
 
         # TODO: better name?
-        self.appModel= QPlayListModel (model=self.playlist.model, parent=self)
+        self.appModel= QPlayListModel (aggr=self.playlist.aggr, parent=self)
         self.setModel (self.appModel)
 
     def setModel (self, model):
@@ -90,7 +90,7 @@ class MainWindow (KMainWindow):
         # index= self.model.indexForSong (song)
         # we use the playlist model because the index is *always* refering
         # to that model
-        song= self.playlist.model.songForIndex (index)
+        song= self.playlist.aggr.songForIndex (index)
         print "satyr.showSong()", song
         self.modelIndex= self.model.index (index, 0)
         self.selection.select (self.modelIndex, QItemSelectionModel.SelectCurrent)
@@ -105,7 +105,7 @@ class MainWindow (KMainWindow):
     def changeSong (self, modelIndex):
         # FIXME: later we ask for the index... doesn't make sense!
         print "satyr.changeSong()", modelIndex.row ()
-        song= self.playlist.model.songForIndex (modelIndex.row ())
+        song= self.model.aggr.songForIndex (modelIndex.row ())
         self.player.play (song)
 
     def scanBegins (self):
@@ -153,12 +153,12 @@ class MainWindow (KMainWindow):
 
 
 class QPlayListModel (QAbstractListModel):
-    def __init__ (self, model=None, songs=None, parent=None):
+    def __init__ (self, aggr=None, songs=None, parent=None):
         QAbstractListModel.__init__ (self, parent)
 
         if songs is None:
-            self.model= model
-            self.collections= self.model.collections
+            self.aggr= aggr
+            self.collections= self.aggr.collections
 
             self.signalMapper= QSignalMapper ()
             for collNo, collection in enumerate (self.collections):
@@ -167,7 +167,7 @@ class QPlayListModel (QAbstractListModel):
 
             self.signalMapper.mapped.connect (self.addRows)
         else:
-            self.model= CollectionAgregator (songs=songs)
+            self.aggr= CollectionAgregator (songs=songs)
 
         # TODO: config
         # TODO: optional parts
@@ -198,8 +198,8 @@ class QPlayListModel (QAbstractListModel):
         return formatted
 
     def data (self, modelIndex, role):
-        if modelIndex.isValid () and modelIndex.row ()<self.model.count:
-            song= self.model.songForIndex (modelIndex.row ())
+        if modelIndex.isValid () and modelIndex.row ()<self.aggr.count:
+            song= self.aggr.songForIndex (modelIndex.row ())
 
             if role==Qt.DisplayRole:
                 data= QVariant (self.formatSong (song))
@@ -224,6 +224,6 @@ class QPlayListModel (QAbstractListModel):
             self.dataChanged.emit (modelIndex, modelIndex)
 
     def rowCount (self, parent=None):
-        return self.model.count
+        return self.aggr.count
 
 # end

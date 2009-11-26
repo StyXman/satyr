@@ -42,7 +42,7 @@ class PlayList (SatyrObject):
     def __init__ (self, parent, collections, busName=None, busPath=None):
         SatyrObject.__init__ (self, parent, busName, busPath)
 
-        self.model= CollectionAgregator (collections)
+        self.aggr= CollectionAgregator (collections)
         self.collections= collections
         for collection in self.collections:
             collection.scanFinished.connect (self.filesAdded)
@@ -61,7 +61,7 @@ class PlayList (SatyrObject):
         # File "/home/mdione/src/projects/satyr/playlist-listmodel/models.py", line 180, in songForIndex
         #     song= collection.songs[collectionIndex]
         # IndexError: list index out of range
-        # self.setCurrent ()
+        self.setCurrent ()
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def toggleRandom (self):
@@ -75,13 +75,13 @@ class PlayList (SatyrObject):
         if song is None:
             try:
                 print "playlist.setCurrent()", self.index
-                song= self.model.songForIndex (self.index)
+                song= self.aggr.songForIndex (self.index)
                 self.filepath= song.filepath
             except IndexError:
                 # the index saved in the config is bigger than the current collection
                 # fall back to 0
                 self.index= 0
-                song= self.model.songForIndex (self.index)
+                song= self.aggr.songForIndex (self.index)
                 self.filepath= song.filepath
         else:
             print "playlist.setCurrent()", song
@@ -102,8 +102,8 @@ class PlayList (SatyrObject):
         print "¡prev",
         if self.random:
             random= self.seed
-            self.index= (self.index-random) % self.model.count
-            random= (self.seed-self.prime) % self.model.count
+            self.index= (self.index-random) % self.aggr.count
+            random= (self.seed-self.prime) % self.aggr.count
             self.seed= random
         else:
             self.index-= 1
@@ -119,8 +119,8 @@ class PlayList (SatyrObject):
             self.index= self.indexQueue.pop (0)
         else:
             if self.random:
-                random= (self.seed+self.prime) % self.model.count
-                self.index= (self.index+random) % self.model.count
+                random= (self.seed+self.prime) % self.aggr.count
+                self.index= (self.index+random) % self.aggr.count
                 self.seed= random
             else:
                 self.index+= 1
@@ -129,7 +129,7 @@ class PlayList (SatyrObject):
 
     def filesAdded (self):
         # we must recompute the prime
-        if self.model.count>2:
+        if self.aggr.count>2:
             # if count is 1, it make no sense to select a prime
             # if it's 2, the prime selected would be 2
             # if you turn on random and hit next
@@ -144,7 +144,7 @@ class PlayList (SatyrObject):
 
     def randomPrime (self):
         # select a random prime based on the amount of songs in the playlist
-        top= bisect.bisect (primes, self.model.count)
+        top= bisect.bisect (primes, self.aggr.count)
         # select from the upper 2/3,
         # so in large playlists the same artist is not picked consecutively
         prime= random.choice (primes[top/3:top])
