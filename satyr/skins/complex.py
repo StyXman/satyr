@@ -83,11 +83,9 @@ class MainWindow (KMainWindow):
 
     def setModel (self, model):
         print "complex.setModel():", model
-        for i in xrange (len (model.headers)):
-            print str (model.headerData (i, Qt.Horizontal, Qt.DisplayRole).toString ()),
-        print
         self.model= model
         self.ui.songsList.setModel (self.model)
+        self.selection= self.ui.songsList.selectionModel ()
 
     def log (self, *args):
         print args
@@ -112,6 +110,7 @@ class MainWindow (KMainWindow):
             self.songIndexSelectedByUser= None
 
         print "default.showSong()", song
+        self.selection.select (modelIndex, QItemSelectionModel.SelectCurrent|QItemSelectionModel.Rows)
         # FIXME? QAbstractItemView.EnsureVisible config?
         self.ui.songsList.scrollTo (modelIndex, QAbstractItemView.PositionAtCenter)
         # move the selection cursor too
