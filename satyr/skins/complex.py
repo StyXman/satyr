@@ -74,18 +74,18 @@ class MainWindow (KMainWindow):
         self.appModel= QPlayListModel (aggr=self.playlist.aggr, parent=self)
         self.setModel (self.appModel)
 
-        # TODO:
-        self.headers= (u'Artist', u'Year', u'Album', u'Track', u'Title', u'Length', u'Path')
         # FIXME: kinda hacky
         self.fontMetrics= QFontMetrics (KGlobalSettings.generalFont ())
-
-        for i, h in enumerate (self.headers):
-            w= self.model.columnWidths[i]
+        for i, w in enumerate (self.model.columnWidths):
             self.ui.songsList.setColumnWidth (i, self.fontMetrics.width (w))
-            # self.ui.songsList.resizeColumnToContents (i)
+
         self.songIndexSelectedByUser= None
 
     def setModel (self, model):
+        print "complex.setModel():", model
+        for i in xrange (len (model.headers)):
+            print str (model.headerData (i, Qt.Horizontal, Qt.DisplayRole).toString ()),
+        print
         self.model= model
         self.ui.songsList.setModel (self.model)
 
@@ -191,10 +191,12 @@ class QPlayListModel (QAbstractTableModel):
         # this must NOT be unicode, 'cause the filepaths might have any vegetable
         self.altFormat= "%(filepath)s [%(length)s]"
 
+        self.headers= (u'Artist', u'Year', u'Album', u'Track', u'Title', u'Length', u'Path')
         # FIXME: kinda hacky
         self.fontMetrics= QFontMetrics (KGlobalSettings.generalFont ())
         # FIXME: hackish
-        self.columnWidths= ("M"*15, "M"*4, "M"*20, "M"*2, "M"*25, "M"*5, "M"*100)
+        self.columnWidths= ("M"*15, "M"*4, "M"*20, "M"*3, "M"*25, "M"*5, "M"*100)
+        print "QPLM: ", self
 
     def formatSong (self, song):
         if song.metadataNotNull ():
@@ -230,6 +232,14 @@ class QPlayListModel (QAbstractTableModel):
         else:
             # print "QPLM.data()[row]:", modelIndex.row ()
             data= QVariant ()
+
+        return data
+
+    def headerData (self, section, direction, role=Qt.DisplayRole):
+        if direction==Qt.Horizontal and role==Qt.DisplayRole:
+            data= QVariant (self.headers[section])
+        else:
+            data= QAbstractTableModel.headerData (self, section, direction, role)
 
         return data
 
