@@ -75,7 +75,14 @@ class MainWindow (KMainWindow):
         self.setModel (self.appModel)
 
         # TODO:
-        # self.ui.songsList.horizontalHeader. (['Artist', 'Year', 'Album', 'Track', 'Title', 'Length', 'Path'])
+        self.headers= (u'Artist', u'Year', u'Album', u'Track', u'Title', u'Length', u'Path')
+        # FIXME: kinda hacky
+        self.fontMetrics= QFontMetrics (KGlobalSettings.generalFont ())
+
+        for i, h in enumerate (self.headers):
+            w= self.model.columnWidths[i]
+            self.ui.songsList.setColumnWidth (i, self.fontMetrics.width (w))
+            # self.ui.songsList.resizeColumnToContents (i)
         self.songIndexSelectedByUser= None
 
     def setModel (self, model):
@@ -177,8 +184,6 @@ class QPlayListModel (QAbstractTableModel):
             self.aggr= CollectionAgregator (songs=songs)
 
         self.attrNames= ('artist', 'year', 'album', 'trackno', 'title', 'length', 'filepath')
-        # FIXME: hackish
-        self.columnWidths= ("M"*15, "M"*4, "M"*20, "M"*2, "M"*25, "M"*5, "M"*100)
         # TODO: config
         # TODO: optional parts
         # TODO: unify unicode/str
@@ -188,6 +193,8 @@ class QPlayListModel (QAbstractTableModel):
 
         # FIXME: kinda hacky
         self.fontMetrics= QFontMetrics (KGlobalSettings.generalFont ())
+        # FIXME: hackish
+        self.columnWidths= ("M"*15, "M"*4, "M"*20, "M"*2, "M"*25, "M"*5, "M"*100)
 
     def formatSong (self, song):
         if song.metadataNotNull ():
