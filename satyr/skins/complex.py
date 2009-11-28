@@ -35,9 +35,7 @@ class MainWindow (KMainWindow):
         # load the .ui file
         # !!! __file__ can end with .py[co]!
         uipath= __file__[:__file__.rfind ('.')]+'.ui'
-        # print uipath
         (UIMainWindow, buh)= uic.loadUiType (uipath)
-        # print UIMainWindow, buh
 
         self.ui= UIMainWindow ()
         self.ui.setupUi (self)
@@ -72,11 +70,13 @@ class MainWindow (KMainWindow):
 
         self.ui.searchEntry.textChanged.connect (self.search)
 
-        self.appModel= QPlayListModel (model=self.playlist.model, parent=self)
+        # TODO: better name?
+        self.appModel= QPlayListModel (aggr=self.playlist.aggr, parent=self)
         self.setModel (self.appModel)
 
         # TODO:
         # self.ui.songsList.horizontalHeader. (['Artist', 'Year', 'Album', 'Track', 'Title', 'Length', 'Path'])
+        self.songIndexSelectedByUser= None
 
     def setModel (self, model):
         self.model= model
@@ -86,29 +86,38 @@ class MainWindow (KMainWindow):
         print args
 
     def showSong (self, index):
-        print "satyr.showSong()", index
-        # we use the playlist model because the index is *always* refering
-        # to that model
-        song= self.playlist.model.songForIndex (index)
-        print "satyr.showSong()", song
+        if self.songIndexSelectedByUser is None:
+            print "default.showSong()", index
+            # we use the playlist model because the index is *always* refering
+            # to that model
+            song= self.playlist.aggr.songForIndex (index)
+            # we save the modelindex in the instance so we can show it
+            # when we come back from searching
+            modelIndex= self.modelIndex= self.model.index (index, 0)
+        else:
+            (song, modelIndex)= self.songIndexSelectedByUser
+            # I also have to save it for the same reason
+            # but using the other model!
+            # BUG: this is getting ugly
+            self.modelIndex= self.appModel.index (index, 0)
+            # we uesd it so we discard it
+            # it will be set again by changeSong()
+            self.songIndexSelectedByUser= None
 
-        # BUG: doesn't work
-        self.ui.songsList.selectRow (index)
-        self.modelIndex= self.model.index (index, 0)
+        print "default.showSong()", song
         # FIXME? QAbstractItemView.EnsureVisible config?
-        self.ui.songsList.scrollTo (self.modelIndex, QAbstractItemView.PositionAtCenter)
+        self.ui.songsList.scrollTo (modelIndex, QAbstractItemView.PositionAtCenter)
         # move the selection cursor too
-        self.ui.songsList.setCurrentIndex (self.modelIndex)
+        self.ui.songsList.setCurrentIndex (modelIndex)
 
         # set the window title
         self.setCaption (self.model.formatSong (song))
 
     def changeSong (self, modelIndex):
         # FIXME: later we ask for the index... doesn't make sense!
-        print "satyr.changeSong()", modelIndex.row ()
-        # song= self.playlist.model.songForIndex (modelIndex.row ())
-        # FIXME: this is ugly... model.model?!?
-        song= self.model.model.songForIndex (modelIndex.row ())
+        print "default.changeSong()", modelIndex.row ()
+        song= self.model.aggr.songForIndex (modelIndex.row ())
+        self.songIndexSelectedByUser= (song, modelIndex)
         self.player.play (song)
 
     def scanBegins (self):
@@ -136,12 +145,7 @@ class MainWindow (KMainWindow):
         else:
             self.setModel (self.appModel)
             # ensure the current song is shown
-            # BUG:
-            # Traceback (most recent call last):
-            # File "satyr.py", line 145, in search
-            #     self.ui.songsList.scrollTo (self.modelIndex, QAbstractItemView.PositionAtCenter)
-            # AttributeError: 'MainWindow' object has no attribute 'modelIndex'
-            self.ui.songsList.scrollTo (self.modelIndex, QAbstractItemView.PositionAtCenter)
+            self.showSong (self.modelIndex.row ())
 
     def collectionAdded (self):
         self.collectionsAwaited+= 1
@@ -156,23 +160,21 @@ class MainWindow (KMainWindow):
 
 
 class QPlayListModel (QAbstractTableModel):
-    def __init__ (self, model=None, songs=None, parent=None):
+    def __init__ (self, aggr=None, songs=None, parent=None):
         QAbstractTableModel.__init__ (self, parent)
 
         if songs is None:
-            self.model= model
-            self.collections= self.model.collections
+            self.aggr= aggr
+            self.collections= self.aggr.collections
 
             self.signalMapper= QSignalMapper ()
             for collNo, collection in enumerate (self.collections):
-                # collection.newSongs.connect (self.addSongs)
                 collection.newSongs.connect (self.signalMapper.map)
                 self.signalMapper.setMapping (collection, collNo)
 
             self.signalMapper.mapped.connect (self.addRows)
-            # self.model.newSongs.connect (self.addRows)
         else:
-            self.model= CollectionAgregator (songs=songs)
+            self.aggr= CollectionAgregator (songs=songs)
 
         self.attrNames= ('artist', 'year', 'album', 'trackno', 'title', 'length', 'filepath')
         # FIXME: hackish
@@ -206,8 +208,8 @@ class QPlayListModel (QAbstractTableModel):
         return formatted
 
     def data (self, modelIndex, role):
-        if modelIndex.isValid () and modelIndex.row ()<self.model.count:
-            song= self.model.songForIndex (modelIndex.row ())
+        if modelIndex.isValid () and modelIndex.row ()<self.aggr.count:
+            song= self.aggr.songForIndex (modelIndex.row ())
 
             if role==Qt.DisplayRole:
                 attr= self.attrNames [modelIndex.column ()]
@@ -236,7 +238,7 @@ class QPlayListModel (QAbstractTableModel):
             self.dataChanged.emit (modelIndex, modelIndex)
 
     def rowCount (self, parent=None):
-        return self.model.count
+        return self.aggr.count
 
     def columnCount (self, parent=None):
         return len (self.attrNames)
