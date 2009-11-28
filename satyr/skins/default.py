@@ -36,9 +36,7 @@ class MainWindow (KMainWindow):
         # load the .ui file
         # !!! __file__ can end with .py[co]!
         uipath= __file__[:__file__.rfind ('.')]+'.ui'
-        # print uipath
         (UIMainWindow, buh)= uic.loadUiType (uipath)
-        # print UIMainWindow, buh
 
         self.ui= UIMainWindow ()
         self.ui.setupUi (self)
@@ -89,7 +87,7 @@ class MainWindow (KMainWindow):
 
     def showSong (self, index):
         if self.songIndexSelectedByUser is None:
-            print "satyr.showSong()", index
+            print "default.showSong()", index
             # we use the playlist model because the index is *always* refering
             # to that model
             song= self.playlist.aggr.songForIndex (index)
@@ -106,7 +104,7 @@ class MainWindow (KMainWindow):
             # it will be set again by changeSong()
             self.songIndexSelectedByUser= None
 
-        print "satyr.showSong()", song
+        print "default.showSong()", song
         self.selection.select (modelIndex, QItemSelectionModel.SelectCurrent)
         # FIXME? QAbstractItemView.EnsureVisible config?
         self.ui.songsList.scrollTo (modelIndex, QAbstractItemView.PositionAtCenter)
@@ -118,7 +116,7 @@ class MainWindow (KMainWindow):
 
     def changeSong (self, modelIndex):
         # FIXME: later we ask for the index... doesn't make sense!
-        print "satyr.changeSong()", modelIndex.row ()
+        print "default.changeSong()", modelIndex.row ()
         song= self.model.aggr.songForIndex (modelIndex.row ())
         self.songIndexSelectedByUser= (song, modelIndex)
         self.player.play (song)
