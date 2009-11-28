@@ -88,7 +88,9 @@ class PlayList (SatyrObject):
             self.filepath= song.filepath
             # FIXME: maybe we can get it from the modelIndex
             # (we're using it elsewhere anyways)
-            # FIXME: this os O(n)
+            # FIXME?: this os O(n)
+            # a way to make it O(1) is to *also* use a hash
+            # but then we have the problem of keeping it in sync
             # BUG: this is the Collection index, not the global one
             self.index= song.collection.songs.index (song)
             print "playlist.setCurrent()", self.index
