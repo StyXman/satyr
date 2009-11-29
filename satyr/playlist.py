@@ -29,7 +29,7 @@ import random, bisect
 # local
 from satyr.common import SatyrObject, BUS_NAME, configBoolToBool
 from satyr.primes import primes
-from satyr.models import CollectionAgregator
+from satyr.collaggr import CollectionAggregator
 
 class StopAfter (Exception):
     pass
@@ -42,7 +42,7 @@ class PlayList (SatyrObject):
     def __init__ (self, parent, collections, busName=None, busPath=None):
         SatyrObject.__init__ (self, parent, busName, busPath)
 
-        self.aggr= CollectionAgregator (collections)
+        self.aggr= CollectionAggregator (collections)
         self.collections= collections
         for collection in self.collections:
             collection.scanFinished.connect (self.filesAdded)

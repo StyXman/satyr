@@ -20,7 +20,7 @@
 # qt/kde related
 from PyKDE4.kdecore import KStandardDirs
 from PyKDE4.kio import KDirWatch
-from PyQt4.QtCore import pyqtSignal, pyqtSlot, QString, QStringList
+from PyQt4.QtCore import pyqtSignal, pyqtSlot, QString
 
 # dbus
 import dbus.service
@@ -31,7 +31,7 @@ import os, bisect
 # local
 from satyr.common import SatyrObject, BUS_NAME
 from satyr.collection_indexer import CollectionIndexer
-from satyr.models import Song
+from satyr.song import Song
 from satyr import utils
 
 class ErrorNoDatabase (Exception):
@@ -40,7 +40,6 @@ class ErrorNoDatabase (Exception):
 class Collection (SatyrObject):
     """A Collection of Albums"""
     newSongs= pyqtSignal ()
-    # filesAdded= pyqtSignal ()
     scanBegins= pyqtSignal ()
     scanFinished= pyqtSignal ()
 
@@ -69,6 +68,8 @@ class Collection (SatyrObject):
         self.watch.created.connect (self.newFiles)
 
         self.scanners= []
+        self.scanning= False
+
         if busPath is not None:
             self.collectionFile= str (KStandardDirs.locateLocal ('data', 'satyr/%s.tdb' % self.dbusName (busPath)))
         else:
@@ -130,19 +131,25 @@ class Collection (SatyrObject):
         self.scan (path)
 
     def scan (self, path=None):
+        self.scanning= True
         if path is None:
             path= self.path
         scanner= CollectionIndexer (path)
         scanner.scanning.connect (self.progress)
         scanner.foundSongs.connect (self.add)
         scanner.terminated.connect (self.log)
-        scanner.finished.connect (self.scanFinished)
+        # it's a signal
+        scanner.finished.connect (self.scanFinished_)
 
         self.scanBegins.emit ()
         scanner.start ()
         # hold it or it gets destroyed before it finishes
         # BUG: they're never destroyed!
         self.scanners.append (scanner)
+
+    def scanFinished_ (self):
+        self.scanning= False
+        self.scanFinished.emit ()
 
     def progress (self, path):
         # print 'scanning', path

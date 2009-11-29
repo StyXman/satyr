@@ -174,6 +174,7 @@ class MainWindow (KMainWindow):
 class QPlayListModel (QAbstractTableModel):
     def __init__ (self, aggr=None, songs=None, parent=None):
         QAbstractTableModel.__init__ (self, parent)
+        # TODO: different delegate for editing tags: one with completion
 
         if songs is None:
             self.aggr= aggr

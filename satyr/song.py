@@ -18,104 +18,10 @@
 
 
 # qt/kde related
-from PyQt4.QtCore import QObject, pyqtSignal, QSignalMapper
+from PyQt4.QtCore import QObject, pyqtSignal
 
 # other libs
 import tagpy
-
-class CollectionAgregator (object):
-    def __init__ (self, collections= None, songs=None):
-        object.__init__ (self)
-
-        if collections is None:
-            collections= []
-        self.collections= collections
-
-        if songs is None:
-            self.songs= []
-            self.count= 0
-        else:
-            self.songs= songs
-            self.count= len (songs)
-
-        self.signalMapper= QSignalMapper ()
-        self.collectionStartIndexes= []
-        for collNo, collection in enumerate (self.collections):
-            collection.newSongs.connect (self.signalMapper.map)
-            self.signalMapper.setMapping (collection, collNo)
-            collection.scanFinished.connect (self.updateIndexes)
-
-        self.signalMapper.mapped.connect (self.addSongs)
-        self.updateIndexes ()
-
-    def indexToCollection (self, index):
-        """Selects the collection that contains the index"""
-        for startIndex, collection in self.collectionStartIndexes:
-            # FIXME: I still don't think this is right
-            # if index > startIndex+collection.count:
-            if index < startIndex:
-                break
-            # print index, startIndex, collection.count, startIndex+collection.count
-            prevCollection= collection
-
-        return startIndex, prevCollection
-
-    def indexToCollectionIndex (self, index):
-        """Converts a global index to a index in a collection"""
-        startIndex, collection= self.indexToCollection (index)
-        collectionIndex= index-startIndex
-
-        return collection, collectionIndex
-
-    def songForIndex (self, index):
-        if len (self.songs)==0:
-            # we're not a queue PLM, so we use the collections
-            collection, collectionIndex= self.indexToCollectionIndex (index)
-            # print collection, collectionIndex, len (collection.songs)
-            song= collection.songs[collectionIndex]
-        else:
-            song= self.songs[index]
-
-        return song
-
-    def indexForSong (self, song):
-        print "PLM.indexForSong", song
-        index= None
-        if len (self.songs)>0:
-            index= self.songs.index (song)
-        else:
-            for startIndex, collection in self.collectionStartIndexes:
-                collectionIndex= collection.indexForSong (song)
-                if collectionIndex is not None:
-                    index= startIndex+collectionIndex
-
-        return index
-
-    def addSongs (self, collNo):
-        # sender= QObject.sender ()
-        # print sender
-        collection= self.collections[collNo]
-        # BUG? shouldn't we call updateIndexes?
-        # HINT: we call it when scanFinished()
-        self.count+= len (collection.newSongs_)
-
-    def updateIndexes (self):
-        # recalculate the count and the startIndexes
-        # only if we don't hols the songs ourselves
-        if len (self.songs)==0:
-            # HINT: yes, self.count==startIndex, but the semantic is different
-            # otherwise the update of startIndexes will not be so clear
-            self.count= 0
-            startIndex= 0
-            self.collectionStartIndexes= []
-
-            for collection in self.collections:
-                self.collectionStartIndexes.append ((startIndex, collection))
-                startIndex+= collection.count
-                self.count+= collection.count
-
-        print "PLM: count:", self.count
-
 
 class Song (QObject):
     metadadaChanged= pyqtSignal ()
@@ -194,6 +100,8 @@ class Song (QObject):
 
     def __setitem__ (self, key, value):
         """dict iface so we don't have to make special case in __setattr__()"""
+        # TODO: don't save; mark as dirty and add the song to a list of dirty songs
+        # TODO: then add something to commit or rollback all changed songs
         if not self.loaded:
             self.loadMetadata ()
 
