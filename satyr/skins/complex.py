@@ -101,7 +101,7 @@ class MainWindow (KMainWindow):
             # we use the playlist model because the index is *always* refering
             # to that model
             song= self.playlist.aggr.songForIndex (index)
-            # we save the modelindex in the instance so we can show it
+            # we save the modelIndex in the instance so we can show it
             # when we come back from searching
             modelIndex= self.modelIndex= self.model.index (index, 0)
         else:
@@ -192,6 +192,7 @@ class QPlayListModel (QAbstractTableModel):
         # TODO: config
         # TODO: optional parts
         # TODO: unify unicode/str
+        # ** DO NOT REMOVE ** we're still using it for setting the window title
         self.format= u"%(artist)s/%(year)s-%(album)s: %(trackno)s - %(title)s [%(length)s]"
         # this must NOT be unicode, 'cause the filepaths might have any vegetable
         self.altFormat= "%(filepath)s [%(length)s]"
@@ -210,6 +211,7 @@ class QPlayListModel (QAbstractTableModel):
             # I choose latin1 because it's the only one I know
             # which is full 256 chars
             # FIXME: I think (this is not needed|we're not in kansas) anymore
+            # or in any case trying with the system's encoding first shoud give better results
             try:
                 s= (self.altFormat % song).decode ('latin1')
             except UnicodeDecodeError:
@@ -226,6 +228,7 @@ class QPlayListModel (QAbstractTableModel):
             song= self.aggr.songForIndex (modelIndex.row ())
 
             if role==Qt.DisplayRole:
+                # print "QPLM.data():", modelIndex.row (), modelIndex.column ()
                 attr= self.attrNames [modelIndex.column ()]
                 data= QVariant (song[attr])
             elif role==Qt.SizeHintRole:
@@ -240,6 +243,48 @@ class QPlayListModel (QAbstractTableModel):
             data= QVariant ()
 
         return data
+
+    def flags (self, modelIndex):
+        ans= QAbstractTableModel.flags (self, modelIndex)
+        # print "QPLM.flags():", modelIndex.row (), modelIndex.column (), int (ans),
+        if modelIndex.column ()<5: # length or filepath are not editable
+            ans|= Qt.ItemIsEditable
+        # print int (ans)
+
+        return ans
+
+    def match (self, start, role, value, hits=1, flags=None):
+        # when you press a key on an uneditable cell, QTableView tries to search
+        # calling this function for matching. we already have a way for searching
+        # and it load the metadata of all the songs anyways
+        # so we disable it by constantly returnin an empty list
+        return []
+
+    def setData (self, modelIndex, variant, role=Qt.EditRole):
+        # not length or filepath and editing
+        if modelIndex.column ()<5 and role==Qt.EditRole:
+            # print "QPLM.setData():", 0
+            song= self.aggr.songForIndex (modelIndex.row ())
+            # print "QPLM.setData():", 1
+            attr= self.attrNames[modelIndex.column ()]
+            try:
+                # print "QPLM.setData():", 2
+                song[attr]= unicode (variant.toString ())
+            # TODO: better exception
+            except AttributeError:
+                # it failed
+                ans= False
+            else:
+                # print "QPLM.setData():", 3
+                self.dataChanged.emit (modelIndex, modelIndex)
+                # print "QPLM.setData():", 4
+                ans= True
+        else:
+            ans= QAbstractTableModel.setData (self, modelIndex, variant, role)
+            # print "QPLM.setData():", ans
+
+        print "QPLM.setData():", modelIndex.row(), modelIndex.column (), role, ans
+        return ans
 
     def headerData (self, section, direction, role=Qt.DisplayRole):
         if direction==Qt.Horizontal and role==Qt.DisplayRole:
