@@ -21,8 +21,9 @@ from PyKDE4.kdeui import KMainWindow
 from PyKDE4.kdeui import KGlobalSettings
 # QAbstractItemModel for when we can model albums and group them that way
 from PyQt4.QtCore import QAbstractTableModel, QModelIndex, QVariant, Qt
-from PyQt4.QtCore import QSignalMapper
+from PyQt4.QtCore import QSignalMapper, QSize
 from PyQt4.QtGui import QItemSelectionModel, QAbstractItemView, QFontMetrics
+from PyQt4.QtGui import QHeaderView
 from PyQt4 import uic
 
 # local
@@ -35,7 +36,7 @@ class MainWindow (KMainWindow):
         # load the .ui file
         # !!! __file__ can end with .py[co]!
         uipath= __file__[:__file__.rfind ('.')]+'.ui'
-        (UIMainWindow, buh)= uic.loadUiType (uipath)
+        UIMainWindow, _= uic.loadUiType (uipath)
 
         self.ui= UIMainWindow ()
         self.ui.setupUi (self)
@@ -69,6 +70,7 @@ class MainWindow (KMainWindow):
         self.ui.songsList.activated.connect (self.changeSong)
 
         self.ui.searchEntry.textChanged.connect (self.search)
+        self.ui.timeSlider.setMediaObject (self.player.media)
 
         # TODO: better name?
         self.appModel= QPlayListModel (aggr=self.playlist.aggr, parent=self)
@@ -78,6 +80,9 @@ class MainWindow (KMainWindow):
         self.fontMetrics= QFontMetrics (KGlobalSettings.generalFont ())
         for i, w in enumerate (self.model.columnWidths):
             self.ui.songsList.setColumnWidth (i, self.fontMetrics.width (w))
+        self.ui.songsList.resizeRowsToContents ()
+        # this is much much slower!
+        # self.ui.songsList.verticalHeader ().setResizeMode (QHeaderView.ResizeToContents)
 
         self.songIndexSelectedByUser= None
 
@@ -110,6 +115,7 @@ class MainWindow (KMainWindow):
             self.songIndexSelectedByUser= None
 
         print "default.showSong()", song
+        # TODO: why selectRow() didn't work?
         self.selection.select (modelIndex, QItemSelectionModel.SelectCurrent|QItemSelectionModel.Rows)
         # FIXME? QAbstractItemView.EnsureVisible config?
         self.ui.songsList.scrollTo (modelIndex, QAbstractItemView.PositionAtCenter)
@@ -224,7 +230,8 @@ class QPlayListModel (QAbstractTableModel):
                 data= QVariant (song[attr])
             elif role==Qt.SizeHintRole:
                 # print "QPLM.data()[size]:", modelIndex.row(), modelIndex.column ()
-                data= QVariant (self.fontMetrics.size (Qt.TextSingleLine, self.columnWidths[modelIndex.column ()]))
+                size= self.fontMetrics.size (Qt.TextSingleLine, self.columnWidths[modelIndex.column ()])
+                data= QVariant (size)
             else:
                 # print "QPLM.data()[role]:", role
                 data= QVariant ()
@@ -237,6 +244,16 @@ class QPlayListModel (QAbstractTableModel):
     def headerData (self, section, direction, role=Qt.DisplayRole):
         if direction==Qt.Horizontal and role==Qt.DisplayRole:
             data= QVariant (self.headers[section])
+        elif direction==Qt.Vertical:
+            if role==Qt.SizeHintRole:
+                # again, hacky. 5 for enough witdh for 5 digits
+                size= self.fontMetrics.size (Qt.TextSingleLine, "X"*5)
+                data= QVariant (size)
+            # TODO: why answering this case gives smaller rows?
+            # elif role==Qt.TextAlignmentRole:
+                # data= QVariant (Qt.AlignRight)
+            else:
+                data= QAbstractTableModel.headerData (self, section, direction, role)
         else:
             data= QAbstractTableModel.headerData (self, section, direction, role)
 

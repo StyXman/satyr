@@ -52,6 +52,28 @@
         </property>
        </widget>
       </item>
+      <item>
+       <widget class="QTimeEdit" name="timeEdit">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="readOnly">
+         <bool>true</bool>
+        </property>
+        <property name="buttonSymbols">
+         <enum>QAbstractSpinBox::NoButtons</enum>
+        </property>
+        <property name="displayFormat">
+         <string>mm:ss</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="Phonon::SeekSlider" name="timeSlider"/>
+      </item>
      </layout>
     </item>
     <item>
@@ -118,6 +140,11 @@
   </widget>
  </widget>
  <customwidgets>
+  <customwidget>
+   <class>Phonon::SeekSlider</class>
+   <extends>QWidget</extends>
+   <header location="global">phonon/seekslider.h</header>
+  </customwidget>
   <customwidget>
    <class>SearchEntry</class>
    <extends>QLineEdit</extends>
