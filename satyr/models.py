@@ -118,13 +118,17 @@ class CollectionAgregator (object):
 
 
 class Song (QObject):
+    metadadaChanged= pyqtSignal ()
+
     def __init__ (self, collection, filepath, onDemand=True, va=False):
+        QObject.__init__ (self)
         if not isinstance (filepath, str):
             print filepath, "is a", type (filepath), "!"
             traceback.print_stack ()
         self.loaded= False
         self.collection= collection
         self.filepath= filepath
+
         self.variousArtists= va
         if not self.variousArtists:
             self.cmpOrder= ('artist', 'year', 'album', 'trackno', 'title', 'length')
@@ -132,6 +136,10 @@ class Song (QObject):
             # note that the year is not used in this case!
             self.cmpOrder= ('album', 'trackno', 'title', 'artist', 'length')
 
+        self.tagForAttr= dict (artist='artist', year='year', album='album', trackno='track', title='title')
+
+        self.fr= None
+        self.info= None
         if not onDemand:
             self.loadMetadata ()
 
@@ -148,33 +156,31 @@ class Song (QObject):
     def loadMetadata (self):
         try:
             # tagpy doesn't handle unicode filepaths (somehow makes sense)
-            fr= tagpy.FileRef (self.filepath)
+            self.fr= tagpy.FileRef (self.filepath)
 
-            props= fr.audioProperties ()
+            props= self.fr.audioProperties ()
             # incredibly enough, tagpy also express lenght as a astring
             # even when taglib uses an int (?!?)
             self.length= self.formatSeconds (props.length)
 
-            info= fr.tag ()
+            self.info= self.fr.tag ()
         except Exception, e:
             print '----- loadMetadata()'
             print self.filepath
             print e
             print '----- loadMetadata()'
             self.length= 0
-            # we must define info so getattr() works
-            info= None
+
 
         # tagpy presents trackno as track, so we map them
         # no, I don't want to change everything to match this
-        for tag, attr in zip (
-                ('artist', 'year', 'album', 'track',   'title'),
-                ('artist', 'year', 'album', 'trackno', 'title')):
-            datum= getattr (info, tag, None)
+        for attr, tag in self.tagForAttr.items ():
+            datum= getattr (self.info, tag, None)
             if isinstance (datum, basestring):
                 datum= datum.strip ()
             setattr (self, attr, datum)
 
+        self.metadadaChanged.emit ()
         self.loaded= True
 
     def __getitem__ (self, key):
@@ -185,6 +191,21 @@ class Song (QObject):
         val= getattr (self, key)
         # print val
         return val
+
+    def __setitem__ (self, key, value):
+        """dict iface so we don't have to make special case in __setattr__()"""
+        if not self.loaded:
+            self.loadMetadata ()
+
+        # we cache; otherwise we could set loaded to False
+        # and let other functions to resolv it.
+        setattr (self, key, value)
+
+        # these two must be int()s
+        if key in ('track', 'year'):
+            value= int (value)
+        setattr (self.info, self.tagForAttr[key], value)
+        self.fr.save ()
 
     def metadataNotNull (self):
         if not self.loaded:
