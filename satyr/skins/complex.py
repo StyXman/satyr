@@ -295,9 +295,8 @@ class QPlayListModel (QAbstractTableModel):
                 # again, hacky. 5 for enough witdh for 5 digits
                 size= self.fontMetrics.size (Qt.TextSingleLine, "X"*5)
                 data= QVariant (size)
-            # TODO: why answering this case gives smaller rows?
-            # elif role==Qt.TextAlignmentRole:
-                # data= QVariant (Qt.AlignRight)
+            elif role==Qt.TextAlignmentRole:
+                data= QVariant (Qt.AlignRight|Qt.AlignVCenter)
             else:
                 data= QAbstractTableModel.headerData (self, section, direction, role)
         else:
