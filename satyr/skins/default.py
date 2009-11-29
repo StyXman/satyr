@@ -36,7 +36,7 @@ class MainWindow (KMainWindow):
         # load the .ui file
         # !!! __file__ can end with .py[co]!
         uipath= __file__[:__file__.rfind ('.')]+'.ui'
-        (UIMainWindow, buh)= uic.loadUiType (uipath)
+        UIMainWindow, _= uic.loadUiType (uipath)
 
         self.ui= UIMainWindow ()
         self.ui.setupUi (self)
