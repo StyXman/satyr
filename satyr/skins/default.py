@@ -17,17 +17,14 @@
 # along with satyr.  If not, see <http://www.gnu.org/licenses/>.
 
 # qt/kde related
-from PyKDE4.kdeui import KMainWindow
-from PyKDE4.kdeui import KGlobalSettings
-# QAbstractItemModel for when we can model albums and group them that way
+from PyKDE4.kdeui import KMainWindow, KGlobalSettings
 from PyQt4.QtCore import QAbstractListModel, QModelIndex, QVariant, Qt
-# QAbstractTableModel if we ever change to a table
-from PyQt4.QtCore import QAbstractTableModel, QSignalMapper
+from PyQt4.QtCore import QSignalMapper
 from PyQt4.QtGui import QItemSelectionModel, QAbstractItemView, QFontMetrics
 from PyQt4 import uic
 
 # local
-from satyr.models import CollectionAgregator
+from satyr.collaggr import CollectionAggregator
 
 class MainWindow (KMainWindow):
     def __init__ (self, parent=None):
@@ -158,7 +155,6 @@ class MainWindow (KMainWindow):
         self.collectionsAwaited-= 1
         if self.collectionsAwaited==0:
             self.showSong (self.playlist.index)
-
 
 class QPlayListModel (QAbstractListModel):
     def __init__ (self, aggr=None, songs=None, parent=None):

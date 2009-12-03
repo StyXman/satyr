@@ -17,9 +17,7 @@
 # along with satyr.  If not, see <http://www.gnu.org/licenses/>.
 
 # qt/kde related
-from PyKDE4.kdeui import KMainWindow
-from PyKDE4.kdeui import KGlobalSettings
-# QAbstractItemModel for when we can model albums and group them that way
+from PyKDE4.kdeui import KMainWindow, KGlobalSettings
 from PyQt4.QtCore import QAbstractTableModel, QModelIndex, QVariant, Qt
 from PyQt4.QtCore import QSignalMapper, QSize
 from PyQt4.QtGui import QItemSelectionModel, QAbstractItemView, QFontMetrics
@@ -27,7 +25,8 @@ from PyQt4.QtGui import QHeaderView
 from PyQt4 import uic
 
 # local
-from satyr.models import CollectionAgregator
+from satyr.collaggr import CollectionAggregator
+from satyr.song import TagWriteError
 
 class MainWindow (KMainWindow):
     def __init__ (self, parent=None):
@@ -187,7 +186,7 @@ class QPlayListModel (QAbstractTableModel):
 
             self.signalMapper.mapped.connect (self.addRows)
         else:
-            self.aggr= CollectionAgregator (songs=songs)
+            self.aggr= CollectionAggregator (songs=songs)
 
         self.attrNames= ('artist', 'year', 'album', 'trackno', 'title', 'length', 'filepath')
         # TODO: config
@@ -257,8 +256,8 @@ class QPlayListModel (QAbstractTableModel):
     def match (self, start, role, value, hits=1, flags=None):
         # when you press a key on an uneditable cell, QTableView tries to search
         # calling this function for matching. we already have a way for searching
-        # and it load the metadata of all the songs anyways
-        # so we disable it by constantly returnin an empty list
+        # and it loads the metadata of all the songs anyways
+        # so we disable it by constantly returning an empty list
         return []
 
     def setData (self, modelIndex, variant, role=Qt.EditRole):
@@ -271,8 +270,9 @@ class QPlayListModel (QAbstractTableModel):
             try:
                 # print "QPLM.setData():", 2
                 song[attr]= unicode (variant.toString ())
-            # TODO: better exception
-            except AttributeError:
+                # TODO: make a list of dirty songs and commit them later
+                song.saveMetadata ()
+            except TagWriteError:
                 # it failed
                 ans= False
             else:

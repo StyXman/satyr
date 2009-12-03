@@ -23,6 +23,9 @@ from PyQt4.QtCore import QObject, pyqtSignal
 # other libs
 import tagpy
 
+class TagWriteError (Exception):
+    pass
+
 class Song (QObject):
     metadadaChanged= pyqtSignal ()
 
@@ -32,6 +35,7 @@ class Song (QObject):
             print filepath, "is a", type (filepath), "!"
             traceback.print_stack ()
         self.loaded= False
+        self.dirty= False
         self.collection= collection
         self.filepath= filepath
 
@@ -44,8 +48,6 @@ class Song (QObject):
 
         self.tagForAttr= dict (artist='artist', year='year', album='album', trackno='track', title='title')
 
-        self.fr= None
-        self.info= None
         if not onDemand:
             self.loadMetadata ()
 
@@ -62,32 +64,36 @@ class Song (QObject):
     def loadMetadata (self):
         try:
             # tagpy doesn't handle unicode filepaths (somehow makes sense)
-            self.fr= tagpy.FileRef (self.filepath)
+            # we cannot keep the FileRef or the Tag because the file stays open.
+            fr= tagpy.FileRef (self.filepath)
 
-            props= self.fr.audioProperties ()
+            props= fr.audioProperties ()
             # incredibly enough, tagpy also express lenght as a astring
             # even when taglib uses an int (?!?)
             self.length= self.formatSeconds (props.length)
 
-            self.info= self.fr.tag ()
+            info= fr.tag ()
         except Exception, e:
             print '----- loadMetadata()'
             print self.filepath
-            print e
-            print '----- loadMetadata()'
+            print type (e), e
+            fr= None
+            info= None
             self.length= 0
 
 
         # tagpy presents trackno as track, so we map them
         # no, I don't want to change everything to match this
         for attr, tag in self.tagForAttr.items ():
-            datum= getattr (self.info, tag, None)
-            if isinstance (datum, basestring):
-                datum= datum.strip ()
-            setattr (self, attr, datum)
+            value= getattr (info, tag, None)
+            if isinstance (value, basestring):
+                value= value.strip ()
+            setattr (self, attr, value)
 
         self.metadadaChanged.emit ()
         self.loaded= True
+
+        return fr
 
     def __getitem__ (self, key):
         """dict iface so we can simply % it to a pattern"""
@@ -100,20 +106,48 @@ class Song (QObject):
 
     def __setitem__ (self, key, value):
         """dict iface so we don't have to make special case in __setattr__()"""
-        # TODO: don't save; mark as dirty and add the song to a list of dirty songs
         # TODO: then add something to commit or rollback all changed songs
-        if not self.loaded:
-            self.loadMetadata ()
-
-        # we cache; otherwise we could set loaded to False
-        # and let other functions to resolv it.
-        setattr (self, key, value)
 
         # these two must be int()s
         if key in ('track', 'year'):
             value= int (value)
-        setattr (self.info, self.tagForAttr[key], value)
-        self.fr.save ()
+
+        # we cache; otherwise we could set loaded to False
+        # and let other functions to resolve it.
+        try:
+            setattr (self, key, value)
+        except AttributeError:
+            raise TagWriteError
+
+        self.dirty= True
+
+    def saveMetadata (self):
+        # otherwise it doesn't make sense
+        if self.dirty:
+            if not self.loaded:
+                fr= self.loadMetadata ()
+            else:
+                try:
+                    fr= tagpy.FileRef (self.filepath)
+                except Exception, e:
+                    print '----- saveMetadata()'
+                    print self.filepath
+                    print type (e), e
+                    fr= None
+
+            if fr is None:
+                raise TagWriteError
+            else:
+                info= fr.tag ()
+
+                for attr, tag in self.tagForAttr.items ():
+                    value= getattr (self, attr, None)
+                    setattr (info, tag, value)
+
+                if not fr.save ():
+                    raise TagWriteError
+
+                self.dirty= False
 
     def metadataNotNull (self):
         if not self.loaded:
@@ -133,9 +167,9 @@ class Song (QObject):
             ans= cmp (self.filepath, other.filepath)
         elif not other.loaded:
             # (is this a) BUG?
-            print '===== cmp()'
-            print other.filepath
-            print '===== cmp()'
+            # print '===== cmp()'
+            # print other.filepath
+            # print '===== cmp()'
             # this is not so much a lie as a decision
             ans= -1
         else:
@@ -159,5 +193,8 @@ class Song (QObject):
 
     def __repr__ (self):
         return "Song: "+self.filepath
+
+    def relPath (self):
+        return self.filepath[len (self.collection.path)+1:]
 
 # end
