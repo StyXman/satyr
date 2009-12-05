@@ -48,6 +48,8 @@ class Collection (SatyrObject):
 
         self.songs= []
         self.count= 0
+        # (re)defined by an aggregator if we're in one of those
+        self.offset= 0
 
         self.configValues= (
             ('path', str, path),
@@ -179,11 +181,8 @@ class Collection (SatyrObject):
         self.newSongs.emit ()
 
     def indexForSong (self, song):
-        index= bisect.bisect (self.songs, song)
-        # test if it's not already there
-        if index==0 or self.songs[index-1]!=song:
-            # 404 not found
-            index= None
+        # BUG?: this is O(n)
+        index= self.songs.index (song)
 
         return index
 

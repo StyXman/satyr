@@ -36,7 +36,6 @@ class CollectionAggregator (QObject):
             self.count= len (songs)
 
         self.signalMapper= QSignalMapper ()
-        self.collectionStartIndexes= []
         for collNo, collection in enumerate (self.collections):
             collection.newSongs.connect (self.signalMapper.map)
             self.signalMapper.setMapping (collection, collNo)
@@ -47,20 +46,17 @@ class CollectionAggregator (QObject):
 
     def indexToCollection (self, index):
         """Selects the collection that contains the index"""
-        for startIndex, collection in self.collectionStartIndexes:
-            # FIXME: I still don't think this is right
-            # if index > startIndex+collection.count:
-            if index < startIndex:
+        for collection in self.collections:
+            if index < collection.offset:
                 break
-            # print index, startIndex, collection.count, startIndex+collection.count
             prevCollection= collection
 
-        return startIndex, prevCollection
+        return prevCollection
 
     def indexToCollectionIndex (self, index):
         """Converts a global index to a index in a collection"""
-        startIndex, collection= self.indexToCollection (index)
-        collectionIndex= index-startIndex
+        collection= self.indexToCollection (index)
+        collectionIndex= index-collection.offset
 
         return collection, collectionIndex
 
@@ -68,7 +64,6 @@ class CollectionAggregator (QObject):
         if len (self.songs)==0:
             # we're not a queue PLM, so we use the collections
             collection, collectionIndex= self.indexToCollectionIndex (index)
-            # print collection, collectionIndex, len (collection.songs)
             song= collection.songs[collectionIndex]
         else:
             song= self.songs[index]
@@ -81,34 +76,31 @@ class CollectionAggregator (QObject):
         if len (self.songs)>0:
             index= self.songs.index (song)
         else:
-            for startIndex, collection in self.collectionStartIndexes:
-                collectionIndex= collection.indexForSong (song)
-                if collectionIndex is not None:
-                    index= startIndex+collectionIndex
+            collection= song.collection
+            collectionIndex= collection.indexForSong (song)
+            if collectionIndex is not None:
+                index= collection.offset+collectionIndex
 
         return index
 
     def addSongs (self, collNo):
-        # sender= QObject.sender ()
-        # print sender
         collection= self.collections[collNo]
         # BUG? shouldn't we call updateIndexes?
         # HINT: we call it when scanFinished()
         self.count+= len (collection.newSongs_)
 
     def updateIndexes (self):
-        # recalculate the count and the startIndexes
+        # recalculate the count and the offsets
         # only if we don't hols the songs ourselves
         if len (self.songs)==0:
-            # HINT: yes, self.count==startIndex, but the semantic is different
-            # otherwise the update of startIndexes will not be so clear
+            # HINT: yes, self.count==offset, but the semantic is different
+            # otherwise the update of offsets will not be so clear
             self.count= 0
-            startIndex= 0
-            self.collectionStartIndexes= []
+            offset= 0
 
             for collection in self.collections:
-                self.collectionStartIndexes.append ((startIndex, collection))
-                startIndex+= collection.count
+                collection.offset= offset
+                offset+= collection.count
                 self.count+= collection.count
 
         print "PLM: count:", self.count
