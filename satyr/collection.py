@@ -78,14 +78,7 @@ class Collection (SatyrObject):
             self.collectionFile= str (KStandardDirs.locateLocal ('data', 'satyr/collection.tdb'))
 
     def loadOrScan (self):
-        # FIXME: ugly
-        try:
-            if self.forceScan:
-                self.scan ()
-            else:
-                self.load ()
-        except ErrorNoDatabase:
-            print "no database!"
+        if self.forceScan or not self.load ():
             self.scan ()
 
     def load (self):
@@ -99,11 +92,13 @@ class Collection (SatyrObject):
             # * fp= []; f= open(); for line in f: fp.append (line)
             filepaths= [ line[:-1] for line in open (self.collectionFile) ]
             self.add (filepaths)
-            # self.filesAdded.emit ()
+            ans= True
         except IOError, e:
+            print "no database!"
             print 'FAILED!', e
-            raise ErrorNoDatabase
-        print
+            ans= False
+
+        return ans
 
     def save (self):
         if self.count>0:

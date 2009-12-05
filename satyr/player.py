@@ -90,7 +90,7 @@ class Player (SatyrObject):
 
             # the QPushButton.clicked() emits a bool,
             # and it's False on normal (non-checkable) buttons
-            # BUG: it's not false, it's 0, which is indistinguishable from play(0)
+            # it's not false, it's 0, which is indistinguishable from play(0)
             # also, 0!=False is False?
             # >>> 0!=False
             # False

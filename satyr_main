@@ -37,11 +37,6 @@ from satyr.playlist import PlayList
 from satyr.collection import Collection
 from satyr import utils
 
-#   PID USER     PRI  NI  VIRT   RES   SHR S CPU% MEM%   TIME+  Command
-# 24979 mdione    20   0  216M 46132 17380 S  1.0  2.2  4:01.62 python satyr.py /home/mdione/media/music/
-#  7300 mdione    20   0  171M 52604 20004 S  0.0  2.5  0:18.42 python satyr.py /home/mdione/media/music/
-# 19204 mdione    20   0  249M 42828 12084 S  0.0  2.1  0:22.61 python satyr.py /home/mdione/media/music/
-
 def createApp (args=sys.argv):
     #########################################
     # all the bureaucratic init of a KDE App
@@ -101,12 +96,6 @@ def main ():
         collections.append (collection)
         collection.scanBegins.connect (mw.scanBegins)
         collection.scanFinished.connect (mw.scanFinished)
-        # we need to fire the load/scan after the main loop has started
-        # otherwise the signals emited from it are not sent to the connected slots
-        # FIXME? I'm not sure I want it this way
-        # QTimer.singleShot (100, collection.loadOrScan)
-
-        # ? seems to be fixed
         collection.loadOrScan ()
         mw.collectionAdded ()
 

@@ -61,15 +61,12 @@ def validMimetype (mimetype):
 
 def getMimeType (filepath):
     mimetype, accuracy= KMimeType.findByFileContent (filepath)
-    # print filepath, mimetype.name (), accuracy,
     if accuracy<50:
         # try harder?
         # BUG?: (in KMimeType) gets confused by filenames with #'s
         # mimetype, accuracy= KMimeType.findByUrl (KUrl (utils.path2qurl (filepath)), 0, False, True)
         mimetype, accuracy= KMimeType.findByUrl (KUrl (utils.path2qurl (filepath)))
-        # print mimetype.name (), accuracy,
 
-    # print
     return str (mimetype.name ())
 
 class CollectionIndexer (QThread):

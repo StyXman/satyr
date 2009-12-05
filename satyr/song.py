@@ -46,6 +46,8 @@ class Song (QObject):
             # note that the year is not used in this case!
             self.cmpOrder= ('album', 'trackno', 'title', 'artist', 'length')
 
+        # tagpy presents trackno as track, so we map them
+        # no, I don't want to change everything to match this
         self.tagForAttr= dict (artist='artist', year='year', album='album', trackno='track', title='title')
 
         if not onDemand:
@@ -81,9 +83,6 @@ class Song (QObject):
             info= None
             self.length= 0
 
-
-        # tagpy presents trackno as track, so we map them
-        # no, I don't want to change everything to match this
         for attr, tag in self.tagForAttr.items ():
             value= getattr (info, tag, None)
             if isinstance (value, basestring):
@@ -109,7 +108,6 @@ class Song (QObject):
 
     def __setitem__ (self, key, value):
         """dict iface so we don't have to make special case in __setattr__()"""
-        # TODO: then add something to commit or rollback all changed songs
 
         # these two must be int()s
         if key in ('track', 'year'):
@@ -124,10 +122,17 @@ class Song (QObject):
 
         self.dirty= True
 
+    def rollbackMetadata (self):
+        # let the Song reload the metadata from the file
+        self.loaded= False
+        self.dirty= False
+
     def saveMetadata (self):
         # otherwise it doesn't make sense
         if self.dirty:
             if not self.loaded:
+                # BUG: makes no fucking sense! what was I drinking?
+                # we loose all the changes we want to save!
                 fr= self.loadMetadata ()
             else:
                 try:
