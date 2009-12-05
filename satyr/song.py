@@ -101,6 +101,9 @@ class Song (QObject):
         if not self.loaded:
             self.loadMetadata ()
         val= getattr (self, key)
+        # if it's, then a) it's either year or trackno; b) leave it empty
+        if val==0:
+            val= ''
         # print val
         return val
 
