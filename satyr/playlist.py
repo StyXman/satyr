@@ -108,7 +108,7 @@ class PlayList (SatyrObject):
             random= (self.seed-self.prime) % self.aggr.count
             self.seed= random
         else:
-            self.index-= 1
+            self.index= (self.index-1) % self.aggr.count
 
         self.setCurrent ()
 
@@ -125,7 +125,7 @@ class PlayList (SatyrObject):
                 self.index= (self.index+random) % self.aggr.count
                 self.seed= random
             else:
-                self.index+= 1
+                self.index= (self.index+1) % self.aggr.count
 
         self.setCurrent ()
 
