@@ -88,7 +88,6 @@ class MainWindow (KMainWindow):
         print "complex.setModel():", model
         self.model= model
         self.ui.songsList.setModel (self.model)
-        self.selection= self.ui.songsList.selectionModel ()
         self.ui.songsList.resizeRowsToContents ()
 
     def log (self, *args):
@@ -114,8 +113,6 @@ class MainWindow (KMainWindow):
             self.songIndexSelectedByUser= None
 
         print "default.showSong()", song
-        # we no longer rely on selection for highlighting. see QPLM.data()
-        # self.selection.select (modelIndex, QItemSelectionModel.SelectCurrent|QItemSelectionModel.Rows)
         # FIXME? QAbstractItemView.EnsureVisible config?
         self.ui.songsList.scrollTo (modelIndex, QAbstractItemView.PositionAtCenter)
         # move the selection cursor too
@@ -228,7 +225,7 @@ class QPlayListModel (QAbstractTableModel):
         if modelIndex.isValid () and modelIndex.row ()<self.aggr.count:
             song= self.aggr.songForIndex (modelIndex.row ())
 
-            if role==Qt.DisplayRole:
+            if role==Qt.DisplayRole or role==Qt.EditRole:
                 # print "QPLM.data():", modelIndex.row (), modelIndex.column ()
                 attr= self.attrNames [modelIndex.column ()]
                 data= QVariant (song[attr])
@@ -261,7 +258,7 @@ class QPlayListModel (QAbstractTableModel):
         ans= QAbstractTableModel.flags (self, modelIndex)
         # print "QPLM.flags():", modelIndex.row (), modelIndex.column (), int (ans),
         if modelIndex.column ()<5: # length or filepath are not editable
-            ans|= Qt.ItemIsEditable
+            ans= ans|Qt.ItemIsEditable|Qt.ItemIsEditable
         # print int (ans)
 
         return ans
