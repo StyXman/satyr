@@ -177,6 +177,10 @@ class Collection (SatyrObject):
 
     def indexForSong (self, song):
         # BUG?: this is O(n)
+        # HINT: we cannot use bisect now becuase if the metadata is loaded
+        # (and if we're here it is pretty sure the case)
+        # the order changes: when we Collection.loadOrScan() it's filepath based
+        # and now it's metadata based.
         index= self.songs.index (song)
 
         return index

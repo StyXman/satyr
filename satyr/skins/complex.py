@@ -79,7 +79,6 @@ class MainWindow (KMainWindow):
         self.fontMetrics= QFontMetrics (KGlobalSettings.generalFont ())
         for i, w in enumerate (self.model.columnWidths):
             self.ui.songsList.setColumnWidth (i, self.fontMetrics.width (w))
-        self.ui.songsList.resizeRowsToContents ()
         # this is much much slower!
         # self.ui.songsList.verticalHeader ().setResizeMode (QHeaderView.ResizeToContents)
 
@@ -90,6 +89,7 @@ class MainWindow (KMainWindow):
         self.model= model
         self.ui.songsList.setModel (self.model)
         self.selection= self.ui.songsList.selectionModel ()
+        self.ui.songsList.resizeRowsToContents ()
 
     def log (self, *args):
         print args
