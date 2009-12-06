@@ -21,7 +21,7 @@ from PyKDE4.kdeui import KMainWindow, KGlobalSettings
 from PyQt4.QtCore import QAbstractTableModel, QModelIndex, QVariant, Qt
 from PyQt4.QtCore import QSignalMapper, QSize
 from PyQt4.QtGui import QItemSelectionModel, QAbstractItemView, QFontMetrics
-from PyQt4.QtGui import QHeaderView
+from PyQt4.QtGui import QHeaderView, QApplication
 from PyQt4 import uic
 
 # local
@@ -96,7 +96,7 @@ class MainWindow (KMainWindow):
 
     def showSong (self, index):
         if self.songIndexSelectedByUser is None:
-            print "default.showSong()", index
+            print "complex.showSong()", index
             # we use the playlist model because the index is *always* refering
             # to that model
             song= self.playlist.aggr.songForIndex (index)
@@ -114,8 +114,8 @@ class MainWindow (KMainWindow):
             self.songIndexSelectedByUser= None
 
         print "default.showSong()", song
-        # TODO: why selectRow() didn't work?
-        self.selection.select (modelIndex, QItemSelectionModel.SelectCurrent|QItemSelectionModel.Rows)
+        # we no longer rely on selection for highlighting. see QPLM.data()
+        # self.selection.select (modelIndex, QItemSelectionModel.SelectCurrent|QItemSelectionModel.Rows)
         # FIXME? QAbstractItemView.EnsureVisible config?
         self.ui.songsList.scrollTo (modelIndex, QAbstractItemView.PositionAtCenter)
         # move the selection cursor too
@@ -174,6 +174,7 @@ class QPlayListModel (QAbstractTableModel):
     def __init__ (self, aggr=None, songs=None, parent=None):
         QAbstractTableModel.__init__ (self, parent)
         # TODO: different delegate for editing tags: one with completion
+        self.parent_= parent
 
         if songs is None:
             self.aggr= aggr
@@ -231,10 +232,22 @@ class QPlayListModel (QAbstractTableModel):
                 # print "QPLM.data():", modelIndex.row (), modelIndex.column ()
                 attr= self.attrNames [modelIndex.column ()]
                 data= QVariant (song[attr])
+
             elif role==Qt.SizeHintRole:
                 # print "QPLM.data()[size]:", modelIndex.row(), modelIndex.column ()
                 size= self.fontMetrics.size (Qt.TextSingleLine, self.columnWidths[modelIndex.column ()])
                 data= QVariant (size)
+
+            elif role==Qt.BackgroundRole and modelIndex.row ()==self.parent_.modelIndex.row ():
+                # highlight the current song
+                # must return a QBrush
+                data= QVariant (QApplication.palette ().dark ())
+
+            elif role==Qt.ForegroundRole and modelIndex.row ()==self.parent_.modelIndex.row ():
+                # highlight the current song
+                # must return a QBrush
+                data= QVariant (QApplication.palette ().brightText ())
+
             else:
                 # print "QPLM.data()[role]:", role
                 data= QVariant ()
