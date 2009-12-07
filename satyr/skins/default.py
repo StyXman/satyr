@@ -21,6 +21,7 @@ from PyKDE4.kdeui import KMainWindow, KGlobalSettings
 from PyQt4.QtCore import QAbstractListModel, QModelIndex, QVariant, Qt
 from PyQt4.QtCore import QSignalMapper
 from PyQt4.QtGui import QItemSelectionModel, QAbstractItemView, QFontMetrics
+from PyQt4.QtGui import QApplication
 from PyQt4 import uic
 
 # local
@@ -63,7 +64,6 @@ class MainWindow (KMainWindow):
         self.player.stopAfterChanged.connect (self.ui.stopAfterCheck.setChecked)
 
         self.playlist.songChanged.connect (self.showSong)
-        self.ui.songsList.setSelectionMode (QAbstractItemView.NoSelection)
         self.ui.songsList.activated.connect (self.changeSong)
 
         self.ui.searchEntry.textChanged.connect (self.search)
@@ -72,17 +72,20 @@ class MainWindow (KMainWindow):
         self.appModel= QPlayListModel (aggr=self.playlist.aggr, parent=self)
         self.setModel (self.appModel)
 
+        # FIXME: temporarily until I resolve the showSong() at boot time
+        self.modelIndex= None
         self.songIndexSelectedByUser= None
 
     def setModel (self, model):
         self.model= model
         self.ui.songsList.setModel (self.model)
-        self.selection= self.ui.songsList.selectionModel ()
 
     def log (self, *args):
         print args
 
     def showSong (self, index):
+        # save the old modelIndex so we can update that row and the new one
+        oldModelIndex= self.modelIndex
         if self.songIndexSelectedByUser is None:
             print "default.showSong()", index
             # we use the playlist model because the index is *always* refering
@@ -101,8 +104,19 @@ class MainWindow (KMainWindow):
             # it will be set again by changeSong()
             self.songIndexSelectedByUser= None
 
+        # mark data in old song and new song as dirty
+        # and let the view update the hightlight
+        # FIXME? yes, this could be moved to the model (too many self.appModel's)
+
+        # FIXME: temporarily until I resolve the showSong() at boot time
+        if oldModelIndex is not None:
+            start= self.appModel.index (oldModelIndex.row (), 0)
+            self.appModel.dataChanged.emit (start, start)
+
+        start= self.appModel.index (self.modelIndex.row (), 0)
+        self.appModel.dataChanged.emit (start, start)
+
         print "default.showSong()", song
-        self.selection.select (modelIndex, QItemSelectionModel.SelectCurrent)
         # FIXME? QAbstractItemView.EnsureVisible config?
         self.ui.songsList.scrollTo (modelIndex, QAbstractItemView.PositionAtCenter)
         # move the selection cursor too
@@ -160,6 +174,8 @@ class QPlayListModel (QAbstractListModel):
     def __init__ (self, aggr=None, songs=None, parent=None):
         QAbstractListModel.__init__ (self, parent)
 
+        self.parent_= parent
+
         if songs is None:
             self.aggr= aggr
             self.collections= self.aggr.collections
@@ -207,9 +223,21 @@ class QPlayListModel (QAbstractListModel):
 
             if role==Qt.DisplayRole:
                 data= QVariant (self.formatSong (song))
+
             elif role==Qt.SizeHintRole:
                 # calculate something based on the filepath
                 data= QVariant (self.fontMetrics.size (Qt.TextSingleLine, song.filepath))
+
+            elif role==Qt.BackgroundRole and modelIndex.row ()==self.parent_.modelIndex.row ():
+                # highlight the current song
+                # must return a QBrush
+                data= QVariant (QApplication.palette ().dark ())
+
+            elif role==Qt.ForegroundRole and modelIndex.row ()==self.parent_.modelIndex.row ():
+                # highlight the current song
+                # must return a QBrush
+                data= QVariant (QApplication.palette ().brightText ())
+
             else:
                 data= QVariant ()
         else:

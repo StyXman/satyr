@@ -99,7 +99,14 @@
      </layout>
     </item>
     <item>
-     <widget class="QListView" name="songsList"/>
+     <widget class="QListView" name="songsList">
+      <property name="alternatingRowColors">
+       <bool>true</bool>
+      </property>
+      <property name="selectionMode">
+       <enum>QAbstractItemView::NoSelection</enum>
+      </property>
+     </widget>
     </item>
    </layout>
   </widget>
@@ -109,7 +116,7 @@
      <x>0</x>
      <y>0</y>
      <width>544</width>
-     <height>24</height>
+     <height>21</height>
     </rect>
    </property>
   </widget>
