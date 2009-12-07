@@ -65,7 +65,6 @@ class MainWindow (KMainWindow):
         self.player.stopAfterChanged.connect (self.ui.stopAfterCheck.setChecked)
 
         self.playlist.songChanged.connect (self.showSong)
-        self.ui.songsList.setSelectionMode (QAbstractItemView.NoSelection)
         self.ui.songsList.activated.connect (self.changeSong)
 
         self.ui.searchEntry.textChanged.connect (self.search)
@@ -82,6 +81,8 @@ class MainWindow (KMainWindow):
         # this is much much slower!
         # self.ui.songsList.verticalHeader ().setResizeMode (QHeaderView.ResizeToContents)
 
+        # FIXME: temporarily until I resolve the showSong() at boot time
+        self.modelIndex= None
         self.songIndexSelectedByUser= None
 
     def setModel (self, model):
@@ -94,12 +95,14 @@ class MainWindow (KMainWindow):
         print args
 
     def showSong (self, index):
+        # save the old modelIndex so we can update that row and the new one
+        oldModelIndex= self.modelIndex
         if self.songIndexSelectedByUser is None:
             print "complex.showSong()", index
             # we use the playlist model because the index is *always* refering
             # to that model
             song= self.playlist.aggr.songForIndex (index)
-            # we save the modelIndex in the instance so we can show it
+            # we save the new modelIndex in self so we can show it
             # when we come back from searching
             modelIndex= self.modelIndex= self.model.index (index, 0)
         else:
@@ -111,6 +114,21 @@ class MainWindow (KMainWindow):
             # we uesd it so we discard it
             # it will be set again by changeSong()
             self.songIndexSelectedByUser= None
+
+        # mark data in old song and new song as dirty
+        # and let the view update the hightlight
+        # FIXME? yes, this could be moved to the model (too many self.appModel's)
+        columns= self.appModel.columnCount ()
+
+        # FIXME: temporarily until I resolve the showSong() at boot time
+        if oldModelIndex is not None:
+            start= self.appModel.index (oldModelIndex.row (), 0)
+            end=   self.appModel.index (oldModelIndex.row (), columns)
+            self.appModel.dataChanged.emit (start, end)
+
+        start= self.appModel.index (self.modelIndex.row (), 0)
+        end=   self.appModel.index (self.modelIndex.row (), columns)
+        self.appModel.dataChanged.emit (start, end)
 
         print "default.showSong()", song
         # FIXME? QAbstractItemView.EnsureVisible config?
@@ -202,6 +220,7 @@ class QPlayListModel (QAbstractTableModel):
         self.columnWidths= ("M"*15, "M"*4, "M"*20, "M"*3, "M"*25, "M"*5, "M"*100)
         print "QPLM: ", self
 
+    # ** DO NOT REMOVE ** we're still using it for setting the window title
     def formatSong (self, song):
         if song.metadataNotNull ():
             formatted= self.format % song
