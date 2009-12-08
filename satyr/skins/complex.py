@@ -19,7 +19,7 @@
 # qt/kde related
 from PyKDE4.kdeui import KMainWindow, KGlobalSettings
 from PyQt4.QtCore import QAbstractTableModel, QModelIndex, QVariant, Qt
-from PyQt4.QtCore import QSignalMapper, QSize
+from PyQt4.QtCore import QSignalMapper, QSize, QFile
 from PyQt4.QtGui import QItemSelectionModel, QAbstractItemView, QFontMetrics
 from PyQt4.QtGui import QHeaderView, QApplication
 from PyQt4 import uic
@@ -247,7 +247,10 @@ class QPlayListModel (QAbstractTableModel):
             if role==Qt.DisplayRole or role==Qt.EditRole:
                 # print "QPLM.data():", modelIndex.row (), modelIndex.column ()
                 attr= self.attrNames [modelIndex.column ()]
-                data= QVariant (song[attr])
+                rawData= song[attr]
+                if attr=='filepath':
+                    rawData= QFile.decodeName (rawData)
+                data= QVariant (rawData)
 
             elif role==Qt.SizeHintRole:
                 # print "QPLM.data()[size]:", modelIndex.row(), modelIndex.column ()
