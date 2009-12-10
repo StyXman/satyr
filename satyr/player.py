@@ -60,6 +60,7 @@ class Player (SatyrObject):
 
         # self.ao= Phonon.AudioOutput (Phonon.MusicCategory, parent)
         # BUG: argument 2 of createPath() has an invalid type
+        # but this used to work with PyQt4.phonon
         # Phonon.createPath (self.media, self.ao)
 
     def stateChanged (self, new, old):
@@ -165,8 +166,8 @@ class Player (SatyrObject):
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def quit (self):
         self.stop ()
+        # save them in 'order'
         self.saveConfig ()
-        # FIXME: is this the right API?
         self.playlist.saveConfig ()
         for collection in self.playlist.collections:
             collection.saveConfig ()

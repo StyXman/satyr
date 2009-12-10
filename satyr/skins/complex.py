@@ -17,7 +17,7 @@
 # along with satyr.  If not, see <http://www.gnu.org/licenses/>.
 
 # qt/kde related
-from PyKDE4.kdeui import KMainWindow, KGlobalSettings
+from PyKDE4.kdeui import KXmlGuiWindow, KGlobalSettings, KActionCollection
 from PyQt4.QtCore import QAbstractTableModel, QModelIndex, QVariant, Qt
 from PyQt4.QtCore import QSignalMapper, QSize, QFile
 from PyQt4.QtGui import QItemSelectionModel, QAbstractItemView, QFontMetrics
@@ -27,10 +27,11 @@ from PyQt4 import uic
 # local
 from satyr.collaggr import CollectionAggregator
 from satyr.song import TagWriteError
+from satyr.skins import actions
 
-class MainWindow (KMainWindow):
+class MainWindow (KXmlGuiWindow):
     def __init__ (self, parent=None):
-        KMainWindow.__init__ (self, parent)
+        KXmlGuiWindow.__init__ (self, parent)
 
         # load the .ui file
         # !!! __file__ can end with .py[co]!
@@ -40,6 +41,11 @@ class MainWindow (KMainWindow):
         self.ui= UIMainWindow ()
         self.ui.setupUi (self)
         self.collectionsAwaited= 0
+
+        self.ac= KActionCollection (self)
+        # actions.create (self, self.ac)
+        actions.create (self, self.actionCollection ())
+        self.setupGUI ()
 
     def connectUi (self, player):
         self.player= player
@@ -173,6 +179,16 @@ class MainWindow (KMainWindow):
             # ensure the current song is shown
             self.showSong (self.modelIndex.row ())
 
+    def queue (self):
+        # so we don't keep (de)queuing if several cells of the same song are selected
+        print "complex.queue()"
+        selectedSongs= []
+        for modelIndex in self.ui.songsList.selectedIndexes ():
+            print "complex.queue()", modelIndex.row ()
+            if modelIndex.row () not in selectedSongs:
+                self.playlist.queue (modelIndex.row ())
+                selectedSongs.append (modelIndex.row ())
+
     def collectionAdded (self):
         self.collectionsAwaited+= 1
 
@@ -216,7 +232,7 @@ class QPlayListModel (QAbstractTableModel):
         self.headers= (u'Artist', u'Year', u'Album', u'Track', u'Title', u'Length', u'Path')
         # FIXME: kinda hacky
         self.fontMetrics= QFontMetrics (KGlobalSettings.generalFont ())
-        # FIXME: hackish
+        # FIXME: (even more) hackish
         self.columnWidths= ("M"*15, "M"*4, "M"*20, "M"*3, "M"*25, "M"*5, "M"*100)
         print "QPLM: ", self
 
@@ -245,7 +261,6 @@ class QPlayListModel (QAbstractTableModel):
             song= self.aggr.songForIndex (modelIndex.row ())
 
             if role==Qt.DisplayRole or role==Qt.EditRole:
-                # print "QPLM.data():", modelIndex.row (), modelIndex.column ()
                 attr= self.attrNames [modelIndex.column ()]
                 rawData= song[attr]
                 if attr=='filepath':
@@ -253,7 +268,6 @@ class QPlayListModel (QAbstractTableModel):
                 data= QVariant (rawData)
 
             elif role==Qt.SizeHintRole:
-                # print "QPLM.data()[size]:", modelIndex.row(), modelIndex.column ()
                 size= self.fontMetrics.size (Qt.TextSingleLine, self.columnWidths[modelIndex.column ()])
                 data= QVariant (size)
 
@@ -268,20 +282,16 @@ class QPlayListModel (QAbstractTableModel):
                 data= QVariant (QApplication.palette ().brightText ())
 
             else:
-                # print "QPLM.data()[role]:", role
                 data= QVariant ()
         else:
-            # print "QPLM.data()[row]:", modelIndex.row ()
             data= QVariant ()
 
         return data
 
     def flags (self, modelIndex):
         ans= QAbstractTableModel.flags (self, modelIndex)
-        # print "QPLM.flags():", modelIndex.row (), modelIndex.column (), int (ans),
         if modelIndex.column ()<5: # length or filepath are not editable
             ans= ans|Qt.ItemIsEditable|Qt.ItemIsEditable
-        # print int (ans)
 
         return ans
 
@@ -295,12 +305,9 @@ class QPlayListModel (QAbstractTableModel):
     def setData (self, modelIndex, variant, role=Qt.EditRole):
         # not length or filepath and editing
         if modelIndex.column ()<5 and role==Qt.EditRole:
-            # print "QPLM.setData():", 0
             song= self.aggr.songForIndex (modelIndex.row ())
-            # print "QPLM.setData():", 1
             attr= self.attrNames[modelIndex.column ()]
             try:
-                # print "QPLM.setData():", 2
                 song[attr]= unicode (variant.toString ())
                 # TODO: make a list of dirty songs and commit them later
                 song.saveMetadata ()
@@ -308,13 +315,10 @@ class QPlayListModel (QAbstractTableModel):
                 # it failed
                 ans= False
             else:
-                # print "QPLM.setData():", 3
                 self.dataChanged.emit (modelIndex, modelIndex)
-                # print "QPLM.setData():", 4
                 ans= True
         else:
             ans= QAbstractTableModel.setData (self, modelIndex, variant, role)
-            # print "QPLM.setData():", ans
 
         print "QPLM.setData():", modelIndex.row(), modelIndex.column (), role, ans
         return ans
@@ -338,7 +342,6 @@ class QPlayListModel (QAbstractTableModel):
 
     def addRows (self, collNo):
         collection= self.collections[collNo]
-        # print "QPLM.addRows()", collection
 
         for index, filepath in collection.newSongs_:
             self.beginInsertRows (QModelIndex (), index, index)

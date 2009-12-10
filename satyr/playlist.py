@@ -38,6 +38,8 @@ class PlayList (SatyrObject):
     finished= pyqtSignal ()
     randomChanged= pyqtSignal (bool)
     songChanged= pyqtSignal (int)
+    queued= pyqtSignal (int)
+    dequeued= pyqtSignal (int)
 
     def __init__ (self, parent, collections, busName=None, busPath=None):
         SatyrObject.__init__ (self, parent, busName, busPath)
@@ -154,10 +156,12 @@ class PlayList (SatyrObject):
             # exists; dequeue
             print 'dequeuing index [%d, %d]' % (listIndex, collectionIndex)
             self.indexQueue.pop (listIndex)
+            self.dequeued.emit (collectionIndex)
         except ValueError:
             # doesn't exist; append
             print 'queuing [%d]' % (collectionIndex)
             self.indexQueue.append (collectionIndex)
+            self.queued.emit (collectionIndex)
 
     @dbus.service.method (BUS_NAME, in_signature='s', out_signature='a(is)')
     def search (self, searchSpec):
