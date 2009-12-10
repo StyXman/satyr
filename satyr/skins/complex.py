@@ -43,7 +43,6 @@ class MainWindow (KXmlGuiWindow):
         self.collectionsAwaited= 0
 
         self.ac= KActionCollection (self)
-        # actions.create (self, self.ac)
         actions.create (self, self.actionCollection ())
         self.setupGUI ()
 
