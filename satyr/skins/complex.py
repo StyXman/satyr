@@ -28,6 +28,7 @@ from PyQt4 import uic
 from satyr.collaggr import CollectionAggregator
 from satyr.song import TagWriteError
 from satyr.skins import actions
+from satyr import utils
 
 class MainWindow (KXmlGuiWindow):
     def __init__ (self, parent=None):
@@ -73,7 +74,9 @@ class MainWindow (KXmlGuiWindow):
         self.ui.songsList.activated.connect (self.changeSong)
 
         self.ui.searchEntry.textChanged.connect (self.search)
-        self.ui.timeSlider.setMediaObject (self.player.media)
+        majV, minV, patchL= utils.phononVersion ()
+        if (majV>4) or (majV==4 and minV>3) or (majV==4 and minV==3 and patchL>1):
+            self.ui.timeSlider.setMediaObject (self.player.media)
 
         # TODO: better name?
         self.appModel= QPlayListModel (aggr=self.playlist.aggr, parent=self)
