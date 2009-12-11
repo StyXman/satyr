@@ -71,6 +71,8 @@ class MainWindow (KXmlGuiWindow):
         self.player.stopAfterChanged.connect (self.ui.stopAfterCheck.setChecked)
 
         self.playlist.songChanged.connect (self.showSong)
+        self.playlist.queued.connect (self.dirtyRow)
+        self.playlist.dequeued.connect (self.dirtyRow)
         self.ui.songsList.activated.connect (self.changeSong)
 
         self.ui.searchEntry.textChanged.connect (self.search)
@@ -126,17 +128,18 @@ class MainWindow (KXmlGuiWindow):
         # mark data in old song and new song as dirty
         # and let the view update the hightlight
         # FIXME? yes, this could be moved to the model (too many self.appModel's)
-        columns= self.appModel.columnCount ()
 
         # FIXME: temporarily until I resolve the showSong() at boot time
         if oldModelIndex is not None:
-            start= self.appModel.index (oldModelIndex.row (), 0)
-            end=   self.appModel.index (oldModelIndex.row (), columns)
-            self.appModel.dataChanged.emit (start, end)
+            # start= self.appModel.index (, 0)
+            # end=   self.appModel.index (oldModelIndex.row (), columns)
+            # self.appModel.dataChanged.emit (start, end)
+            self.dirtyRow (oldModelIndex.row ())
 
-        start= self.appModel.index (self.modelIndex.row (), 0)
-        end=   self.appModel.index (self.modelIndex.row (), columns)
-        self.appModel.dataChanged.emit (start, end)
+        # start= self.appModel.index (self.modelIndex.row (), 0)
+        # end=   self.appModel.index (self.modelIndex.row (), columns)
+        # self.appModel.dataChanged.emit (start, end)
+        self.dirtyRow (self.modelIndex.row ())
 
         print "default.showSong()", song
         # FIXME? QAbstractItemView.EnsureVisible config?
@@ -153,6 +156,13 @@ class MainWindow (KXmlGuiWindow):
         song= self.model.aggr.songForIndex (modelIndex.row ())
         self.songIndexSelectedByUser= (song, modelIndex)
         self.player.play (song)
+
+    def dirtyRow (self, index):
+        print "complex.dirtyRow():", index
+        columns= self.appModel.columnCount ()
+        start= self.appModel.index (index, 0)
+        end=   self.appModel.index (index, columns)
+        self.appModel.dataChanged.emit (start, end)
 
     def scanBegins (self):
         # self.ui.songsList.setEnabled (False)
