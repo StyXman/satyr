@@ -59,7 +59,7 @@ def createApp (args=sys.argv):
 
     # ki18n required for first two addAuthor () arguments
     aboutData.addAuthor (ki18n ("Marcos Dione"), ki18n ("design and implementation"))
-    aboutData.addAuthor (ki18n ("Sebastián Álvarez"), ki18n ("features and bugfixes"))
+    aboutData.addAuthor (ki18n ("Sebastián Álvarez"), ki18n ("features, bugfixes and testing"))
 
     KCmdLineArgs.init (args, aboutData)
     options= KCmdLineOptions ()
