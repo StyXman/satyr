@@ -71,6 +71,7 @@ class Collection (SatyrObject):
 
         self.scanners= []
         self.scanning= False
+        self.loadMetadata= False
 
         if busPath is not None:
             self.collectionFile= str (KStandardDirs.locateLocal ('data', 'satyr/%s.tdb' % self.dbusName (busPath)))
@@ -127,10 +128,13 @@ class Collection (SatyrObject):
         path= utils.qstring2path (path)
         self.scan (path)
 
-    def scan (self, path=None):
+    def scan (self, path=None, loadMetadata=False):
         self.scanning= True
+        self.loadMetadata= loadMetadata
+
         if path is None:
             path= self.path
+
         scanner= CollectionIndexer (path)
         scanner.scanning.connect (self.progress)
         scanner.foundSongs.connect (self.add)
@@ -171,6 +175,8 @@ class Collection (SatyrObject):
             if index==0 or self.songs[index-1]!=song:
                 self.songs.insert (index, song)
                 self.count+= 1
+                if self.loadMetadata:
+                    song.loadMetadata ()
                 self.newSongs_.append ((index, filepath))
 
         self.newSongs.emit ()
