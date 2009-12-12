@@ -128,17 +128,9 @@ class MainWindow (KXmlGuiWindow):
         # mark data in old song and new song as dirty
         # and let the view update the hightlight
         # FIXME? yes, this could be moved to the model (too many self.appModel's)
-
-        # FIXME: temporarily until I resolve the showSong() at boot time
+        # FIXME: temporarily if'ed until I resolve the showSong() at boot time
         if oldModelIndex is not None:
-            # start= self.appModel.index (, 0)
-            # end=   self.appModel.index (oldModelIndex.row (), columns)
-            # self.appModel.dataChanged.emit (start, end)
             self.dirtyRow (oldModelIndex.row ())
-
-        # start= self.appModel.index (self.modelIndex.row (), 0)
-        # end=   self.appModel.index (self.modelIndex.row (), columns)
-        # self.appModel.dataChanged.emit (start, end)
         self.dirtyRow (self.modelIndex.row ())
 
         print "default.showSong()", song
@@ -218,6 +210,7 @@ class QPlayListModel (QAbstractTableModel):
         QAbstractTableModel.__init__ (self, parent)
         # TODO: different delegate for editing tags: one with completion
         self.parent_= parent
+        self.playlist= parent.playlist
 
         if songs is None:
             self.aggr= aggr
@@ -283,15 +276,29 @@ class QPlayListModel (QAbstractTableModel):
                 size= self.fontMetrics.size (Qt.TextSingleLine, self.columnWidths[modelIndex.column ()])
                 data= QVariant (size)
 
-            elif role==Qt.BackgroundRole and modelIndex.row ()==self.parent_.modelIndex.row ():
-                # highlight the current song
-                # must return a QBrush
-                data= QVariant (QApplication.palette ().dark ())
+            elif role==Qt.BackgroundRole:
+                if modelIndex.row ()==self.parent_.modelIndex.row ():
+                    # highlight the current song
+                    # must return a QBrush
+                    data= QVariant (QApplication.palette ().dark ())
+                else:
+                    try:
+                        queueIndex= self.playlist.indexQueue.index (modelIndex.row ())
+                        data= QVariant (QApplication.palette ().midlight ())
+                    except ValueError:
+                        data= QVariant ()
 
-            elif role==Qt.ForegroundRole and modelIndex.row ()==self.parent_.modelIndex.row ():
-                # highlight the current song
-                # must return a QBrush
-                data= QVariant (QApplication.palette ().brightText ())
+            elif role==Qt.ForegroundRole:
+                if modelIndex.row ()==self.parent_.modelIndex.row ():
+                    # highlight the current song
+                    # must return a QBrush
+                    data= QVariant (QApplication.palette ().brightText ())
+                else:
+                    try:
+                        queueIndex= self.playlist.indexQueue.index (modelIndex.row ())
+                        data= QVariant (QApplication.palette ().mid ())
+                    except ValueError:
+                        data= QVariant ()
 
             else:
                 data= QVariant ()
