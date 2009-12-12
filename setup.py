@@ -24,7 +24,7 @@ python_version='%d.%d' % sys.version_info[:2]
 
 data= dict (
     name='satyr',
-    version='0.2',
+    version='0.3',
     description="audio player developed in PyKDE4.",
     long_description="""
 satyr pretends to have the following features (some are not implemented yet):
