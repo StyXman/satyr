@@ -22,7 +22,6 @@ from PyQt4.QtCore import Qt
 
 def create (parent, ac):
     """here be common actions for satyr skins"""
-    # queueAction= actionCollection ().addAction ("queue")
     queueAction= KAction (parent)
     queueAction.setShortcut (Qt.CTRL + Qt.Key_Q)
     ac.addAction ("queue", queueAction)
