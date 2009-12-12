@@ -163,6 +163,10 @@ class Player (SatyrObject):
         self.quitAfter= not self.quitAfter
         print self.quitAfter
 
+    @dbus.service.method (BUS_NAME, in_signature='', out_signature='s')
+    def nowPlaying (self):
+        return self.playlist.formatSong (self.playlist.song)
+
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def quit (self):
         self.stop ()
