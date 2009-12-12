@@ -270,6 +270,13 @@ class QPlayListModel (QAbstractTableModel):
                 rawData= song[attr]
                 if attr=='filepath':
                     rawData= QFile.decodeName (rawData)
+                elif attr=='title':
+                    try:
+                        queueIndex= self.playlist.indexQueue.index (modelIndex.row ())
+                        # make it show as starting in 1, otherwise it's confusing
+                        rawData= "[%d] %s" % (queueIndex+1, rawData)
+                    except ValueError:
+                        pass
                 data= QVariant (rawData)
 
             elif role==Qt.SizeHintRole:
@@ -284,7 +291,7 @@ class QPlayListModel (QAbstractTableModel):
                 else:
                     try:
                         queueIndex= self.playlist.indexQueue.index (modelIndex.row ())
-                        data= QVariant (QApplication.palette ().midlight ())
+                        data= QVariant (QApplication.palette ().mid ())
                     except ValueError:
                         data= QVariant ()
 
@@ -294,11 +301,11 @@ class QPlayListModel (QAbstractTableModel):
                     # must return a QBrush
                     data= QVariant (QApplication.palette ().brightText ())
                 else:
-                    try:
-                        queueIndex= self.playlist.indexQueue.index (modelIndex.row ())
-                        data= QVariant (QApplication.palette ().mid ())
-                    except ValueError:
-                        data= QVariant ()
+                    # try:
+                    #     queueIndex= self.playlist.indexQueue.index (modelIndex.row ())
+                    #     data= QVariant (QApplication.palette ().mid ())
+                    # except ValueError:
+                    data= QVariant ()
 
             else:
                 data= QVariant ()
