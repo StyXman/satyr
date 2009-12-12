@@ -140,7 +140,7 @@ class MainWindow (KXmlGuiWindow):
         self.ui.songsList.setCurrentIndex (modelIndex)
 
         # set the window title
-        self.setCaption (self.model.formatSong (song))
+        self.setCaption (self.playlist.formatSong (song))
 
     def changeSong (self, modelIndex):
         # FIXME: later we ask for the index... doesn't make sense!
@@ -226,13 +226,6 @@ class QPlayListModel (QAbstractTableModel):
             self.aggr= CollectionAggregator (songs=songs)
 
         self.attrNames= ('artist', 'year', 'album', 'trackno', 'title', 'length', 'filepath')
-        # TODO: config
-        # TODO: optional parts
-        # TODO: unify unicode/str
-        # ** DO NOT REMOVE ** we're still using it for setting the window title
-        self.format= u"%(artist)s/%(year)s-%(album)s: %(trackno)s - %(title)s [%(length)s]"
-        # this must NOT be unicode, 'cause the filepaths might have any vegetable
-        self.altFormat= "%(filepath)s [%(length)s]"
 
         self.headers= (u'Artist', u'Year', u'Album', u'Track', u'Title', u'Length', u'Path')
         # FIXME: kinda hacky
@@ -240,26 +233,6 @@ class QPlayListModel (QAbstractTableModel):
         # FIXME: (even more) hackish
         self.columnWidths= ("M"*15, "M"*4, "M"*20, "M"*3, "M"*25, "M"*5, "M"*100)
         print "QPLM: ", self
-
-    # ** DO NOT REMOVE ** we're still using it for setting the window title
-    def formatSong (self, song):
-        if song.metadataNotNull ():
-            formatted= self.format % song
-        else:
-            # I choose latin1 because it's the only one I know
-            # which is full 256 chars
-            # FIXME: I think (this is not needed|we're not in kansas) anymore
-            # or in any case trying with the system's encoding first shoud give better results
-            try:
-                s= (self.altFormat % song).decode ('latin1')
-            except UnicodeDecodeError:
-                print song.filepath
-                fp= song.filepath.decode ('iso-8859-1')
-                s= u"%s [%s]" % (fp, song.length)
-
-            formatted= s
-
-        return formatted
 
     def data (self, modelIndex, role):
         if modelIndex.isValid () and modelIndex.row ()<self.aggr.count:

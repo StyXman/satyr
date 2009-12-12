@@ -59,11 +59,40 @@ class PlayList (SatyrObject):
             ('index', int, 0),
             )
         self.loadConfig ()
+
+        # TODO: config
+        # TODO: optional parts
+        # TODO: unify unicode/str
+        # ** DO NOT REMOVE ** we're still using it for setting the window title
+        self.format= u"%(artist)s/%(year)s-%(album)s: %(trackno)s - %(title)s [%(length)s]"
+        # this must NOT be unicode, 'cause the filepaths might have any vegetable
+        self.altFormat= "%(filepath)s [%(length)s]"
+
         # BUG: loading for the first time
         # File "/home/mdione/src/projects/satyr/playlist-listmodel/models.py", line 180, in songForIndex
         #     song= collection.songs[collectionIndex]
         # IndexError: list index out of range
         # self.setCurrent ()
+
+    # ** DO NOT REMOVE ** we're still using it for setting the window title
+    def formatSong (self, song):
+        if song.metadataNotNull ():
+            formatted= self.format % song
+        else:
+            # I choose latin1 because it's the only one I know
+            # which is full 256 chars
+            # FIXME: I think (this is not needed|we're not in kansas) anymore
+            # or in any case trying with the system's encoding first shoud give better results
+            try:
+                s= (self.altFormat % song).decode ('latin1')
+            except UnicodeDecodeError:
+                print song.filepath
+                fp= song.filepath.decode ('iso-8859-1')
+                s= u"%s [%s]" % (fp, song.length)
+
+            formatted= s
+
+        return formatted
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def toggleRandom (self):

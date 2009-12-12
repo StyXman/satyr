@@ -123,7 +123,7 @@ class MainWindow (KMainWindow):
         self.ui.songsList.setCurrentIndex (modelIndex)
 
         # set the window title
-        self.setCaption (self.model.formatSong (song))
+        self.setCaption (self.playlist.formatSong (song))
 
     def changeSong (self, modelIndex):
         # FIXME: later we ask for the index... doesn't make sense!
@@ -189,40 +189,15 @@ class QPlayListModel (QAbstractListModel):
         else:
             self.aggr= CollectionAgregator (songs=songs)
 
-        # TODO: config
-        # TODO: optional parts
-        # TODO: unify unicode/str
-        self.format= u"%(artist)s/%(year)s-%(album)s: %(trackno)s - %(title)s [%(length)s]"
-        # this must NOT be unicode, 'cause the filepaths might have any vegetable
-        self.altFormat= "%(filepath)s [%(length)s]"
-
         # FIXME: kinda hacky
         self.fontMetrics= QFontMetrics (KGlobalSettings.generalFont ())
-
-    def formatSong (self, song):
-        if song.metadataNotNull ():
-            formatted= self.format % song
-        else:
-            # I choose latin1 because it's the only one I know
-            # which is full 256 chars
-            # FIXME: I think (this is not needed|we're not in kansas) anymore
-            try:
-                s= (self.altFormat % song).decode ('latin1')
-            except UnicodeDecodeError:
-                print song.filepath
-                fp= song.filepath.decode ('iso-8859-1')
-                s= u"%s [%s]" % (fp, song.length)
-
-            formatted= s
-
-        return formatted
 
     def data (self, modelIndex, role):
         if modelIndex.isValid () and modelIndex.row ()<self.aggr.count:
             song= self.aggr.songForIndex (modelIndex.row ())
 
             if role==Qt.DisplayRole:
-                data= QVariant (self.formatSong (song))
+                data= QVariant (self.playlist.formatSong (song))
 
             elif role==Qt.SizeHintRole:
                 # calculate something based on the filepath
