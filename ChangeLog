@@ -1,0 +1,13 @@
+satyr (0.3) unstable; urgency=low
+
+  * (De)Queueing Songs with the keyboard, with visual feedback.
+  * Remembers window size.
+  * Current song highlighted not with selection but with real color changes.
+  * We can select Songs. Right now useful only for queuing several songs at the same time.
+  * Workaround a bug in PyQt4 with the SeekBar.
+  * Show the filepaths as much as possible in the user's encoding.
+  * Hitting F2 in a cell edits its contents.
+  * Silightly cleaner interface: don't show so many 0's.
+  * bug with perv/next: weren't wrapping around.
+
+ -- Marcos Dione <mdione@grulic.org.ar>  Sat, 12 Dec 2009 02:12:13 +0100
