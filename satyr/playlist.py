@@ -50,6 +50,7 @@ class PlayList (SatyrObject):
             collection.scanFinished.connect (self.filesAdded)
 
         self.indexQueue= []
+        self.song= None
         self.filepath= None
 
         self.configValues= (
@@ -106,16 +107,17 @@ class PlayList (SatyrObject):
         if song is None:
             try:
                 print "playlist.setCurrent()", self.index
-                song= self.aggr.songForIndex (self.index)
-                self.filepath= song.filepath
+                self.song= self.aggr.songForIndex (self.index)
+                self.filepath= self.song.filepath
             except IndexError:
                 # the index saved in the config is bigger than the current collection
                 # fall back to 0
                 self.index= 0
-                song= self.aggr.songForIndex (self.index)
-                self.filepath= song.filepath
+                self.song= self.aggr.songForIndex (self.index)
+                self.filepath= self.song.filepath
         else:
             print "playlist.setCurrent()", song
+            self.song= song
             self.filepath= song.filepath
             self.index= self.aggr.indexForSong (song)
             print "playlist.setCurrent()", self.index
