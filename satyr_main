@@ -92,7 +92,7 @@ def main ():
         # paths must be bytes, not ascii or utf-8
         path= utils.qstring2path (path)
 
-        collection= Collection (app, path, busName, "/collection_%04d" % index)
+        collection= Collection (app, path, busName=busName, busPath="/collection_%04d" % index)
         collections.append (collection)
         collection.scanBegins.connect (mw.scanBegins)
         collection.scanFinished.connect (mw.scanFinished)
