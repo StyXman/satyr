@@ -1,0 +1,208 @@
+#! /usr/bin/python
+# vim: set fileencoding=utf-8 :
+# (c) 2009 Marcos Dione <mdione@grulic.org.ar>
+
+# This file is part of satyr.
+
+# satyr is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 2 of the License, or
+# (at your option) any later version.
+
+# satyr is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with satyr.  If not, see <http://www.gnu.org/licenses/>.
+
+# qt/kde related
+from PyKDE4.kdecore import KCmdLineArgs, KAboutData, i18n, ki18n
+from PyKDE4.kdecore import KCmdLineOptions
+from PyKDE4.kdeui import KApplication, KMainWindow
+from PyQt4.QtCore import Qt
+from PyQt4 import uic
+
+# std python
+import sys, os.path
+
+# local
+# from satyr.song import Song
+from satyr.collection import Collection
+from satyr.song import Song
+from satyr import utils
+
+def createApp (args=sys.argv):
+    #########################################
+    # all the bureaucratic init of a KDE App
+    # the appName must not contain any chars besides a-zA-Z0-9_
+    # because KMainWindowPrivate::polish() calls QDBusConnection::sessionBus().registerObject()
+    # see QDBusUtil::isValidCharacterNoDash()
+    appName     = "coll_diff"
+    catalog     = ""
+    programName = ki18n ("Collection Diff")                 #ki18n required here
+    version     = "0.1a"
+    description = ki18n ("Once I told Amarok to organize my Colection and left a mess. This program will let me fix that.")         #ki18n required here
+    license     = KAboutData.License_GPL
+    copyright   = ki18n ("(c) 2009 Marcos Dione")    #ki18n required here
+    text        = ki18n ("none")                    #ki18n required here
+    homePage    = "http://savannah.nongnu.org/projects/satyr/"
+    bugEmail    = "mdione@grulic.org.ar"
+
+    aboutData   = KAboutData (appName, catalog, programName, version, description,
+                                license, copyright, text, homePage, bugEmail)
+
+    # ki18n required for first two addAuthor () arguments
+    aboutData.addAuthor (ki18n ("Marcos Dione"), ki18n ("design and implementation"))
+
+    KCmdLineArgs.init (args, aboutData)
+    options= KCmdLineOptions ()
+    options.add ("+path", ki18n ("paths to your music collections"))
+    KCmdLineArgs.addCmdLineOptions (options)
+
+    app= KApplication ()
+    args= KCmdLineArgs.parsedArgs ()
+
+    return app, args
+
+class CollDiffApp (KMainWindow):
+    def __init__ (self):
+        self.app, args= createApp ()
+        KMainWindow.__init__ (self)
+
+        self.leftRoot= utils.qstring2path (args.arg (0))
+        self.left= Collection (self.app, self.leftRoot)
+        self.left.scanFinished.connect (self.scanRight)
+        self.left.scan (loadMetadata=True)
+        self.leftSong= None
+
+        self.rightRoot= utils.qstring2path (args.arg (1))
+        self.right= Collection (self.app, self.rightRoot)
+        self.right.scanFinished.connect (self.enable)
+
+        UIMainWindow, _= uic.loadUiType ('coll_diff.ui')
+
+        self.ui= UIMainWindow ()
+        self.ui.setupUi (self)
+
+        self.ui.leftView.currentRowChanged.connect (self.findMatches)
+        self.ui.rightView.currentRowChanged.connect (self.showMatchingSongs)
+
+    def loadSongsMetadata (self, *ignore):
+        for song in self.left.songs:
+            # song.loadMetadata ()
+            print song.filepath
+
+        print "done."
+        self.app.quit ()
+
+    def scanRight (self):
+        self.right.scan (loadMetadata=True)
+
+    def enable (self):
+        self.ui.leftView.setEnabled (True)
+        self.ui.rightView.setEnabled (True)
+
+        # fill left list
+        for leftSong in self.left.songs:
+            self.ui.leftView.addItem (leftSong.relPath ())
+        self.ui.leftView.setFocus ()
+
+    def compare (self, leftSong, rightSong):
+        attrPoints= dict (title=0.2, trackno=0.05, album=0.1, year=0.05, autor=0.1, length=0.3)
+        match= 0.0
+        matches= []
+
+        # first try to match tags
+        for tag, value in attrPoints.items ():
+            try:
+                leftTag=  leftSong[tag]
+                rightTag= rightSong[tag]
+            except AttributeError:
+                pass
+            else:
+                if leftTag!=u'' and rightTag!=u'' and leftTag!=0 and rightTag!=0 and leftTag==rightTag:
+                    # print tag, value
+                    match+= value
+                    matches.append (tag)
+                    # print match, leftSong, rightSong
+
+        # next, filename
+        leftFN= os.path.basename (leftSong.filepath)
+        rightFN= os.path.basename (rightSong.filepath)
+        if leftFN==rightFN:
+            match+= 0.20
+            matches.append ('filename')
+            # print match, os.path.basename (leftSong.filepath), os.path.basename (rightSong.filepath)
+        else:
+            # last chance: basename
+            leftBN=  leftFN.rsplit ('.', 1)
+            rightBN= rightFN.rsplit ('.', 1)
+            if leftBN==rightBN:
+                match+= 0.15
+                matches.append ('basename')
+
+        if match>0.69:
+            print "mostly sure:", match, matches, leftSong, rightSong
+        elif match>0.49:
+            print "most posibly:", match, matches, leftSong, rightSong
+        elif match>0.26:
+            print "maybe:", match, matches, leftSong, rightSong
+
+        return match, matches
+
+    def findMatches (self, index):
+        # yes, this is gonna be O(n²) or worse
+        # path= utils.qstring2path (item.data (Qt.DisplayRole).toString ())
+        # leftSong= Song (None, self.leftRoot+'/'+path)
+        print "findMatches()"
+        if index>=0:
+            self.leftSong= self.left.songs[index]
+
+            # clear the other views
+            self.ui.matchesView.clear ()
+            print "findMatches(): rw.clear()"
+            self.ui.rightView.clear ()
+
+            for rightSong in self.right.songs:
+                # print "findMatches()"
+                match, matches= self.compare (self.leftSong, rightSong)
+                if match>0.0:
+                    # add to the right view
+                    self.ui.rightView.addItem (rightSong.relPath ())
+
+    def showMatchingSongs (self, index):
+        print "showMatchingSongs()", 1, index
+        if index>=0 and self.leftSong is not None:
+            print "showMatchingSongs()", 2
+            # print "findMatches(): rw.clear()"
+            self.ui.matchesView.clear ()
+
+            # print "showMatchingSongs()", 3, index
+            # path= utils.qstring2path (self.ui.leftView.currentItem ().data (Qt.DisplayRole).toString ())
+            # print "showMatchingSongs()", 4, index
+            # leftSong= Song (None, self.leftRoot+'/'+path)
+
+            print "showMatchingSongs()", 5,
+            path= utils.qstring2path (self.ui.rightView.currentItem ().data (Qt.DisplayRole).toString ())
+            print "showMatchingSongs()", 6
+            rightSong= Song (None, self.rightRoot+'/'+path)
+            # rightSong= self.right.songs[index]
+
+            print "showMatchingSongs()", 7, self.leftSong.filepath, rightSong.filepath
+            match, matches= self.compare (self.leftSong, rightSong)
+            print "showMatchingSongs()", 8
+            for match in matches:
+                self.ui.matchesView.addItem (match)
+        print "showMatchingSongs()", 9
+
+def main ():
+    mw= CollDiffApp ()
+    mw.show ()
+    mw.app.exec_ ()
+
+if __name__=='__main__':
+    main ()
+
+# end
