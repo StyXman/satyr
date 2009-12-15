@@ -74,35 +74,49 @@ class CollectionIndexer (QThread):
     scanning= pyqtSignal (unicode)
     foundSongs= pyqtSignal (QStringList)
 
-    def __init__ (self, path, parent=None):
+    def __init__ (self, path, parent=None, relative=False):
         QThread.__init__ (self, parent)
         self.path= path
+        self.relative= relative
         initMimetypes ()
 
-    def walk (self, top, relative=False):
-        # TODO? return relative paths
+    def walk (self, root, subdir='', relative=False):
+        print root, subdir
         # TODO: support single filenames
-        # if not os.path.isdir (top):
-        #     return top
+        # if not os.path.isdir (root):
+        #     return root
         try:
-            names= os.listdir (top)
+            names= os.listdir (root+'/'+subdir)
         except Exception, err:
             print err
             return
 
+        # separate directories from files
         dirs, nondirs = [], []
         for name in names:
-            path= top+'/'+name
-            if os.path.isdir(path):
-                dirs.append(name)
-            else:
-                nondirs.append(name)
+            # always use the absolute path
+            path= root+'/'+subdir+'/'+name
 
-        yield top, dirs, nondirs
+            if os.path.isdir (path):
+                dirs.append (name)
+            else:
+                nondirs.append (name)
+
+        # deliver what we found so far
+        if not relative:
+            yield root+'/'+subdir, dirs, nondirs
+        else:
+            yield subdir, dirs, nondirs
+
+        # recurse...
         for name in dirs:
-            path = top+'/'+name
-            if not os.path.islink(path):
-                for x in self.walk(path):
+            if subdir=='':
+                path= name
+            else:
+                path= subdir+'/'+name
+            # ... on non-symlinked dirs
+            if not os.path.islink (path):
+                for x in self.walk (root, path, relative=relative):
                     yield x
 
     def run (self):
