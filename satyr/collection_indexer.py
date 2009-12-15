@@ -132,7 +132,7 @@ class CollectionIndexer (QThread):
         else:
             if stat.S_ISDIR (mode):
                 # http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=481795
-                for root, dirs, files in self.walk (self.path):
+                for root, dirs, files in self.walk (self.path, relative=self.relative):
                     self.scanning.emit (root)
                     filepaths= []
                     for filename in files:
