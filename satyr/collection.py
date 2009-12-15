@@ -43,7 +43,7 @@ class Collection (SatyrObject):
     scanBegins= pyqtSignal ()
     scanFinished= pyqtSignal ()
 
-    def __init__ (self, parent, path, busName=None, busPath=None):
+    def __init__ (self, parent, path, relative=False, busName=None, busPath=None):
         SatyrObject.__init__ (self, parent, busName, busPath)
 
         self.songs= []
@@ -63,6 +63,7 @@ class Collection (SatyrObject):
             print "new path, forcing (re)scan"
         else:
             self.forceScan= False
+        self.relative= relative
 
         self.watch= KDirWatch (self)
         self.watch.addDir (self.path,
