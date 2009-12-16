@@ -73,13 +73,17 @@ class CollDiffApp (KMainWindow):
 
         self.leftRoot= utils.qstring2path (args.arg (0))
         self.left= Collection (self.app, self.leftRoot)
-        self.left.scanFinished.connect (self.scanRight)
         self.left.scan (loadMetadata=True)
         self.leftSong= None
 
-        self.rightRoot= utils.qstring2path (args.arg (1))
-        self.right= Collection (self.app, self.rightRoot)
-        self.right.scanFinished.connect (self.enable)
+        if args.count ()==2:
+            self.left.scanFinished.connect (self.scanRight)
+            self.rightRoot= utils.qstring2path (args.arg (1))
+            self.right= Collection (self.app, self.rightRoot)
+            self.right.scanFinished.connect (self.enable)
+        else:
+            self.left.scanFinished.connect (self.enable)
+            self.right= self.left
 
         UIMainWindow, _= uic.loadUiType ('coll_diff.ui')
 
@@ -88,14 +92,6 @@ class CollDiffApp (KMainWindow):
 
         self.ui.leftView.currentRowChanged.connect (self.findMatches)
         self.ui.rightView.currentRowChanged.connect (self.showMatchingSongs)
-
-    def loadSongsMetadata (self, *ignore):
-        for song in self.left.songs:
-            # song.loadMetadata ()
-            print song.filepath
-
-        print "done."
-        self.app.quit ()
 
     def scanRight (self):
         self.right.scan (loadMetadata=True)
@@ -123,10 +119,8 @@ class CollDiffApp (KMainWindow):
                 pass
             else:
                 if leftTag!=u'' and rightTag!=u'' and leftTag!=0 and rightTag!=0 and leftTag==rightTag:
-                    # print tag, value
                     match+= value
                     matches.append (tag)
-                    # print match, leftSong, rightSong
 
         # next, filename
         leftFN= os.path.basename (leftSong.filepath)
@@ -134,7 +128,6 @@ class CollDiffApp (KMainWindow):
         if leftFN==rightFN:
             match+= 0.20
             matches.append ('filename')
-            # print match, os.path.basename (leftSong.filepath), os.path.basename (rightSong.filepath)
         else:
             # last chance: basename
             leftBN=  leftFN.rsplit ('.', 1)
@@ -153,49 +146,30 @@ class CollDiffApp (KMainWindow):
         return match, matches
 
     def findMatches (self, index):
-        # yes, this is gonna be O(n²) or worse
-        # path= utils.qstring2path (item.data (Qt.DisplayRole).toString ())
-        # leftSong= Song (None, self.leftRoot+'/'+path)
-        print "findMatches()"
+        # yes, this is gonna be O(n) or worse
         if index>=0:
             self.leftSong= self.left.songs[index]
 
             # clear the other views
             self.ui.matchesView.clear ()
-            print "findMatches(): rw.clear()"
             self.ui.rightView.clear ()
 
             for rightSong in self.right.songs:
-                # print "findMatches()"
                 match, matches= self.compare (self.leftSong, rightSong)
                 if match>0.0:
                     # add to the right view
                     self.ui.rightView.addItem (rightSong.relPath ())
 
     def showMatchingSongs (self, index):
-        print "showMatchingSongs()", 1, index
         if index>=0 and self.leftSong is not None:
-            print "showMatchingSongs()", 2
-            # print "findMatches(): rw.clear()"
             self.ui.matchesView.clear ()
 
-            # print "showMatchingSongs()", 3, index
-            # path= utils.qstring2path (self.ui.leftView.currentItem ().data (Qt.DisplayRole).toString ())
-            # print "showMatchingSongs()", 4, index
-            # leftSong= Song (None, self.leftRoot+'/'+path)
-
-            print "showMatchingSongs()", 5,
             path= utils.qstring2path (self.ui.rightView.currentItem ().data (Qt.DisplayRole).toString ())
-            print "showMatchingSongs()", 6
             rightSong= Song (None, self.rightRoot+'/'+path)
-            # rightSong= self.right.songs[index]
 
-            print "showMatchingSongs()", 7, self.leftSong.filepath, rightSong.filepath
             match, matches= self.compare (self.leftSong, rightSong)
-            print "showMatchingSongs()", 8
             for match in matches:
                 self.ui.matchesView.addItem (match)
-        print "showMatchingSongs()", 9
 
 def main ():
     mw= CollDiffApp ()
