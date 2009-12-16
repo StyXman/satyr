@@ -136,13 +136,6 @@ class CollDiffApp (KMainWindow):
                 match+= 0.15
                 matches.append ('basename')
 
-        if match>0.69:
-            print "mostly sure:", match, matches, leftSong, rightSong
-        elif match>0.49:
-            print "most posibly:", match, matches, leftSong, rightSong
-        elif match>0.26:
-            print "maybe:", match, matches, leftSong, rightSong
-
         return match, matches
 
     def findMatches (self, index):
@@ -155,8 +148,20 @@ class CollDiffApp (KMainWindow):
             self.ui.rightView.clear ()
 
             for rightSong in self.right.songs:
+                add= False
                 match, matches= self.compare (self.leftSong, rightSong)
-                if match>0.0:
+
+                # yes, this could be a big or. sue me
+                if match>0.69 and self.ui.sure.isChecked ():
+                    add= True
+                elif match>0.49 and self.ui.probable.isChecked ():
+                    add= True
+                elif match>0.26 and self.ui.maybe.isChecked ():
+                    add= True
+                elif match>0.0 and self.ui.all.isChecked ():
+                    add= True
+
+                if add:
                     # add to the right view
                     self.ui.rightView.addItem (rightSong.relPath ())
 
