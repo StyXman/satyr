@@ -70,19 +70,21 @@ class MainWindow (KXmlGuiWindow):
         self.ui.stopAfterCheck.clicked.connect (self.player.toggleStopAfter)
         self.player.stopAfterChanged.connect (self.ui.stopAfterCheck.setChecked)
 
-        self.playlist.songChanged.connect (self.showSong)
-        self.playlist.queued.connect (self.dirtyRow)
-        self.playlist.dequeued.connect (self.dirtyRow)
-        self.ui.songsList.activated.connect (self.changeSong)
-
         self.ui.searchEntry.textChanged.connect (self.search)
         majV, minV, patchL= utils.phononVersion ()
         if (majV>4) or (majV==4 and minV>3) or (majV==4 and minV==3 and patchL>1):
             self.ui.timeSlider.setMediaObject (self.player.media)
 
         # TODO: better name?
-        self.appModel= QPlayListModel (aggr=self.playlist.aggr, parent=self)
+        self.appModel= QPlayListModel (aggr=self.playlist.aggr, view=self)
+        self.appModel.dataChanged.connect (self.copyEditToSelection)
+        self.copying= False
         self.setModel (self.appModel)
+
+        self.playlist.songChanged.connect (self.showSong)
+        self.playlist.queued.connect (self.appModel.dirtyRow)
+        self.playlist.dequeued.connect (self.appModel.dirtyRow)
+        self.ui.songsList.activated.connect (self.changeSong)
 
         # FIXME: kinda hacky
         self.fontMetrics= QFontMetrics (KGlobalSettings.generalFont ())
@@ -130,8 +132,8 @@ class MainWindow (KXmlGuiWindow):
         # FIXME? yes, this could be moved to the model (too many self.appModel's)
         # FIXME: temporarily if'ed until I resolve the showSong() at boot time
         if oldModelIndex is not None:
-            self.dirtyRow (oldModelIndex.row ())
-        self.dirtyRow (self.modelIndex.row ())
+            self.appModel.dirtyRow (oldModelIndex.row ())
+        self.appModel.dirtyRow (self.modelIndex.row ())
 
         print "default.showSong()", song
         # FIXME? QAbstractItemView.EnsureVisible config?
@@ -148,13 +150,6 @@ class MainWindow (KXmlGuiWindow):
         song= self.model.aggr.songForIndex (modelIndex.row ())
         self.songIndexSelectedByUser= (song, modelIndex)
         self.player.play (song)
-
-    def dirtyRow (self, index):
-        print "complex.dirtyRow():", index
-        columns= self.appModel.columnCount ()
-        start= self.appModel.index (index, 0)
-        end=   self.appModel.index (index, columns)
-        self.appModel.dataChanged.emit (start, end)
 
     def scanBegins (self):
         # self.ui.songsList.setEnabled (False)
@@ -193,6 +188,36 @@ class MainWindow (KXmlGuiWindow):
                 self.playlist.queue (modelIndex.row ())
                 selectedSongs.append (modelIndex.row ())
 
+    def copyEditToSelection (self, tl, br):
+        # TODO? there could be a problem here.
+        # this is connected to QPLM.dataChanged(), which
+        # a) doesn't say which role changed
+        # b) we're using for inserting rows,
+        # selecting a new song (and deselecting the old one)
+        # and of course editing itself.
+        print "complex.copyEditToSelection()", len (self.ui.songsList.selectedIndexes ()), self.appModel.edited
+        # for i in tl, br:
+        #     print i.row(), i.column ()
+        if len (self.ui.songsList.selectedIndexes ())>1 and self.appModel.edited:
+            # more than one cell selected
+            # we copy was has just been edited tho the rest of selected cells
+            print "complex.copyEditToSelection()", self.copying
+            if not self.copying:
+                self.copying= True
+                # data() already returns QVariant
+                value= self.appModel.data (tl, Qt.DisplayRole)
+                print "complex.copyEditToSelection()", value
+                # just copy the column that has been edited...
+                column= tl.column ()
+                for modelIndex in self.ui.songsList.selectedIndexes ():
+                    # ... in the selected cells in the same column
+                    if modelIndex.column ()==column:
+                        # copy the value
+                        self.appModel.setData (modelIndex, value, Qt.EditRole)
+
+                # we finished copying
+                self.copying= False
+
     def collectionAdded (self):
         self.collectionsAwaited+= 1
 
@@ -206,11 +231,12 @@ class MainWindow (KXmlGuiWindow):
 
 
 class QPlayListModel (QAbstractTableModel):
-    def __init__ (self, aggr=None, songs=None, parent=None):
-        QAbstractTableModel.__init__ (self, parent)
+    def __init__ (self, aggr=None, songs=None, view=None):
+        QAbstractTableModel.__init__ (self, view)
         # TODO: different delegate for editing tags: one with completion
-        self.parent_= parent
-        self.playlist= parent.playlist
+        self.view_= view
+        self.playlist= view.playlist
+        self.edited= False
 
         if songs is None:
             self.aggr= aggr
@@ -257,7 +283,7 @@ class QPlayListModel (QAbstractTableModel):
                 data= QVariant (size)
 
             elif role==Qt.BackgroundRole:
-                if modelIndex.row ()==self.parent_.modelIndex.row ():
+                if modelIndex.row ()==self.view_.modelIndex.row ():
                     # highlight the current song
                     # must return a QBrush
                     data= QVariant (QApplication.palette ().dark ())
@@ -269,7 +295,7 @@ class QPlayListModel (QAbstractTableModel):
                         data= QVariant ()
 
             elif role==Qt.ForegroundRole:
-                if modelIndex.row ()==self.parent_.modelIndex.row ():
+                if modelIndex.row ()==self.view_.modelIndex.row ():
                     # highlight the current song
                     # must return a QBrush
                     data= QVariant (QApplication.palette ().brightText ())
@@ -303,7 +329,9 @@ class QPlayListModel (QAbstractTableModel):
 
     def setData (self, modelIndex, variant, role=Qt.EditRole):
         # not length or filepath and editing
+        print "QPLM.setData()", modelIndex.row (), modelIndex.column(), role
         if modelIndex.column ()<5 and role==Qt.EditRole:
+            # TODO: iterate over the selected cells
             song= self.aggr.songForIndex (modelIndex.row ())
             attr= self.attrNames[modelIndex.column ()]
             try:
@@ -314,6 +342,7 @@ class QPlayListModel (QAbstractTableModel):
                 # it failed
                 ans= False
             else:
+                self.edited= True
                 self.dataChanged.emit (modelIndex, modelIndex)
                 ans= True
         else:
@@ -348,6 +377,14 @@ class QPlayListModel (QAbstractTableModel):
 
             modelIndex= self.index (index, 0)
             self.dataChanged.emit (modelIndex, modelIndex)
+
+    def dirtyRow (self, index):
+        print "QLMP.dirtyRow():", index
+        columns= self.columnCount ()
+        start= self.index (index, 0)
+        end=   self.index (index, columns)
+        self.edited= False
+        self.dataChanged.emit (start, end)
 
     def rowCount (self, parent=None):
         return self.aggr.count

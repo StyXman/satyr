@@ -150,6 +150,7 @@ class Song (QObject):
 
                 for attr, tag in self.tagForAttr.items ():
                     value= getattr (self, attr, None)
+                    # print
                     setattr (info, tag, value)
 
                 if not fr.save ():
