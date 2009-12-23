@@ -179,8 +179,8 @@ class MainWindow (KXmlGuiWindow):
             self.showSong (self.modelIndex.row ())
 
     def queue (self):
-        # so we don't keep (de)queuing if several cells of the same song are selected
         print "complex.queue()"
+        # so we don't keep (de)queuing if several cells of the same song are selected
         selectedSongs= []
         for modelIndex in self.ui.songsList.selectedIndexes ():
             print "complex.queue()", modelIndex.row ()
@@ -189,15 +189,7 @@ class MainWindow (KXmlGuiWindow):
                 selectedSongs.append (modelIndex.row ())
 
     def copyEditToSelection (self, tl, br):
-        # TODO? there could be a problem here.
-        # this is connected to QPLM.dataChanged(), which
-        # a) doesn't say which role changed
-        # b) we're using for inserting rows,
-        # selecting a new song (and deselecting the old one)
-        # and of course editing itself.
         print "complex.copyEditToSelection()", len (self.ui.songsList.selectedIndexes ()), self.appModel.edited
-        # for i in tl, br:
-        #     print i.row(), i.column ()
         if len (self.ui.songsList.selectedIndexes ())>1 and self.appModel.edited:
             # more than one cell selected
             # we copy was has just been edited tho the rest of selected cells
@@ -282,7 +274,7 @@ class QPlayListModel (QAbstractTableModel):
                 size= self.fontMetrics.size (Qt.TextSingleLine, self.columnWidths[modelIndex.column ()])
                 data= QVariant (size)
 
-            elif role==Qt.BackgroundRole:
+            elif role==Qt.BackgroundRole and self.view_.modelIndex is not None:
                 if modelIndex.row ()==self.view_.modelIndex.row ():
                     # highlight the current song
                     # must return a QBrush
@@ -294,16 +286,12 @@ class QPlayListModel (QAbstractTableModel):
                     except ValueError:
                         data= QVariant ()
 
-            elif role==Qt.ForegroundRole:
+            elif role==Qt.ForegroundRole and self.view_.modelIndex is not None:
                 if modelIndex.row ()==self.view_.modelIndex.row ():
                     # highlight the current song
                     # must return a QBrush
                     data= QVariant (QApplication.palette ().brightText ())
                 else:
-                    # try:
-                    #     queueIndex= self.playlist.indexQueue.index (modelIndex.row ())
-                    #     data= QVariant (QApplication.palette ().mid ())
-                    # except ValueError:
                     data= QVariant ()
 
             else:
@@ -331,7 +319,6 @@ class QPlayListModel (QAbstractTableModel):
         # not length or filepath and editing
         print "QPLM.setData()", modelIndex.row (), modelIndex.column(), role
         if modelIndex.column ()<5 and role==Qt.EditRole:
-            # TODO: iterate over the selected cells
             song= self.aggr.songForIndex (modelIndex.row ())
             attr= self.attrNames[modelIndex.column ()]
             try:
