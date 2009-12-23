@@ -69,7 +69,7 @@ class MainWindow (KMainWindow):
         self.ui.searchEntry.textChanged.connect (self.search)
 
         # TODO: better name?
-        self.appModel= QPlayListModel (aggr=self.playlist.aggr, parent=self)
+        self.appModel= QPlayListModel (aggr=self.playlist.aggr, view=self)
         self.setModel (self.appModel)
 
         # FIXME: temporarily until I resolve the showSong() at boot time
@@ -171,10 +171,11 @@ class MainWindow (KMainWindow):
             self.showSong (self.playlist.index)
 
 class QPlayListModel (QAbstractListModel):
-    def __init__ (self, aggr=None, songs=None, parent=None):
-        QAbstractListModel.__init__ (self, parent)
+    def __init__ (self, aggr=None, songs=None, view=None):
+        QAbstractListModel.__init__ (self, view)
 
-        self.parent_= parent
+        self.view_= view
+        self.playlist= view.playlist
 
         if songs is None:
             self.aggr= aggr
@@ -203,12 +204,12 @@ class QPlayListModel (QAbstractListModel):
                 # calculate something based on the filepath
                 data= QVariant (self.fontMetrics.size (Qt.TextSingleLine, song.filepath))
 
-            elif role==Qt.BackgroundRole and modelIndex.row ()==self.parent_.modelIndex.row ():
+            elif role==Qt.BackgroundRole and self.view_.modelIndex is not None and modelIndex.row ()==self.view_.modelIndex.row ():
                 # highlight the current song
                 # must return a QBrush
                 data= QVariant (QApplication.palette ().dark ())
 
-            elif role==Qt.ForegroundRole and modelIndex.row ()==self.parent_.modelIndex.row ():
+            elif role==Qt.ForegroundRole and self.view_.modelIndex is not None and modelIndex.row ()==self.view_.modelIndex.row ():
                 # highlight the current song
                 # must return a QBrush
                 data= QVariant (QApplication.palette ().brightText ())
