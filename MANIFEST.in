@@ -1,1 +1,3 @@
 include satyr/skins/*.ui
+include ChangeLog
+include COPYING

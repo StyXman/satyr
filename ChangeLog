@@ -1,6 +1,4 @@
-satyr (0.3.1) unstable; urgency=low
-
-satyr (0.3.1) unstable; urgency=low
+satyr (0.3.1) unstable; urgency=medium
 
   * nowPlaying(), exported via dbus.
   * 'now playing' plugin for irssi.
