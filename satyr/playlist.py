@@ -112,9 +112,16 @@ class PlayList (SatyrObject):
             except IndexError:
                 # the index saved in the config is bigger than the current collection
                 # fall back to 0
-                self.index= 0
-                self.song= self.aggr.songForIndex (self.index)
-                self.filepath= self.song.filepath
+                try:
+                    self.index= 0
+                    self.song= self.aggr.songForIndex (self.index)
+                    self.filepath= self.song.filepath
+                except IndexError:
+                    # we cannot even select the first song
+                    # which means there are no songs
+                    self.index= None
+                    self.song= None
+                    self.filepath= None
         else:
             print "playlist.setCurrent()", song
             self.song= song
