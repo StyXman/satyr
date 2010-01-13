@@ -148,6 +148,15 @@ class Song (QObject):
             else:
                 info= fr.tag ()
 
+                #Traceback (most recent call last):
+                #File "/home/mdione/src/projects/satyr/collection-agregator/satyr/skins/complex.py", line 327, in setData
+                    #song.saveMetadata ()
+                #File "/home/mdione/src/projects/satyr/collection-agregator/satyr/song.py", line 154, in saveMetadata
+                    #setattr (info, tag, value)
+                #Boost.Python.ArgumentError: Python argument types in
+                    #None.None(Tag, unicode)
+                #did not match C++ signature:
+                    #None(TagLib::Tag {lvalue}, unsigned int)
                 for attr, tag in self.tagForAttr.items ():
                     value= getattr (self, attr, None)
                     # print
