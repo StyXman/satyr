@@ -46,7 +46,9 @@ class CollectionAggregator (QObject):
 
     def indexToCollection (self, index):
         """Selects the collection that contains the index"""
-        for collection in self.collections:
+        prevCollection= self.collections[0]
+        for collection in self.collections[1:]:
+            print index, collection.offset
             if index < collection.offset:
                 break
             prevCollection= collection
