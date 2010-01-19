@@ -53,15 +53,14 @@ class Player (SatyrObject):
         self.playlist= playlist
 
         # self.media= Phonon.MediaObject ()
-        self.media= Phonon.createPlayer (Phonon.MusicCategory)
-        # god bless PyQt4.5
-        self.media.finished.connect (self.next)
-        self.media.stateChanged.connect (self.stateChanged)
-
         # self.ao= Phonon.AudioOutput (Phonon.MusicCategory, parent)
         # BUG: argument 2 of createPath() has an invalid type
         # but this used to work with PyQt4.phonon
         # Phonon.createPath (self.media, self.ao)
+        self.media= Phonon.createPlayer (Phonon.MusicCategory)
+        # god bless PyQt4.5
+        self.media.finished.connect (self.next)
+        self.media.stateChanged.connect (self.stateChanged)
 
     def stateChanged (self, new, old):
         # print "state changed from %d to %d" % (old, new)
