@@ -153,7 +153,7 @@ class MainWindow (KMainWindow):
             songs= self.playlist.search (unicode (text))
             # we have to keep it
             # otherwise it pufs into inexistence after the function ends
-            self.setModel (QPlayListModel (songs=songs))
+            self.setModel (QPlayListModel (songs=songs, view=self))
         else:
             self.setModel (self.appModel)
             # ensure the current song is shown
@@ -188,7 +188,7 @@ class QPlayListModel (QAbstractListModel):
 
             self.signalMapper.mapped.connect (self.addRows)
         else:
-            self.aggr= CollectionAgregator (songs=songs)
+            self.aggr= CollectionAggregator (songs=songs)
 
         # FIXME: kinda hacky
         self.fontMetrics= QFontMetrics (KGlobalSettings.generalFont ())

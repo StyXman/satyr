@@ -172,7 +172,7 @@ class MainWindow (KXmlGuiWindow):
             songs= self.playlist.search (unicode (text))
             # we have to keep it
             # otherwise it pufs into inexistence after the function ends
-            self.setModel (QPlayListModel (songs=songs))
+            self.setModel (QPlayListModel (songs=songs, view=self))
         else:
             self.setModel (self.appModel)
             # ensure the current song is shown
