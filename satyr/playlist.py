@@ -192,12 +192,12 @@ class PlayList (SatyrObject):
         try:
             listIndex= self.indexQueue.index (collectionIndex)
             # exists; dequeue
-            print 'dequeuing index [%d, %d]' % (listIndex, collectionIndex)
+            print 'PL.queue(): dequeuing index [%d, %d]' % (listIndex, collectionIndex)
             self.indexQueue.pop (listIndex)
             self.dequeued.emit (collectionIndex)
         except ValueError:
             # doesn't exist; append
-            print 'queuing [%d]' % (collectionIndex)
+            print 'PL.queue(): queuing [%d]' % (collectionIndex)
             self.indexQueue.append (collectionIndex)
             self.queued.emit (collectionIndex)
 
