@@ -123,7 +123,7 @@ class MainWindow (KXmlGuiWindow):
             # but using the other model!
             # BUG: this is getting ugly
             self.modelIndex= self.appModel.index (index, 0)
-            # we uesd it so we discard it
+            # we used it so we discard it
             # it will be set again by changeSong()
             self.songIndexSelectedByUser= None
 
@@ -185,10 +185,18 @@ class MainWindow (KXmlGuiWindow):
         for modelIndex in self.ui.songsList.selectedIndexes ():
             print "complex.queue()", modelIndex.row ()
             if modelIndex.row () not in selectedSongs:
-                self.playlist.queue (modelIndex.row ())
+                # self.playlist.queue (modelIndex.row ())
+                # not so fast, cowboy. PlayList.queue() spects 'global' indexes
+                # TODO: this is not very efficient
+                song= self.model.aggr.songForIndex (modelIndex.row ())
+                index= self.appModel.aggr.indexForSong (song)
+                self.playlist.queue (index)
                 selectedSongs.append (modelIndex.row ())
 
     def copyEditToSelection (self, tl, br):
+        """copies the outcome of an edition in a cell
+        to all the selected cells in the same column which.
+        this lets us implement mass tag edition."""
         print "complex.copyEditToSelection()", len (self.ui.songsList.selectedIndexes ()), self.appModel.edited
         if len (self.ui.songsList.selectedIndexes ())>1 and self.appModel.edited:
             # more than one cell selected
