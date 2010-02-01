@@ -29,3 +29,14 @@ Marcos Dione <mdione@grulic.org.ar>
 
 or contact me via irc: I'm StyXman on the freenode network. good luck and
 happy song listening!
+
+Shooting troubles in the head (a.k.a FAQ):
+=========================================
+
+Q: I get no songs after scanning my collection! What (doesn't) give?
+A: It happened to me once. phonon didn't had any backend so no mymetypes were
+   supported. Check if the output has a line like:
+
+No mimetypes! do you have any Phonon backend installed, configured and/or working?
+
+   If so, then please check that phonon is properly installed and configured.
