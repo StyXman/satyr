@@ -77,6 +77,7 @@ class MainWindow (KXmlGuiWindow):
 
         # TODO: better name?
         self.appModel= QPlayListModel (aggr=self.playlist.aggr, view=self)
+        # TODO: connect after the collection has been scanned/populated
         self.appModel.dataChanged.connect (self.copyEditToSelection)
         self.copying= False
         self.setModel (self.appModel)
