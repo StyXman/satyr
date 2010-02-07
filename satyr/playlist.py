@@ -18,7 +18,7 @@
 
 
 # qt/kde related
-from PyQt4.QtCore import pyqtSignal, QModelIndex
+from PyQt4.QtCore import pyqtSignal, QModelIndex, QStringList
 
 # dbus
 import dbus.service
@@ -27,7 +27,7 @@ import dbus.service
 import random, bisect
 
 # local
-from satyr.common import SatyrObject, BUS_NAME, configBoolToBool
+from satyr.common import SatyrObject, BUS_NAME, configEntryToBool, configEntryToIntList
 from satyr.primes import primes
 from satyr.collaggr import CollectionAggregator
 
@@ -49,15 +49,16 @@ class PlayList (SatyrObject):
         for collection in self.collections:
             collection.scanFinished.connect (self.filesAdded)
 
-        self.indexQueue= []
+        # self.indexQueue= []
         self.song= None
         self.filepath= None
 
         self.configValues= (
-            ('random', configBoolToBool, False),
+            ('random', configEntryToBool, False),
             ('seed', int, 0),
             ('prime', int, -1),
             ('index', int, 0),
+            ('indexQueue', configEntryToIntList, QStringList ())
             )
         self.loadConfig ()
 
@@ -73,7 +74,7 @@ class PlayList (SatyrObject):
         # File "/home/mdione/src/projects/satyr/playlist-listmodel/models.py", line 180, in songForIndex
         #     song= collection.songs[collectionIndex]
         # IndexError: list index out of range
-        # self.setCurrent ()
+        self.setCurrent ()
 
     # ** DO NOT REMOVE ** we're still using it for setting the window title
     def formatSong (self, song):
