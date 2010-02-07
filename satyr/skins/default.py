@@ -188,7 +188,7 @@ class QPlayListModel (QAbstractListModel):
 
             self.signalMapper.mapped.connect (self.addRows)
         else:
-            self.aggr= CollectionAgregator (songs=songs)
+            self.aggr= CollectionAggregator (songs=songs)
 
         # FIXME: kinda hacky
         self.fontMetrics= QFontMetrics (KGlobalSettings.generalFont ())

@@ -150,6 +150,7 @@ class Collection (SatyrObject):
         self.scanners.append (scanner)
 
     def scanFinished_ (self):
+        print "C.scanFinished()"
         self.scanning= False
         self.scanFinished.emit ()
 
@@ -173,6 +174,7 @@ class Collection (SatyrObject):
             index= bisect.bisect (self.songs, song)
             # test if it's not already there
             # FIXME: use another sorting method?
+            # print index
             if index==0 or self.songs[index-1]!=song:
                 self.songs.insert (index, song)
                 self.count+= 1
@@ -180,6 +182,7 @@ class Collection (SatyrObject):
                     song.loadMetadata ()
                 self.newSongs_.append ((index, filepath))
 
+        # print "C.add():", self.newSongs_
         self.newSongs.emit ()
 
     def indexForSong (self, song):

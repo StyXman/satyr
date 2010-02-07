@@ -1,3 +1,13 @@
+satyr (0.3.1) unstable; urgency=medium
+
+  * nowPlaying(), exported via dbus.
+  * 'now playing' plugin for irssi.
+  * Changes in tags is copied to selected cells (in the same column). This allows 'Massive tag writing'.
+  * Fixed "NoneType has noe attribute 'row'" bug, but this is just a workaround.
+  * Forgot to install complex.ui.
+
+ -- Marcos Dione <mdione@mustang.grulicueva.net>  Sat, 26 Dec 2009 16:02:48 -0300
+
 satyr (0.3) unstable; urgency=low
 
   * (De)Queueing Songs with the keyboard, with visual feedback.
