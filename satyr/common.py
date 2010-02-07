@@ -16,10 +16,9 @@
 # You should have received a copy of the GNU General Public License
 # along with satyr.  If not, see <http://www.gnu.org/licenses/>.
 
-
 # qt/kde related
 from PyKDE4.kdecore import KSharedConfig
-from PyQt4.QtCore import QObject, QVariant
+from PyQt4.QtCore import QObject, QVariant, QStringList
 
 # dbus
 import dbus.service
@@ -27,8 +26,16 @@ import dbus.service
 # globals :|
 BUS_NAME= 'org.kde.satyr'
 
-def configBoolToBool (s):
+def configEntryToBool (s):
     return s!='false'
+
+def configEntryToIntList (s):
+    print ">%s<" % s
+    if s=='':
+        ans= []
+    else:
+        ans= [int (x) for x in list (s)]
+    return ans
 
 
 MetaDBusObject= type (dbus.service.Object)
@@ -63,7 +70,7 @@ class SatyrObject (dbus.service.Object, QObject):
         if not self.config is None:
             for k, t, v in self.configValues:
                 v= getattr (self, k)
-                # print 'writing config entry %s= %s' % (k, v)
+                print 'writing config entry %s= %s' % (k, v)
                 self.config.writeEntry (k, QVariant (v))
             self.config.config ().sync ()
 
@@ -71,7 +78,14 @@ class SatyrObject (dbus.service.Object, QObject):
         for k, t, v in self.configValues:
             if not self.config is None:
                 print 'reading config entry %s [%s]' % (k, v),
-                s= self.config.readEntry (k, QVariant (v)).toString ()
+                a= self.config.readEntry (k, QVariant (v))
+                if type (v)==QStringList:
+                    print "QSL!"
+                    s= a.toStringList ()
+                else:
+                    print "just a QS...", type (v)
+                    s= a.toString ()
+                print type (s)
                 v= t (s)
                 print s, v
 
