@@ -24,7 +24,7 @@ python_version='%d.%d' % sys.version_info[:2]
 
 data= dict (
     name='satyr',
-    version='0.3',
+    version='0.3.1',
     description="audio player developed in PyKDE4.",
     long_description="""
 satyr pretends to have the following features (some are not implemented yet):
@@ -70,7 +70,9 @@ satyr pretends to have the following features (some are not implemented yet):
     # this kinda suck
     data_files= [
         ('lib/python%s/site-packages/satyr/skins/' % python_version,
-            ('satyr/skins/default.ui', 'satyr/skins/simple.ui'))],
+            ('satyr/skins/default.ui',
+                'satyr/skins/simple.ui',
+                'satyr/skins/complex.ui'))],
     scripts= ['satyr_main'],
     )
 
