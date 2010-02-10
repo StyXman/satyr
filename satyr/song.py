@@ -22,6 +22,7 @@ from PyQt4.QtCore import QObject, pyqtSignal
 
 # other libs
 import tagpy
+# import Boost.Python
 
 class TagWriteError (Exception):
     pass
@@ -110,7 +111,8 @@ class Song (QObject):
         """dict iface so we don't have to make special case in __setattr__()"""
 
         # these two must be int()s
-        if key in ('track', 'year'):
+        if key in ('trackno', 'year'):
+            print "converting from %s to int for %s" % (type (value), key)
             value= int (value)
 
         # we cache; otherwise we could set loaded to False
@@ -133,6 +135,7 @@ class Song (QObject):
             if not self.loaded:
                 # BUG: makes no fucking sense! what was I drinking?
                 # we loose all the changes we want to save!
+                print "*** ERROR: loadMetadata() while saveMetadata()!!!"
                 fr= self.loadMetadata ()
             else:
                 try:
@@ -160,7 +163,11 @@ class Song (QObject):
                 for attr, tag in self.tagForAttr.items ():
                     value= getattr (self, attr, None)
                     # print
-                    setattr (info, tag, value)
+                    try:
+                        setattr (info, tag, value)
+                    except Exception, e:
+                        print type (e)
+                        print "ValueError: %s= (%s)%s" % (tag, type (value), value)
 
                 if not fr.save ():
                     raise TagWriteError
