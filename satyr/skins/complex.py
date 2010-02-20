@@ -269,8 +269,10 @@ class QPlayListModel (QAbstractTableModel):
                 attr= self.attrNames [modelIndex.column ()]
                 rawData= song[attr]
                 if attr=='filepath':
+                    # filenames as they are
                     rawData= QFile.decodeName (rawData)
-                elif attr=='title':
+                elif attr=='title' and role!=Qt.EditRole:
+                    # don't (even try to) add the [#] to the title
                     try:
                         queueIndex= self.playlist.indexQueue.index (modelIndex.row ())
                         # make it show as starting in 1, otherwise it's confusing
