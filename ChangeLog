@@ -1,9 +1,18 @@
+satyr (0.3.2) unstable; urgency=low
+
+  * We can save the list of queued Songs on exit and load it at startup.
+  * The queue position is not presented when editing the title of a Song that is queued.
+  * Setting the track number works now (was a bug).
+  * fixed a bug in setup.py.
+
+ -- Marcos Dione <mdione@grulic.org.ar>  Wed, 24 Feb 2010 20:32:21 +0100
+
 satyr (0.3.1) unstable; urgency=medium
 
   * nowPlaying(), exported via dbus.
   * 'now playing' plugin for irssi.
   * Changes in tags is copied to selected cells (in the same column). This allows 'Massive tag writing'.
-  * Fixed "NoneType has noe attribute 'row'" bug, but this is just a workaround.
+  * Fixed "NoneType has no attribute 'row'" bug, but this is just a workaround.
   * Forgot to install complex.ui.
 
  -- Marcos Dione <mdione@mustang.grulicueva.net>  Sat, 26 Dec 2009 16:02:48 -0300
@@ -18,6 +27,6 @@ satyr (0.3) unstable; urgency=low
   * Show the filepaths as much as possible in the user's encoding.
   * Hitting F2 in a cell edits its contents.
   * Silightly cleaner interface: don't show so many 0's.
-  * bug with perv/next: weren't wrapping around.
+  * Bug with prev/next: weren't wrapping around.
 
  -- Marcos Dione <mdione@grulic.org.ar>  Sat, 12 Dec 2009 02:12:13 +0100
