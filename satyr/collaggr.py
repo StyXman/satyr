@@ -18,11 +18,14 @@
 
 
 # qt/kde related
-from PyQt4.QtCore import QObject, QSignalMapper
+from PyQt4.QtCore import QSignalMapper
 
-class CollectionAggregator (QObject):
+# local
+from satyr.common import SatyrObject, BUS_NAME
+
+class CollectionAggregator (SatyrObject):
     def __init__ (self, collections= None, songs=None):
-        QObject.__init__ (self)
+        SatyrObject.__init__ (self)
 
         if collections is None:
             collections= []
