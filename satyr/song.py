@@ -113,7 +113,10 @@ class Song (QObject):
         # these two must be int()s
         if key in ('trackno', 'year'):
             print "converting from %s to int for %s" % (type (value), key)
-            value= int (value)
+            try:
+                value= int (value)
+            except ValueError:
+                value= 0
 
         # we cache; otherwise we could set loaded to False
         # and let other functions to resolve it.
