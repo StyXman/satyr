@@ -44,7 +44,7 @@ class PlayList (SatyrObject):
     def __init__ (self, parent, collections, busName=None, busPath=None):
         SatyrObject.__init__ (self, parent, busName, busPath)
 
-        self.aggr= CollectionAggregator (collections)
+        self.aggr= CollectionAggregator (collections, self)
         self.collections= collections
         for collection in self.collections:
             collection.scanFinished.connect (self.filesAdded)

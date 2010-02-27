@@ -21,8 +21,8 @@
 from PyQt4.QtCore import QObject, QSignalMapper
 
 class CollectionAggregator (QObject):
-    def __init__ (self, collections= None, songs=None):
-        QObject.__init__ (self)
+    def __init__ (self, parent, collections= None, songs=None):
+        QObject.__init__ (self, parent)
 
         if collections is None:
             collections= []
