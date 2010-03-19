@@ -52,13 +52,13 @@
         </property>
        </widget>
       </item>
-      <item>
+      <!--item>
        <widget class="Phonon::SeekSlider" name="timeSlider"/>
       </item>
      </layout>
     </item>
     <item>
-     <layout class="QHBoxLayout" name="horizontalLayout_2">
+     <layout class="QHBoxLayout" name="horizontalLayout_2"-->
       <item>
        <widget class="QCheckBox" name="randomCheck">
         <property name="text">
@@ -121,11 +121,11 @@
   </widget>
  </widget>
  <customwidgets>
-  <customwidget>
+  <!--customwidget>
    <class>Phonon::SeekSlider</class>
    <extends>QWidget</extends>
    <header location="global">phonon/seekslider.h</header>
-  </customwidget>
+  </customwidget-->
   <customwidget>
    <class>SearchEntry</class>
    <extends>QLineEdit</extends>

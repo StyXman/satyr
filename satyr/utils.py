@@ -17,7 +17,8 @@
 # along with satyr.  If not, see <http://www.gnu.org/licenses/>.
 
 # qt/kde related
-from PyKDE4.phonon import Phonon
+# from PyKDE4.phonon import Phonon
+from PyQt4.phonon import Phonon
 from PyQt4.QtCore import QByteArray, QUrl
 
 def phononVersion ():
