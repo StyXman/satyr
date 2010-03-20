@@ -45,11 +45,11 @@ def path2qurl (path):
 
 def import_ (name):
     # as per __import__'s doc suggestion
-    print name
+    # print name
     mod= __import__ (name)
     components= name.split ('.')
     for comp in components[1:]:
-        print comp
+        # print comp
         mod= getattr (mod, comp)
     return mod
 
