@@ -38,33 +38,14 @@ def configEntryToIntList (s):
     return ans
 
 
-MetaDBusObject= type (dbus.service.Object)
-MetaQObject= type (QObject)
-
-class MetaObject (MetaQObject, MetaDBusObject):
-    """Dummy metaclass that allows us to inherit from both QObject and d.s.Object"""
-    def __init__(cls, name, bases, dct):
-        MetaDBusObject.__init__ (cls, name, bases, dct)
-        MetaQObject.__init__ (cls, name, bases, dct)
-
-class SatyrObject (dbus.service.Object, QObject):
-    """A QObject with a DBus interface and a section in the config file"""
-    __metaclass__= MetaObject
-
-    def __init__ (self, parent, busName=None, busPath=None):
-        print busName, busPath
-        dbus.service.Object.__init__ (self, busName, busPath)
-        QObject.__init__ (self, parent)
-
+class ConfigurableObject (object):
+    def __init__ (self, groupName=None):
         # HINT: please redefine in inheriting classes
         self.configValues= ()
-        if busPath is not None:
-            self.config= KSharedConfig.openConfig ('satyrrc').group (self.dbusName (busPath))
+        if groupName is not None:
+            self.config= KSharedConfig.openConfig ('satyrrc').group (groupName)
         else:
             self.config= None
-
-    def dbusName (self, busPath):
-        return busPath[1:].replace ('/', '-')
 
     def saveConfig (self):
         if not self.config is None:
@@ -90,5 +71,32 @@ class SatyrObject (dbus.service.Object, QObject):
                 print s, v
 
             setattr (self, k, v)
+
+
+MetaDBusObject= type (dbus.service.Object)
+MetaQObject= type (QObject)
+MetaCObject= type (ConfigurableObject)
+
+
+class MetaObject (MetaQObject, MetaDBusObject, MetaCObject):
+    """Dummy metaclass that allows us to inherit from both QObject and d.s.Object"""
+    def __init__(cls, name, bases, dct):
+        MetaDBusObject.__init__ (cls, name, bases, dct)
+        MetaQObject.__init__ (cls, name, bases, dct)
+        MetaCObject.__init__ (cls, name, bases, dct)
+
+
+class SatyrObject (dbus.service.Object, QObject, ConfigurableObject):
+    """A QObject with a DBus interface and a section in the config file"""
+    __metaclass__= MetaObject
+
+    def __init__ (self, parent, busName=None, busPath=None):
+        # print busName, busPath
+        dbus.service.Object.__init__ (self, busName, busPath)
+        QObject.__init__ (self, parent)
+        ConfigurableObject.__init__ (self, self.dbusName (busPath))
+
+    def dbusName (self, busPath):
+        return busPath[1:].replace ('/', '-')
 
 # end
