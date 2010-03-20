@@ -41,11 +41,11 @@ class PlayList (SatyrObject):
     queued= pyqtSignal (int)
     dequeued= pyqtSignal (int)
 
-    def __init__ (self, parent, collections, busName=None, busPath=None):
+    def __init__ (self, parent, collaggr, busName=None, busPath=None):
         SatyrObject.__init__ (self, parent, busName, busPath)
 
-        self.aggr= CollectionAggregator (self, collections)
-        self.collections= collections
+        self.collaggr= collaggr
+        self.collections= collaggr.collections
         for collection in self.collections:
             collection.scanFinished.connect (self.filesAdded)
 
@@ -108,14 +108,14 @@ class PlayList (SatyrObject):
         if song is None:
             try:
                 print "playlist.setCurrent()", self.index
-                self.song= self.aggr.songForIndex (self.index)
+                self.song= self.collaggr.songForIndex (self.index)
                 self.filepath= self.song.filepath
             except IndexError:
                 # the index saved in the config is bigger than the current collection
                 # fall back to 0
                 try:
                     self.index= 0
-                    self.song= self.aggr.songForIndex (self.index)
+                    self.song= self.collaggr.songForIndex (self.index)
                     self.filepath= self.song.filepath
                 except IndexError:
                     # we cannot even select the first song
@@ -127,7 +127,7 @@ class PlayList (SatyrObject):
             print "playlist.setCurrent()", song
             self.song= song
             self.filepath= song.filepath
-            self.index= self.aggr.indexForSong (song)
+            self.index= self.collaggr.indexForSong (song)
             print "playlist.setCurrent()", self.index
 
         # we cannot emit the song because Qt (and I don't mean PyQt4 here)
@@ -139,11 +139,11 @@ class PlayList (SatyrObject):
         print "¡prev",
         if self.random:
             random= self.seed
-            self.index= (self.index-random) % self.aggr.count
-            random= (self.seed-self.prime) % self.aggr.count
+            self.index= (self.index-random) % self.collaggr.count
+            random= (self.seed-self.prime) % self.collaggr.count
             self.seed= random
         else:
-            self.index= (self.index-1) % self.aggr.count
+            self.index= (self.index-1) % self.collaggr.count
 
         self.setCurrent ()
 
@@ -156,17 +156,17 @@ class PlayList (SatyrObject):
             self.index= self.indexQueue.pop (0)
         else:
             if self.random:
-                random= (self.seed+self.prime) % self.aggr.count
-                self.index= (self.index+random) % self.aggr.count
+                random= (self.seed+self.prime) % self.collaggr.count
+                self.index= (self.index+random) % self.collaggr.count
                 self.seed= random
             else:
-                self.index= (self.index+1) % self.aggr.count
+                self.index= (self.index+1) % self.collaggr.count
 
         self.setCurrent ()
 
     def filesAdded (self):
         # we must recompute the prime
-        if self.aggr.count>2:
+        if self.collaggr.count>2:
             # if count is 1, it make no sense to select a prime
             # if it's 2, the prime selected would be 2
             # if you turn on random and hit next
@@ -181,7 +181,7 @@ class PlayList (SatyrObject):
 
     def randomPrime (self):
         # select a random prime based on the amount of songs in the playlist
-        top= bisect.bisect (primes, self.aggr.count)
+        top= bisect.bisect (primes, self.collaggr.count)
         # select from the upper 2/3,
         # so in large playlists the same artist is not picked consecutively
         prime= random.choice (primes[top/3:top])

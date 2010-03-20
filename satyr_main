@@ -30,6 +30,7 @@ from satyr.common import BUS_NAME
 from satyr.player import Player
 from satyr.playlist import PlayList
 from satyr.collection import Collection
+from satyr.collaggr import CollectionAggregator
 from satyr import utils
 import satyr
 
@@ -46,21 +47,26 @@ def main ():
     mod= utils.import_ ('satyr.skins.'+skin)
     mw= mod.MainWindow ()
 
-    collections= []
-    for index in xrange (args.count ()):
-        path= args.arg (index)
+    collaggr= CollectionAggregator (app, busName=busName, busPath='/collaggr')
+    if collaggr.collsNo==0:
+        print "no collections, picking from args"
+        for index in xrange (args.count ()):
+            path= args.arg (index)
 
-        # paths must be bytes, not ascii or utf-8
-        path= utils.qstring2path (path)
+            # paths must be bytes, not ascii or utf-8
+            path= utils.qstring2path (path)
 
-        collection= Collection (app, path, busName=busName, busPath="/collection_%04d" % index)
-        collections.append (collection)
+            collection= Collection (app, path, busName=busName, busPath="/collection_%04d" % index)
+            collaggr.append (collection)
+
+    for collection in collaggr.collections:
         collection.scanBegins.connect (mw.scanBegins)
         collection.scanFinished.connect (mw.scanFinished)
-        collection.loadOrScan ()
+        # they're loaded by the CollAggr
+        # collection.loadOrScan ()
         mw.collectionAdded ()
 
-    playlist= PlayList (app, collections, busName, '/playlist')
+    playlist= PlayList (app, collaggr, busName=busName, busPath='/playlist')
     player= Player (app, playlist, busName, '/player')
     player.finished.connect (app.quit)
 

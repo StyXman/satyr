@@ -172,6 +172,7 @@ class Player (SatyrObject):
         # save them in 'order'
         self.saveConfig ()
         self.playlist.saveConfig ()
+        self.playlist.collaggr.saveConfig ()
         for collection in self.playlist.collections:
             collection.saveConfig ()
         print "bye!"

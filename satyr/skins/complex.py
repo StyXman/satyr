@@ -76,7 +76,7 @@ class MainWindow (KXmlGuiWindow):
             self.ui.timeSlider.setMediaObject (self.player.media)
 
         # TODO: better name?
-        self.appModel= QPlayListModel (aggr=self.playlist.aggr, view=self)
+        self.appModel= QPlayListModel (collaggr=self.playlist.collaggr, view=self)
         # TODO: connect after the collection has been scanned/populated
         self.appModel.dataChanged.connect (self.copyEditToSelection)
         self.copying= False
@@ -114,7 +114,7 @@ class MainWindow (KXmlGuiWindow):
             print "complex.showSong()", index
             # we use the playlist model because the index is *always* refering
             # to that model
-            song= self.playlist.aggr.songForIndex (index)
+            song= self.playlist.collaggr.songForIndex (index)
             # we save the new modelIndex in self so we can show it
             # when we come back from searching
             modelIndex= self.modelIndex= self.model.index (index, 0)
@@ -148,7 +148,7 @@ class MainWindow (KXmlGuiWindow):
     def changeSong (self, modelIndex):
         # FIXME: later we ask for the index... doesn't make sense!
         print "default.changeSong()", modelIndex.row ()
-        song= self.model.aggr.songForIndex (modelIndex.row ())
+        song= self.model.collaggr.songForIndex (modelIndex.row ())
         self.songIndexSelectedByUser= (song, modelIndex)
         self.player.play (song)
 
@@ -189,8 +189,8 @@ class MainWindow (KXmlGuiWindow):
                 # self.playlist.queue (modelIndex.row ())
                 # not so fast, cowboy. PlayList.queue() spects 'global' indexes
                 # TODO: this is not very efficient
-                song= self.model.aggr.songForIndex (modelIndex.row ())
-                index= self.appModel.aggr.indexForSong (song)
+                song= self.model.collaggr.songForIndex (modelIndex.row ())
+                index= self.appModel.collaggr.indexForSong (song)
                 self.playlist.queue (index)
                 selectedSongs.append (modelIndex.row ())
 
@@ -232,7 +232,7 @@ class MainWindow (KXmlGuiWindow):
 
 
 class QPlayListModel (QAbstractTableModel):
-    def __init__ (self, aggr=None, songs=None, view=None):
+    def __init__ (self, collaggr=None, songs=None, view=None):
         QAbstractTableModel.__init__ (self, view)
         # TODO: different delegate for editing tags: one with completion
         self.view_= view
@@ -240,8 +240,8 @@ class QPlayListModel (QAbstractTableModel):
         self.edited= False
 
         if songs is None:
-            self.aggr= aggr
-            self.collections= self.aggr.collections
+            self.collaggr= collaggr
+            self.collections= self.collaggr.collections
 
             self.signalMapper= QSignalMapper ()
             for collNo, collection in enumerate (self.collections):
@@ -250,7 +250,7 @@ class QPlayListModel (QAbstractTableModel):
 
             self.signalMapper.mapped.connect (self.addRows)
         else:
-            self.aggr= CollectionAggregator (songs=songs)
+            self.collaggr= CollectionAggregator (songs=songs)
 
         self.attrNames= ('artist', 'year', 'album', 'trackno', 'title', 'length', 'filepath')
 
@@ -262,8 +262,8 @@ class QPlayListModel (QAbstractTableModel):
         print "QPLM: ", self
 
     def data (self, modelIndex, role):
-        if modelIndex.isValid () and modelIndex.row ()<self.aggr.count:
-            song= self.aggr.songForIndex (modelIndex.row ())
+        if modelIndex.isValid () and modelIndex.row ()<self.collaggr.count:
+            song= self.collaggr.songForIndex (modelIndex.row ())
 
             if role==Qt.DisplayRole or role==Qt.EditRole:
                 attr= self.attrNames [modelIndex.column ()]
@@ -330,7 +330,7 @@ class QPlayListModel (QAbstractTableModel):
         # not length or filepath and editing
         print "QPLM.setData()", modelIndex.row (), modelIndex.column(), role
         if modelIndex.column ()<5 and role==Qt.EditRole:
-            song= self.aggr.songForIndex (modelIndex.row ())
+            song= self.collaggr.songForIndex (modelIndex.row ())
             attr= self.attrNames[modelIndex.column ()]
             try:
                 song[attr]= unicode (variant.toString ())
@@ -385,7 +385,7 @@ class QPlayListModel (QAbstractTableModel):
         self.dataChanged.emit (start, end)
 
     def rowCount (self, parent=None):
-        return self.aggr.count
+        return self.collaggr.count
 
     def columnCount (self, parent=None):
         return len (self.attrNames)

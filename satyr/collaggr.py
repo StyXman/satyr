@@ -16,20 +16,24 @@
 # You should have received a copy of the GNU General Public License
 # along with satyr.  If not, see <http://www.gnu.org/licenses/>.
 
-
 # qt/kde related
 from PyQt4.QtCore import QSignalMapper
 
 # local
 from satyr.common import SatyrObject, BUS_NAME
+from satyr.collection import Collection
 
 class CollectionAggregator (SatyrObject):
-    def __init__ (self, parent, collections= None, songs=None):
-        SatyrObject.__init__ (self, parent)
+    def __init__ (self, parent, collections=None, songs=None, busName=None, busPath=None):
+        SatyrObject.__init__ (self, parent, busName, busPath)
 
-        if collections is None:
-            collections= []
-        self.collections= collections
+        self.configValues= (
+            ('collsNo', int, 0),
+            )
+        self.loadConfig ()
+
+        self.signalMapper= QSignalMapper ()
+        self.collections= []
 
         if songs is None:
             self.songs= []
@@ -38,13 +42,29 @@ class CollectionAggregator (SatyrObject):
             self.songs= songs
             self.count= len (songs)
 
-        self.signalMapper= QSignalMapper ()
-        for collNo, collection in enumerate (self.collections):
-            collection.newSongs.connect (self.signalMapper.map)
-            self.signalMapper.setMapping (collection, collNo)
-            collection.scanFinished.connect (self.updateIndexes)
+        # if collections is not None we it means the may have changed
+        if self.collsNo>0 and collections is None:
+            print "loading collections from config", self.collsNo
+            for index in xrange (self.collsNo):
+                collection= Collection (self, busName=busName, busPath="/collection_%04d" % index)
+                self.append (collection)
+        else:
+            if collections is not None:
+                for collection in collections:
+                    self.append (collection)
 
         self.signalMapper.mapped.connect (self.addSongs)
+
+    def append (self, collection):
+        print "adding collection", collection
+        collection.loadOrScan ()
+        self.collections.append (collection)
+        self.collsNo= len (self.collections)
+
+        index= len (self.collections)-1
+        collection.newSongs.connect (self.signalMapper.map)
+        self.signalMapper.setMapping (collection, index)
+        collection.scanFinished.connect (self.updateIndexes)
         self.updateIndexes ()
 
     def indexToCollection (self, index):
