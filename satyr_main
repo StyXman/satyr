@@ -48,12 +48,10 @@ def main ():
         )
     config.loadConfig ()
 
-    skin= config.skin
-
-    # skin selection logic:
-    # if the config says it's default, use command line
-    if config.skin=='default':
-        config.skin= str (args.getOption ("skin"))
+    # if the command line is not default, use it
+    skin= str (args.getOption ("skin"))
+    if skin!="":
+        config.skin= skin
 
     # do the import magic
     # TODO: add the user's app dir to sys.path so we can load skins from there
