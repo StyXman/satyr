@@ -8,14 +8,17 @@ it has very few, if maybe big, dependencies:
 
 package[1]		version[2]
 -------------------------------
+python-qt4-phonon	4.6-1[5]
 python-kde4		4.3.1
 python-tagpy		0.94.7
-pyqt4-dev-tools[3]	4.5.4[4]
+pyqt4-dev-tools[3]	4.5.4[4][5]
 
 [1] the names are the ones used in debian.
 [2] these are the versions used while developing
 [3] or the package that provides the pyuic4 tool.
 [4] I think any 4.5.x is enough.
+[5] python-qt4-phonon was added after my system changed to python-qt4_4.6-1.
+    if it's not working with 4.5.x, let me know.
 
 once unpacked, run 'python setup.py --help', follow instructions, and then
 'satyr_main <path to collection>'. more advanced installation instructions will
@@ -38,4 +41,5 @@ A: It happened to me once. phonon didn't had any backend so no mymetypes were
 
 No mimetypes! do you have any Phonon backend installed, configured and/or working?
 
-   If so, then please check that phonon is properly installed and configured.
+   If so, then please check that phonon is properly installed, configured, and has 
+   at least one backend.

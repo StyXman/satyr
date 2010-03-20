@@ -51,7 +51,8 @@ class Collection (SatyrObject):
         # (re)defined by an aggregator if we're in one of those
         self.offset= 0
 
-        # BUG: path is not reread fromt he config file!
+        # BUG: path is not reread from the config file!
+        # it breaks rescanning
         self.configValues= (
             ('path', str, path),
             )
