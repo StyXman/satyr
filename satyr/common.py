@@ -77,15 +77,15 @@ class SatyrObject (dbus.service.Object, QObject):
     def loadConfig (self):
         for k, t, v in self.configValues:
             if not self.config is None:
-                print 'reading config entry %s [%s]' % (k, v),
+                print 'reading config entry %s.%s [%s]' % (unicode (self.config.name ()), k, v),
                 a= self.config.readEntry (k, QVariant (v))
                 if type (v)==QStringList:
-                    print "QSL!"
+                    # print "QSL!"
                     s= a.toStringList ()
                 else:
-                    print "just a QS...", type (v)
+                    # print "just a QS...", type (v)
                     s= a.toString ()
-                print type (s)
+                print type (s),
                 v= t (s)
                 print s, v
 
