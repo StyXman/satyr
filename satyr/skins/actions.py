@@ -29,6 +29,6 @@ def create (parent, ac):
     # wants the action or not. with this it will still be able to do it, but via
     # implementing empty slots
     queueAction.triggered.connect (parent.queue)
-    print "actions created"
+    # print "actions created"
 
 # end
