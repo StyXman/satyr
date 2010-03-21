@@ -97,6 +97,10 @@ class SatyrObject (dbus.service.Object, QObject, ConfigurableObject):
         ConfigurableObject.__init__ (self, self.dbusName (busPath))
 
     def dbusName (self, busPath):
-        return busPath[1:].replace ('/', '-')
+        if busPath is None:
+            ans= None
+        else:
+            ans= busPath[1:].replace ('/', '-')
+        return ans
 
 # end

@@ -18,6 +18,7 @@
 
 # qt/kde related
 from PyKDE4.kdeui import KXmlGuiWindow, KGlobalSettings, KActionCollection
+from PyKDE4.kdeui import KApplication
 from PyQt4.QtCore import QAbstractTableModel, QModelIndex, QVariant, Qt
 from PyQt4.QtCore import QSignalMapper, QSize, QFile
 from PyQt4.QtGui import QItemSelectionModel, QAbstractItemView, QFontMetrics
@@ -230,6 +231,25 @@ class MainWindow (KXmlGuiWindow):
         if self.collectionsAwaited==0:
             self.showSong (self.playlist.index)
 
+    # session management
+    def saveProperties (self, config):
+        print "saveProperties():"
+
+    def restoreProperties (self, config):
+        # not automatically called, add code in main()
+        # see http://techbase.kde.org/Development/Tutorials/Session_Management#Add_session_management_support_to_your_main.28.29_function
+        print "restoreProperties():"
+
+    def queryClose (self):
+        print "queryClose():"
+        # , KApplication.sessionSaving ()
+        return True
+
+    def queryExit (self):
+        print "queryExit():"
+        # , KApplication.sessionSaving ()
+        return True
+
 
 class QPlayListModel (QAbstractTableModel):
     def __init__ (self, collaggr=None, songs=None, view=None):
@@ -250,7 +270,7 @@ class QPlayListModel (QAbstractTableModel):
 
             self.signalMapper.mapped.connect (self.addRows)
         else:
-            self.collaggr= CollectionAggregator (songs=songs)
+            self.collaggr= CollectionAggregator (self, songs=songs)
 
         self.attrNames= ('artist', 'year', 'album', 'trackno', 'title', 'length', 'filepath')
 
