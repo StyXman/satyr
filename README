@@ -1,10 +1,12 @@
-«I need a media player that thinks about music the way I think about it.
-This is such a program.»
+«I need a media player that thinks about music the way I think about
+it. This is such a program.»
 
-satyr is a rather minimalistic audio player based in KDE technologies, and
-developed in the Python language.
+satyr is a rather minimalistic audio player/tag editor based in KDE
+technologies, and developed in the Python language.
 
-it has very few, if maybe big, dependencies:
+
+DEPENDENCIES:
+============
 
 package[1]		version[2]
 -------------------------------
@@ -17,29 +19,62 @@ pyqt4-dev-tools[3]	4.5.4[4][5]
 [2] these are the versions used while developing
 [3] or the package that provides the pyuic4 tool.
 [4] I think any 4.5.x is enough.
-[5] python-qt4-phonon was added after my system changed to python-qt4_4.6-1.
-    if it's not working with 4.5.x, let me know.
 
-once unpacked, run 'python setup.py --help', follow instructions, and then
-'satyr_main <path to collection>'. more advanced installation instructions will
-come later.
+[5] python-qt4-phonon was added after my system changed to
+    python-qt4_4.6-1. if it's not working with 4.5.x, let me know.
 
-if you have any question or suggestion and you want to contact me, you can
-send me an e-mail to:
+
+INSTALATION:
+===========
+
+once unpacked, run 'python setup.py install --help', and follow
+instructions. make sure that the chosen prefix (which you can change
+with the --prefix option) is in the proper paths; that is:
+
+ * $prefix/bin is in PATH
+ * $prefix/lib/pythonX.Y/site-packages is in PYTHONPATH
+ 
+where X.Y is the version of the default python in your system. If they
+are not, add them in your .bashrc file or equivalent. if everythong is
+setup correctly, satyr will be able to rise with your X session.
+
+
+RUNNING:
+=======
+
+satyr still lacks of configure dialogs, but can be configured from the
+command line the first time it's run. So far you can configure the skin
+to show (use the -s/--skin option to change it) and the paths to the
+collections. run 'satyr_main <path to collection>...'. satyr will
+remember all this, so next runs can simply be 'satyr_main', unless you
+want to change something.
+
+
+ABOUT:
+=====
+
+if you have any question or suggestion and you want to contact me, you
+can send me an e-mail to:
 
 Marcos Dione <mdione@grulic.org.ar>
 
-or contact me via irc: I'm StyXman on the freenode network. good luck and
-happy song listening!
+or contact me via irc: I'm StyXman on the freenode network. good luck
+and happy song listening!
 
 Shooting troubles in the head (a.k.a FAQ):
 =========================================
 
 Q: I get no songs after scanning my collection! What (doesn't) give?
-A: It happened to me once. phonon didn't had any backend so no mymetypes were
-   supported. Check if the output has a line like:
+A: It happened to me once. phonon didn't had any backend so no mymetypes
+    were supported. Check if the output has a line like:
 
 No mimetypes! do you have any Phonon backend installed, configured and/or working?
 
-   If so, then please check that phonon is properly installed, configured, and has 
-   at least one backend.
+   If so, then please check that phonon is properly installed,
+   configured, and has at least one backend.
+
+Q: Search takes ages!
+A: Yes, I know. I'm looking for alternatives, but so far they have
+    proven even worse. Also, sometimes it takes some time to load the
+    tags of songs show for the first time, specially when the program
+    has just been run.
