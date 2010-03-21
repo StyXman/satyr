@@ -19,10 +19,12 @@
 # qt/kde related
 from PyKDE4.kdecore import KCmdLineArgs, KAboutData, i18n, ki18n
 from PyKDE4.kdecore import KCmdLineOptions
-from PyKDE4.kdeui import KApplication
 
 # std python
 import sys
+
+# local
+from satyr.app import App
 
 def createApp (args=sys.argv):
     #########################################
@@ -54,7 +56,7 @@ def createApp (args=sys.argv):
     options.add ("+path", ki18n ("paths to your music collections"))
     KCmdLineArgs.addCmdLineOptions (options)
 
-    app= KApplication ()
+    app= App ()
     args= KCmdLineArgs.parsedArgs ()
 
     return app, args
