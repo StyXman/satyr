@@ -1,9 +1,9 @@
 satyr (0.4.0) unstable; urgency=low
 
-  * remeber collecitons and selected skin. this means we can also recover with a X session.
-  * python-qt4-phonon is a dep. this way we can run on unpatched systems.
-  * the complex skin doesn't show the time slide bar until it can be shown on an unpatched system.
-  * fixed search.
+  * Remember collections and selected skin. This means we can also recover with a X session.
+  * python-qt4-phonon is a dep. This way we can run on unpatched systems.
+  * The complex skin doesn't show the time slide bar until it can be shown on an unpatched system.
+  * Fixed bug which broke the search feature.
 
  -- Marcos Dione <mdione@grulic.org.ar>  Sun, 21 Mar 2010 21:14:13 +0100
 
@@ -11,8 +11,8 @@ satyr (0.3.2) unstable; urgency=low
 
   * We can save the list of queued Songs on exit and load it at startup.
   * The queue position is not presented when editing the title of a Song that is queued.
-  * Setting the track number works now (was a bug).
-  * fixed a bug in setup.py.
+  * Setting the track number works now (there was a bug).
+  * Fixed a bug in setup.py.
 
  -- Marcos Dione <mdione@grulic.org.ar>  Wed, 24 Feb 2010 20:32:21 +0100
 
