@@ -43,7 +43,7 @@ class Collection (SatyrObject):
     scanBegins= pyqtSignal ()
     scanFinished= pyqtSignal ()
 
-    def __init__ (self, parent, path=None, relative=False, busName=None, busPath=None):
+    def __init__ (self, parent, path="", relative=False, busName=None, busPath=None):
         SatyrObject.__init__ (self, parent, busName, busPath)
 
         self.songs= []
@@ -60,7 +60,7 @@ class Collection (SatyrObject):
         # print busPath, self.path
 
         # if the user requests a new path, use it
-        if self.path!=path and path is not None:
+        if self.path!=path and path!="":
             self.path= path
             self.forceScan= True
             print "new path, forcing (re)scan"
