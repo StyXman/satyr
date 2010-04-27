@@ -74,7 +74,9 @@ class MainWindow (KXmlGuiWindow):
         self.ui.searchEntry.textChanged.connect (self.search)
         majV, minV, patchL= utils.phononVersion ()
         if (majV>4) or (majV==4 and minV>3) or (majV==4 and minV==3 and patchL>1):
-            self.ui.timeSlider.setMediaObject (self.player.media)
+            # self.ui.timeSlider.setMediaObject (self.player.media)
+            # we disabled it because it needed a ptched system
+            pass
 
         # TODO: better name?
         self.appModel= QPlayListModel (collaggr=self.playlist.collaggr, view=self)
