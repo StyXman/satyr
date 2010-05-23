@@ -245,6 +245,7 @@ class MainWindow (KXmlGuiWindow):
     def queryClose (self):
         print "queryClose():"
         # , KApplication.sessionSaving ()
+        self.player.quit ()
         return True
 
     def queryExit (self):
