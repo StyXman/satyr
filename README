@@ -1,9 +1,28 @@
-«I need a media player that thinks about music the way I think about
-it. This is such a program.»
+«I need a media player that thinks about music the way I think about it.
+This is such a program.»
 
 satyr is a rather minimalistic audio player/tag editor based in KDE
 technologies, and developed in the Python language.
 
+It pretends to have the following features:
+
+ * The PlayList and the Collection(s) are the same thing.
+ * Yours is a Collection of Albums, nothing else[3].
+ * Some Albums are from the same artists and some are compilations[3].
+ * If you want an ephemeral playlist you could queue songs.
+ * If you want non-ephemeral playlists, then this player is not for you.
+ * Ability to search à la xmms, but in the same interface
+ * Skinneable.
+ * Tag reading and writing.
+ * Order you collection based on the tags[3].
+ * The collection discovers new files and adds them to the playlist on the fly[4].
+ * Be able to use the whole interface only with your keyboard (die, mouse, die!).
+
+[1] Functionality available via dbus only at the moment.
+[2] There is no 2.
+[3] Not yet available.
+[4] Of course this only works if it's running. Otherwise, you can always ask for
+  a rescan[1].
 
 DEPENDENCIES:
 ============
@@ -15,28 +34,27 @@ python-kde4		4.3.1
 python-tagpy		0.94.7
 pyqt4-dev-tools[3]	4.5.4[4][5]
 
-[1] the names are the ones used in debian.
-[2] these are the versions used while developing
-[3] or the package that provides the pyuic4 tool.
+[1] The names are the ones used in Debian.
+[2] These are the versions used while developing
+[3] Or the package that provides the pyuic4 tool.
 [4] I think any 4.5.x is enough.
-
 [5] python-qt4-phonon was added after my system changed to
-    python-qt4_4.6-1. if it's not working with 4.5.x, let me know.
+    python-qt4-4.6-1. if it's not working with 4.5.x, let me know.
 
 
 INSTALATION:
 ===========
 
-once unpacked, run 'python setup.py install --help', and follow
+Once unpacked, run 'python setup.py install --help', and follow
 instructions. make sure that the chosen prefix (which you can change
 with the --prefix option) is in the proper paths; that is:
 
  * $prefix/bin is in PATH
  * $prefix/lib/pythonX.Y/site-packages is in PYTHONPATH
- 
+
 where X.Y is the version of the default python in your system. If they
-are not, add them in your .bashrc file or equivalent. if everythong is
-setup correctly, satyr will be able to rise with your X session.
+are not, add them in your .bashrc file or equivalent. If everythong is
+setup correctly, satyr will be able to start with your X session.
 
 
 RUNNING:
@@ -45,7 +63,7 @@ RUNNING:
 satyr still lacks of configure dialogs, but can be configured from the
 command line the first time it's run. So far you can configure the skin
 to show (use the -s/--skin option to change it) and the paths to the
-collections. run 'satyr_main <path to collection>...'. satyr will
+collections. Run 'satyr_main <path to collection>...'. satyr will
 remember all this, so next runs can simply be 'satyr_main', unless you
 want to change something.
 
@@ -53,12 +71,12 @@ want to change something.
 ABOUT:
 =====
 
-if you have any question or suggestion and you want to contact me, you
+If you have any question or suggestion and you want to contact me, you
 can send me an e-mail to:
 
 Marcos Dione <mdione@grulic.org.ar>
 
-or contact me via irc: I'm StyXman on the freenode network. good luck
+or contact me via irc: I'm StyXman on the freenode network. Good luck
 and happy song listening!
 
 Shooting troubles in the head (a.k.a FAQ):
