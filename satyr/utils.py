@@ -21,6 +21,8 @@
 from PyQt4.phonon import Phonon
 from PyQt4.QtCore import QByteArray, QUrl
 
+import re
+
 def phononVersion ():
     return map (int, Phonon.phononVersion ().split ('.'))
 
@@ -52,5 +54,23 @@ def import_ (name):
         # print comp
         mod= getattr (mod, comp)
     return mod
+
+expansion= re.compile ("(\{(.*?)\%([a-z]+)([^a-z}]*)\})")
+
+def expandConditionally (format, values):
+    expansions= expansion.findall (format)
+    ans= format
+    for complete, pre, var, post in expansions:
+        try:
+            value= unicode (values[var])
+        except (KeyError, AttributeError):
+            value= ''
+
+        if value!='':
+            ans= ans.replace (complete, pre+value+post)
+        else:
+            ans= ans.replace (complete, '')
+
+    return ans
 
 # end

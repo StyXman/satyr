@@ -170,6 +170,7 @@ class MainWindow (KXmlGuiWindow):
         return True
 
     def search (self, text):
+        # TODO: properly implement histeresis
         # below 3 chars is too slow (and with big playlists, useless)
         if len (text)>2:
             #                            QString->unicode
@@ -181,21 +182,6 @@ class MainWindow (KXmlGuiWindow):
             self.setModel (self.appModel)
             # ensure the current song is shown
             self.showSong (self.modelIndex.row ())
-
-    def queue (self):
-        print "complex.queue()"
-        # so we don't keep (de)queuing if several cells of the same song are selected
-        selectedSongs= []
-        for modelIndex in self.ui.songsList.selectedIndexes ():
-            print "complex.queue()", modelIndex.row ()
-            if modelIndex.row () not in selectedSongs:
-                # self.playlist.queue (modelIndex.row ())
-                # not so fast, cowboy. PlayList.queue() spects 'global' indexes
-                # TODO: this is not very efficient
-                song= self.model.collaggr.songForIndex (modelIndex.row ())
-                index= self.appModel.collaggr.indexForSong (song)
-                self.playlist.queue (index)
-                selectedSongs.append (modelIndex.row ())
 
     def copyEditToSelection (self, tl, br):
         """copies the outcome of an edition in a cell
@@ -252,6 +238,39 @@ class MainWindow (KXmlGuiWindow):
         print "queryExit():"
         # , KApplication.sessionSaving ()
         return True
+
+    ### actions ###
+    def queue (self):
+        print "complex.queue()"
+        # so we don't keep (de)queuing if several cells of the same song are selected
+        selectedSongs= []
+        for modelIndex in self.ui.songsList.selectedIndexes ():
+            print "complex.queue()", modelIndex.row ()
+            if modelIndex.row () not in selectedSongs:
+                # self.playlist.queue (modelIndex.row ())
+                # not so fast, cowboy. PlayList.queue() spects 'global' indexes
+                # TODO: this is not very efficient
+                song= self.model.collaggr.songForIndex (modelIndex.row ())
+                index= self.appModel.collaggr.indexForSong (song)
+                self.playlist.queue (index)
+                selectedSongs.append (modelIndex.row ())
+
+    def rename (self):
+        print "complex.rename()"
+        # TODO: parametrize format
+        format= u"{%artist}/{%year - }{%album}/{Disk %disk/}{%trackno - }{%title}"
+
+        for modelIndex in self.ui.songsList.selectedIndexes ():
+            song= self.model.collaggr.songForIndex (modelIndex.row ())
+            # TODO: take ext from file format?
+            ext= song.filepath[-4:]
+
+            # TODO: parametrize the main music colleciton
+            mainColl= self.model.collaggr.collections[0]
+            path= mainColl.path
+
+            print "complex.rename()", song.filepath
+            print "complex.rename()", path+"/"+utils.expandConditionally (format, song)+ext
 
 
 class QPlayListModel (QAbstractTableModel):

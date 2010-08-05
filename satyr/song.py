@@ -28,6 +28,7 @@ class TagWriteError (Exception):
     pass
 
 class Song (QObject):
+    # TODO: do not return int's for year or track?
     metadadaChanged= pyqtSignal ()
 
     def __init__ (self, collection, filepath, onDemand=True, va=False):
@@ -60,7 +61,7 @@ class Song (QObject):
             s= float (seconds)
             seconds= int (s) % 60
             minutes= int (s) / 60
-            return "%02d:%02d" % (minutes, seconds)
+            return u"%02d:%02d" % (minutes, seconds)
         else:
             return "???"
 
