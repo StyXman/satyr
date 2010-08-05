@@ -1,5 +1,5 @@
 # vim: set fileencoding=utf-8 :
-# (c) 2009 Marcos Dione <mdione@grulic.org.ar>
+# (c) 2009, 2010 Marcos Dione <mdione@grulic.org.ar>
 
 # This file is part of satyr.
 
@@ -29,6 +29,8 @@ from PyQt4 import uic
 from satyr.collaggr import CollectionAggregator
 from satyr.song import TagWriteError
 from satyr.skins import actions
+from satyr.common import BUS_NAME
+from satyr.skins.renamer import Renamer
 from satyr import utils
 
 class MainWindow (KXmlGuiWindow):
@@ -43,6 +45,8 @@ class MainWindow (KXmlGuiWindow):
         self.ui= UIMainWindow ()
         self.ui.setupUi (self)
         self.collectionsAwaited= 0
+
+        self.renamer= Renamer ()
 
         self.ac= KActionCollection (self)
         actions.create (self, self.actionCollection ())
@@ -232,6 +236,7 @@ class MainWindow (KXmlGuiWindow):
         print "queryClose():"
         # , KApplication.sessionSaving ()
         self.player.quit ()
+        self.renamer.saveConfig ()
         return True
 
     def queryExit (self):
@@ -257,20 +262,15 @@ class MainWindow (KXmlGuiWindow):
 
     def rename (self):
         print "complex.rename()"
-        # TODO: parametrize format
-        format= u"{%artist}/{%year - }{%album}/{Disk %disk/}{%trackno - }{%title}"
 
         for modelIndex in self.ui.songsList.selectedIndexes ():
             song= self.model.collaggr.songForIndex (modelIndex.row ())
-            # TODO: take ext from file format?
-            ext= song.filepath[-4:]
 
             # TODO: parametrize the main music colleciton
             mainColl= self.model.collaggr.collections[0]
             path= mainColl.path
 
-            print "complex.rename()", song.filepath
-            print "complex.rename()", path+"/"+utils.expandConditionally (format, song)+ext
+            print "complex.rename()", song.filepath, "->", self.renamer.songPath (path, song)
 
 
 class QPlayListModel (QAbstractTableModel):
