@@ -1,5 +1,5 @@
 # vim: set fileencoding=utf-8 :
-# (c) 2009 Marcos Dione <mdione@grulic.org.ar>
+# (c) 2009, 2010 Marcos Dione <mdione@grulic.org.ar>
 
 # This file is part of satyr.
 
@@ -29,6 +29,7 @@ class TagWriteError (Exception):
 
 class Song (QObject):
     # TODO: do not return int's for year or track?
+    # no, we need them as int's so we can %02d
     metadadaChanged= pyqtSignal ()
 
     def __init__ (self, collection, filepath, onDemand=True, va=False):

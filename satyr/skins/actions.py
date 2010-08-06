@@ -1,5 +1,5 @@
 # vim: set fileencoding=utf-8 :
-# (c) 2009 Marcos Dione <mdione@grulic.org.ar>
+# (c) 2009, 2010 Marcos Dione <mdione@grulic.org.ar>
 
 # This file is part of satyr.
 
