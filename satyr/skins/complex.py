@@ -46,8 +46,6 @@ class MainWindow (KXmlGuiWindow):
         self.ui.setupUi (self)
         self.collectionsAwaited= 0
 
-        self.renamer= Renamer ()
-
         self.ac= KActionCollection (self)
         actions.create (self, self.actionCollection ())
         self.setupGUI ()
@@ -88,6 +86,8 @@ class MainWindow (KXmlGuiWindow):
         self.appModel.dataChanged.connect (self.copyEditToSelection)
         self.copying= False
         self.setModel (self.appModel)
+
+        self.renamer= Renamer (self.model.collaggr)
 
         self.playlist.songChanged.connect (self.showSong)
         self.playlist.queued.connect (self.appModel.dirtyRow)
@@ -263,14 +263,11 @@ class MainWindow (KXmlGuiWindow):
     def rename (self):
         print "complex.rename()"
 
+        songs= []
         for modelIndex in self.ui.songsList.selectedIndexes ():
-            song= self.model.collaggr.songForIndex (modelIndex.row ())
+            songs.append (self.model.collaggr.songForIndex (modelIndex.row ()))
 
-            # TODO: parametrize the main music colleciton
-            mainColl= self.model.collaggr.collections[0]
-            path= mainColl.path
-
-            print "complex.rename()", song.filepath, "->", self.renamer.songPath (path, song)
+        self.renamer.rename (songs)
 
 
 class QPlayListModel (QAbstractTableModel):

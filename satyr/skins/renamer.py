@@ -19,8 +19,10 @@ from satyr.common import ConfigurableObject
 from satyr import utils
 
 class Renamer (ConfigurableObject):
-    def __init__ (self):
+    def __init__ (self, collaggr):
         ConfigurableObject.__init__ (self, 'Renamer')
+
+        self.collaggr= collaggr
 
         # TODO: ***becareful!*** mixing unicode with paths!
         self.configValues= (
@@ -44,3 +46,13 @@ class Renamer (ConfigurableObject):
             ans= base+"/"+song.filepath
 
         return ans
+
+    def rename (self, songs):
+        # TODO: parametrize the main music colleciton
+        mainColl= self.collaggr.collections[0]
+        path= mainColl.path
+
+        for song in songs:
+            print "Renamer.rename()", song.filepath, "->", self.songPath (path, song)
+
+# end
