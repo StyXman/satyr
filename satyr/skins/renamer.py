@@ -26,8 +26,8 @@ class Renamer (ConfigurableObject):
 
         # TODO: ***becareful!*** mixing unicode with paths!
         self.configValues= (
-            ('format', unicode, u"{%artist/}{%year - }{%album/}{Disk %disk/}{%trackno - }{%title}"),
-            ('vaFormat', unicode, u"{%year - }{%album/}{Disk %disk/}{%trackno - }{%artist - }{%title}"),
+            ('format', unicode, u"{%artist/}{%4year - }{%album/}{Disk %02disk/}{%02trackno - }{%title}"),
+            ('vaFormat', unicode, u"{%4year - }{%album/}{Disk %02disk/}{%02trackno - }{%artist - }{%title}"),
             )
         self.loadConfig ()
 
