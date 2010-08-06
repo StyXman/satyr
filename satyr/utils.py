@@ -1,5 +1,5 @@
 # vim: set fileencoding=utf-8 :
-# (c) 2009 Marcos Dione <mdione@grulic.org.ar>
+# (c) 2009, 2010 Marcos Dione <mdione@grulic.org.ar>
 
 # This file is part of satyr.
 
@@ -22,6 +22,7 @@ from PyQt4.phonon import Phonon
 from PyQt4.QtCore import QByteArray, QUrl
 
 import re
+import types
 
 def phononVersion ():
     return map (int, Phonon.phononVersion ().split ('.'))
@@ -55,18 +56,21 @@ def import_ (name):
         mod= getattr (mod, comp)
     return mod
 
-expansion= re.compile ("(\{(.*?)\%([a-z]+)([^a-z}]*)\})")
+expansion= re.compile ("(\{(.*?)\%([0-9]*)([a-z]+)([^a-z}]*)\})")
 
 def expandConditionally (format, values):
     expansions= expansion.findall (format)
     ans= format
-    for complete, pre, var, post in expansions:
+    for complete, pre, digits, var, post in expansions:
         try:
-            value= unicode (values[var])
+            value= values[var]
         except (KeyError, AttributeError):
             value= ''
 
-        if value!='':
+        # year and trackno are int's
+        if value!='' and value!=0:
+            if type (value)==types.IntType:
+                value= (u"%"+digits+"d") % value
             ans= ans.replace (complete, pre+value+post)
         else:
             ans= ans.replace (complete, '')
