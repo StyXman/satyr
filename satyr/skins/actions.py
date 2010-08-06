@@ -22,18 +22,22 @@ from PyQt4.QtCore import Qt
 
 def create (parent, ac):
     """here be common actions for satyr skins"""
-    queueAction= KAction (parent)
-    queueAction.setShortcut (Qt.CTRL+Qt.Key_Q)
-    ac.addAction ("queue", queueAction)
-    # FIXME? if we don't do this then the skin will be able to choose whether it
-    # wants the action or not. with this it will still be able to do it, but via
-    # implementing empty slots
-    queueAction.triggered.connect (parent.queue)
-    # print "actions created"
+    actions= (
+        ("queue",     Qt.CTRL+Qt.Key_Q),
+        ("rename",    Qt.CTRL+Qt.Key_R),
+        ("toggleVA",  Qt.CTRL+Qt.Key_V),
+        )
 
-    renameAction= KAction (parent)
-    renameAction.setShortcut (Qt.CTRL+Qt.Key_R)
-    ac.addAction ("rename", renameAction)
-    renameAction.triggered.connect (parent.rename)
+    for name, shortcut in actions:
+        action= KAction (parent)
+        action.setShortcut (shortcut)
+        ac.addAction (name, action)
+
+        # the skin can decide to not implement an action!
+        method= getattr (parent, name, None)
+        if method is not None:
+            action.triggered.connect (method)
+        else:
+            print "actions.create(): no method", name
 
 # end

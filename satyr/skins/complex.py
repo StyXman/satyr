@@ -244,6 +244,10 @@ class MainWindow (KXmlGuiWindow):
         # , KApplication.sessionSaving ()
         return True
 
+    def selectedSongs (self):
+        return [self.model.collaggr.songForIndex (modelIndex.row ())
+            for modelIndex in self.ui.songsList.selectedIndexes ()]
+
     ### actions ###
     def queue (self):
         print "complex.queue()"
@@ -262,12 +266,13 @@ class MainWindow (KXmlGuiWindow):
 
     def rename (self):
         print "complex.rename()"
-
-        songs= []
-        for modelIndex in self.ui.songsList.selectedIndexes ():
-            songs.append (self.model.collaggr.songForIndex (modelIndex.row ()))
+        songs= self.selectedSongs ()
 
         self.renamer.rename (songs)
+
+    def toggleVA (self):
+        print "complex.toggleVA()"
+        songs= self.selectedSongs ()
 
 
 class QPlayListModel (QAbstractTableModel):
