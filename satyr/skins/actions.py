@@ -26,7 +26,7 @@ def create (parent, ac):
         ("queue",     Qt.CTRL+Qt.Key_Q),
         ("rename",    Qt.CTRL+Qt.Key_R),
         ("toggleVA",  Qt.CTRL+Qt.Key_V),
-        ("delete",    Qt.CTRL+Qt.KEY_D),
+        ("delete",    Qt.CTRL+Qt.Key_D),
         )
 
     for name, shortcut in actions:
