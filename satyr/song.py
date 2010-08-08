@@ -22,6 +22,7 @@ from PyQt4.QtCore import QObject, pyqtSignal
 
 # other libs
 import tagpy
+import types
 
 class TagWriteError (Exception):
     pass
@@ -101,13 +102,13 @@ class Song (QObject):
         if type (info)==tagpy._tagpy.ogg_XiphComment:
             # with Xiph comments we're free to set our own
             # names must(?) be uppercase
-            flm= info.fieldListMap ()
+            d= info.fieldListMap ()
             # TODO: make it a class attr
-            print 'Song.loadMetadata():', self.filepath, info.fieldCount (), info.fieldListMap ().keys ()
+            # print 'Song.loadMetadata():', self.filepath, info.fieldCount (), info.fieldListMap ().keys ()
             for attr in ('collection', 'diskno'):
                 tag= attr.upper ()
                 try:
-                    value= flm[tag][0].strip ()
+                    value= d[tag][0].strip ()
                     if attr=='diskno':
                         if value!='':
                             value= int (value)
@@ -136,11 +137,16 @@ class Song (QObject):
                     # 4.2.1   TOAL    [#TOAL Original album/movie/show title] <-- we (ab)use this one for collection
                     # 4.2.1   TPOS    [#TPOS Part of a set]
                     # ['TALB', 'TCON', 'TDRC', 'TIT2', 'TPE1', 'TRCK']
+                    # print "Song.loadMetadata():", d.keys ()
                     for attr, tag in dict (collection='TOAL', diskno='TPOS').items ():
                         try:
-                            value= d[tag][0].toString () # TODO: support a real list
-                            if isinstance (value, basestring):
-                                value= value.strip ()
+                            value= d[tag][0].toString ().strip () # TODO: support a real list
+                            if attr=='diskno':
+                                if value!='':
+                                    value= int (value)
+                                else:
+                                    value= 0
+
                         except KeyError:
                             value= ''
 
@@ -184,6 +190,7 @@ class Song (QObject):
         # we cache; otherwise we could set loaded to False
         # and let other functions to resolve it.
         try:
+            print "__setitem__():", key, value
             setattr (self, key, value)
         except AttributeError:
             raise TagWriteError
@@ -238,17 +245,19 @@ class Song (QObject):
 
                 # 'faked' tags; must be handled file type by file type
                 if type (info)==tagpy._tagpy.ogg_XiphComment:
+                    # http://www.xiph.org/vorbis/doc/v-comment.html
                     # with Xiph comments we're free to set our own
                     # names must(?) be uppercase
                     # TODO: make it a class attr
                     for attr in ('collection', 'diskno'):
                         tag= attr.upper ()
                         value= getattr (self, attr)
-                        info.addField (tag, unicode (value), True) # yes, replace
+                        if value!='' and value!=0:
+                            info.addField (tag, unicode (value), True) # yes, replace
 
-                    print 'Song.saveMetadata():', info.fieldCount (), info.fieldListMap ().keys ()
+                    # print 'Song.saveMetadata():', info.fieldCount (), info.fieldListMap ().keys ()
 
-                elif type (info)==tagpy._tagpy.Tag and False:
+                elif type (info)==tagpy._tagpy.Tag:
                     # this is somewhat generic, so we try guessing different types
                     # mpeg first
                     f= fr.file ()
@@ -260,19 +269,23 @@ class Song (QObject):
                             pass
 
                         if not t2.isEmpty ():
-                            d= t2.frameListMap ()
+                            # http://www.id3.org/id3v2.3.0
                             # 4.2.1   TOAL    [#TOAL Original album/movie/show title] <-- we (ab)use this one for collection
                             # 4.2.1   TPOS    [#TPOS Part of a set]
-                            # ['TALB', 'TCON', 'TDRC', 'TIT2', 'TPE1', 'TRCK']
+                            # print "Song.saveMetadata():", t2.frameListMap ().keys ()
                             for attr, tag in dict (collection='TOAL', diskno='TPOS').items ():
-                                try:
-                                    value= d[tag][0].toString () # TODO: support a real list
-                                    if isinstance (value, basestring):
-                                        value= value.strip ()
-                                except KeyError:
-                                    value= ''
+                                value= unicode (getattr (self, attr))
+                                # convert to ByteVector
+                                # value= value.encode ('utf-16')
 
-                                setattr (self, attr, value)
+                                if value not in ('', '0'):
+                                    # frame= tagpy._tagpy.id3v2_TextIdentificationFrame (tag)
+                                    # t2.removeFrame (frame, False)
+
+                                    frame= tagpy._tagpy.id3v2_TextIdentificationFrame (tag)
+                                    frame.setText (value)
+                                    t2.addFrame (frame)
+
                         else:
                             # TODO: else?
                             pass
@@ -286,6 +299,15 @@ class Song (QObject):
                     raise TagWriteError
 
                 self.dirty= False
+
+    def frameSize (self, value):
+        size= len (value)+2 # remember \x00\x00 as string end
+        s= ''
+        for byte in (3, 2, 1, 0):
+            s= chr (size & 255)+s
+            size= size>>8 # next byte, please!
+
+        return s
 
     def metadataNotNull (self):
         if not self.loaded:

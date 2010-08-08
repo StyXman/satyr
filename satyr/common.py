@@ -66,9 +66,9 @@ class ConfigurableObject (object):
                 else:
                     # print "just a QS...", type (v)
                     s= a.toString ()
-                print type (s),
+                # print type (s),
                 v= t (s)
-                print s, v
+                # print s, v
 
             setattr (self, k, v)
 

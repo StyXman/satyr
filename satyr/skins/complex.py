@@ -304,13 +304,13 @@ class QPlayListModel (QAbstractTableModel):
         else:
             self.collaggr= CollectionAggregator (self, songs=songs)
 
-        self.attrNames= ('artist', 'year', 'album', 'diskno', 'trackno', 'title', 'length', 'filepath')
+        self.attrNames= ('artist', 'year', 'collection', 'diskno', 'album', 'trackno', 'title', 'length', 'filepath')
 
-        self.headers= (u'Artist', u'Year', u'Album', u'CD', u'Track', u'Title', u'Length', u'Path')
+        self.headers= (u'Artist', u'Year', u'Collection', u'CD', u'Album', u'Track', u'Title', u'Length', u'Path')
         # FIXME: kinda hacky
         self.fontMetrics= QFontMetrics (KGlobalSettings.generalFont ())
         # FIXME: (even more) hackish
-        self.columnWidths= ("M"*15, "M"*4, "M"*20, "M"*3, "M"*3, "M"*25, "M"*5, "M"*100)
+        self.columnWidths= ("M"*15, "M"*4, "M"*15, "M"*3, "M"*20, "M"*3, "M"*25, "M"*5, "M"*100)
         print "QPLM: ", self
 
     def data (self, modelIndex, role):
@@ -367,7 +367,7 @@ class QPlayListModel (QAbstractTableModel):
 
     def flags (self, modelIndex):
         ans= QAbstractTableModel.flags (self, modelIndex)
-        if modelIndex.column ()<5: # length or filepath are not editable
+        if modelIndex.column ()<7: # length or filepath are not editable
             ans= ans|Qt.ItemIsEditable|Qt.ItemIsEditable
 
         return ans
@@ -382,7 +382,7 @@ class QPlayListModel (QAbstractTableModel):
     def setData (self, modelIndex, variant, role=Qt.EditRole):
         # not length or filepath and editing
         print "QPLM.setData()", modelIndex.row (), modelIndex.column(), role
-        if modelIndex.column ()<5 and role==Qt.EditRole:
+        if modelIndex.column ()<7 and role==Qt.EditRole:
             song= self.collaggr.songForIndex (modelIndex.row ())
             attr= self.attrNames[modelIndex.column ()]
             try:
