@@ -16,7 +16,7 @@
 # along with satyr.  If not, see <http://www.gnu.org/licenses/>.
 
 from PyKDE4.kio import KIO
-from PyKDE4.kdecore import KUrl
+from PyKDE4.kdecore import KUrl, KJob
 
 from satyr.common import ConfigurableObject
 from satyr import utils
@@ -53,11 +53,14 @@ class Renamer (ConfigurableObject):
         return ans
 
     def jobFinished (self, job):
-        print "Renamer.jobFinished()", job, job.error ()
         try:
             self.jobs.remove (job)
         except ValueError:
             print "Renamer.jobFinished()", job, "not found!"
+
+        if job.error()==KJob.NoError:
+            # TODO: update iface
+            print "Renamer.jobFinished(): success!"
 
     def rename (self, songs):
         # TODO: parametrize the main music colleciton
