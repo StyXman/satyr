@@ -35,6 +35,7 @@ class StopAfter (Exception):
     pass
 
 class PlayList (SatyrObject):
+    # TODO: get rid of primes, use normal random and a bounded list
     finished= pyqtSignal ()
     randomChanged= pyqtSignal (bool)
     songChanged= pyqtSignal (int)

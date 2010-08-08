@@ -22,7 +22,6 @@ from PyQt4.QtCore import QObject, pyqtSignal
 
 # other libs
 import tagpy
-# import Boost.Python
 
 class TagWriteError (Exception):
     pass
@@ -42,9 +41,11 @@ class Song (QObject):
         self.collection= collection
         self.filepath= filepath
 
+        # artist, year, collection, diskno, album, trackno, title, length
+
         self.variousArtists= va
         if not self.variousArtists:
-            self.cmpOrder= ('artist', 'year', 'album', 'trackno', 'title', 'length')
+            self.cmpOrder= ('artist', 'year', 'collection', 'diskno', 'album', 'trackno', 'title', 'length')
         else:
             # note that the year is not used in this case!
             self.cmpOrder= ('album', 'trackno', 'title', 'artist', 'length')
@@ -92,6 +93,67 @@ class Song (QObject):
                 value= value.strip ()
             setattr (self, attr, value)
 
+
+        # 'faked' tags; must be handled file type by file type
+        for attr in ('collection', 'diskno'):
+            setattr (self, attr, '')
+
+        if type (info)==tagpy._tagpy.ogg_XiphComment:
+            # with Xiph comments we're free to set our own
+            # names must(?) be uppercase
+            flm= info.fieldListMap ()
+            # TODO: make it a class attr
+            print 'Song.loadMetadata():', self.filepath, info.fieldCount (), info.fieldListMap ().keys ()
+            for attr in ('collection', 'diskno'):
+                tag= attr.upper ()
+                try:
+                    value= flm[tag][0].strip ()
+                    if attr=='diskno':
+                        if value!='':
+                            value= int (value)
+                        else:
+                            value= 0
+
+                except KeyError:
+                    value= ''
+
+                setattr (self, attr, value)
+
+        elif type (info)==tagpy._tagpy.Tag:
+            # this is somewhat generic, so we try guessing different types
+            # mpeg first
+            f= fr.file ()
+            if type (f)==tagpy._tagpy.mpeg_File:
+                t1= f.ID3v1Tag ()
+                t2= f.ID3v2Tag ()
+                if not t1.isEmpty () and t2.isEmpty ():
+                    # TODO: convert to v2
+                    # TODO: strip?
+                    pass
+
+                if not t2.isEmpty ():
+                    d= t2.frameListMap ()
+                    # 4.2.1   TOAL    [#TOAL Original album/movie/show title] <-- we (ab)use this one for collection
+                    # 4.2.1   TPOS    [#TPOS Part of a set]
+                    # ['TALB', 'TCON', 'TDRC', 'TIT2', 'TPE1', 'TRCK']
+                    for attr, tag in dict (collection='TOAL', diskno='TPOS').items ():
+                        try:
+                            value= d[tag][0].toString () # TODO: support a real list
+                            if isinstance (value, basestring):
+                                value= value.strip ()
+                        except KeyError:
+                            value= ''
+
+                        setattr (self, attr, value)
+                else:
+                    # TODO: else?
+                    pass
+            else:
+                print '**** loadMetadata(): file type not supportd yet', type (f)
+
+        else:
+            print '**** loadMetadata(): file type not supportd yet', type (info)
+
         self.metadadaChanged.emit ()
         self.loaded= True
 
@@ -99,21 +161,20 @@ class Song (QObject):
 
     def __getitem__ (self, key):
         """dict iface so we can simply % it to a pattern"""
-        # print self.filepath, key,
         if not self.loaded:
             self.loadMetadata ()
         val= getattr (self, key)
         # if it's, then a) it's either year or trackno; b) leave it empty
         if val==0:
             val= ''
-        # print val
+
         return val
 
     def __setitem__ (self, key, value):
         """dict iface so we don't have to make special case in __setattr__()"""
 
         # these two must be int()s
-        if key in ('trackno', 'year'):
+        if key in ('diskno', 'trackno', 'year'):
             print "converting from %s to int for %s" % (type (value), key)
             try:
                 value= int (value)
@@ -156,6 +217,7 @@ class Song (QObject):
             else:
                 info= fr.tag ()
 
+                # BUG:
                 #Traceback (most recent call last):
                 #File "/home/mdione/src/projects/satyr/collection-agregator/satyr/skins/complex.py", line 327, in setData
                     #song.saveMetadata ()
@@ -173,6 +235,52 @@ class Song (QObject):
                     except Exception, e:
                         print type (e)
                         print "ValueError: %s= (%s)%s" % (tag, type (value), value)
+
+                # 'faked' tags; must be handled file type by file type
+                if type (info)==tagpy._tagpy.ogg_XiphComment:
+                    # with Xiph comments we're free to set our own
+                    # names must(?) be uppercase
+                    # TODO: make it a class attr
+                    for attr in ('collection', 'diskno'):
+                        tag= attr.upper ()
+                        value= getattr (self, attr)
+                        info.addField (tag, unicode (value), True) # yes, replace
+
+                    print 'Song.saveMetadata():', info.fieldCount (), info.fieldListMap ().keys ()
+
+                elif type (info)==tagpy._tagpy.Tag and False:
+                    # this is somewhat generic, so we try guessing different types
+                    # mpeg first
+                    f= fr.file ()
+                    if type (f)==tagpy._tagpy.mpeg_File:
+                        t1= f.ID3v1Tag ()
+                        t2= f.ID3v2Tag ()
+                        if not t1.isEmpty ():
+                            # TODO: strip?
+                            pass
+
+                        if not t2.isEmpty ():
+                            d= t2.frameListMap ()
+                            # 4.2.1   TOAL    [#TOAL Original album/movie/show title] <-- we (ab)use this one for collection
+                            # 4.2.1   TPOS    [#TPOS Part of a set]
+                            # ['TALB', 'TCON', 'TDRC', 'TIT2', 'TPE1', 'TRCK']
+                            for attr, tag in dict (collection='TOAL', diskno='TPOS').items ():
+                                try:
+                                    value= d[tag][0].toString () # TODO: support a real list
+                                    if isinstance (value, basestring):
+                                        value= value.strip ()
+                                except KeyError:
+                                    value= ''
+
+                                setattr (self, attr, value)
+                        else:
+                            # TODO: else?
+                            pass
+                    else:
+                        print '**** loadMetadata(): file type not supportd yet', type (f)
+
+                else:
+                    print '**** loadMetadata(): file type not supportd yet', type (info)
 
                 if not fr.save ():
                     raise TagWriteError

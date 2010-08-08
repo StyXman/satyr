@@ -28,7 +28,9 @@ class Renamer (ConfigurableObject):
         self.collaggr= collaggr
 
         # TODO: ***becareful!*** mixing unicode with paths!
+        # artist, year, collection, diskno, album, trackno, title, length
         self.configValues= (
+            # ('format', unicode, u"{%artist/}{%4year - }{%collection/}{%02diskno - }{%album/}{Disk %02disk/}{%02trackno - }{%title}"),
             ('format', unicode, u"{%artist/}{%4year - }{%album/}{Disk %02disk/}{%02trackno - }{%title}"),
             ('vaFormat', unicode, u"{%4year - }{%album/}{Disk %02disk/}{%02trackno - }{%artist - }{%title}"),
             )

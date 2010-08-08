@@ -30,7 +30,7 @@ def configEntryToBool (s):
     return s!='false'
 
 def configEntryToIntList (s):
-    print ">%s<" % s
+    # print ">%s<" % s
     if s=='':
         ans= []
     else:
@@ -51,14 +51,14 @@ class ConfigurableObject (object):
         if not self.config is None:
             for k, t, v in self.configValues:
                 v= getattr (self, k)
-                print 'writing config entry %s= %s' % (k, v)
+                # print 'writing config entry %s= %s' % (k, v)
                 self.config.writeEntry (k, QVariant (v))
             self.config.config ().sync ()
 
     def loadConfig (self):
         for k, t, v in self.configValues:
             if not self.config is None:
-                print 'reading config entry %s.%s [%s]' % (unicode (self.config.name ()), k, v),
+                # print 'reading config entry %s.%s [%s]' % (unicode (self.config.name ()), k, v),
                 a= self.config.readEntry (k, QVariant (v))
                 if type (v)==QStringList:
                     # print "QSL!"

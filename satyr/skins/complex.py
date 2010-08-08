@@ -304,16 +304,17 @@ class QPlayListModel (QAbstractTableModel):
         else:
             self.collaggr= CollectionAggregator (self, songs=songs)
 
-        self.attrNames= ('artist', 'year', 'album', 'trackno', 'title', 'length', 'filepath')
+        self.attrNames= ('artist', 'year', 'album', 'diskno', 'trackno', 'title', 'length', 'filepath')
 
-        self.headers= (u'Artist', u'Year', u'Album', u'Track', u'Title', u'Length', u'Path')
+        self.headers= (u'Artist', u'Year', u'Album', u'CD', u'Track', u'Title', u'Length', u'Path')
         # FIXME: kinda hacky
         self.fontMetrics= QFontMetrics (KGlobalSettings.generalFont ())
         # FIXME: (even more) hackish
-        self.columnWidths= ("M"*15, "M"*4, "M"*20, "M"*3, "M"*25, "M"*5, "M"*100)
+        self.columnWidths= ("M"*15, "M"*4, "M"*20, "M"*3, "M"*3, "M"*25, "M"*5, "M"*100)
         print "QPLM: ", self
 
     def data (self, modelIndex, role):
+        # TODO: allow to enter to edit mode in filepath but don't save any changes
         if modelIndex.isValid () and modelIndex.row ()<self.collaggr.count:
             song= self.collaggr.songForIndex (modelIndex.row ())
 
