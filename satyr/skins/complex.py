@@ -150,6 +150,7 @@ class MainWindow (KXmlGuiWindow):
         self.ui.songsList.setCurrentIndex (modelIndex)
 
         # set the window title
+        # TODO: also update on tag edition
         self.setCaption (self.playlist.formatSong (song))
 
     def changeSong (self, modelIndex):
@@ -273,6 +274,13 @@ class MainWindow (KXmlGuiWindow):
     def toggleVA (self):
         print "complex.toggleVA()"
         songs= self.selectedSongs ()
+
+    def delete (self):
+        # we actually move it to a 'trash' collection
+        print "complex.delete()"
+        songs= self.selectedSongs ()
+
+        self.renamer.delete (songs)
 
 
 class QPlayListModel (QAbstractTableModel):

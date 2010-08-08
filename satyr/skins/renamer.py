@@ -55,4 +55,12 @@ class Renamer (ConfigurableObject):
         for song in songs:
             print "Renamer.rename()", song.filepath, "->", self.songPath (path, song)
 
+    def delete (self, songs):
+        # TODO: parametrize the trash music colleciton
+        trashColl= self.collaggr.collections[-1]
+        path= trashColl.path
+
+        for song in songs:
+            print "Renamer.rename()", song.filepath, "->", self.songPath (path, song)
+
 # end
