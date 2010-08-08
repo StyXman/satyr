@@ -254,6 +254,8 @@ class Song (QObject):
                         value= getattr (self, attr)
                         if value!='' and value!=0:
                             info.addField (tag, unicode (value), True) # yes, replace
+                        else:
+                            info.removeField (tag)
 
                     # print 'Song.saveMetadata():', info.fieldCount (), info.fieldListMap ().keys ()
 
@@ -272,19 +274,25 @@ class Song (QObject):
                             # http://www.id3.org/id3v2.3.0
                             # 4.2.1   TOAL    [#TOAL Original album/movie/show title] <-- we (ab)use this one for collection
                             # 4.2.1   TPOS    [#TPOS Part of a set]
-                            # print "Song.saveMetadata():", t2.frameListMap ().keys ()
+                            # ['TALB', 'TCON', 'TDRC', 'TIT2', 'TPE1', 'TRCK']
+                            d= t2.frameListMap ()
+                            # print "Song.saveMetadata():", d.keys ()
                             for attr, tag in dict (collection='TOAL', diskno='TPOS').items ():
                                 value= unicode (getattr (self, attr))
                                 # convert to ByteVector
                                 # value= value.encode ('utf-16')
 
                                 if value not in ('', '0'):
-                                    # frame= tagpy._tagpy.id3v2_TextIdentificationFrame (tag)
-                                    # t2.removeFrame (frame, False)
-
-                                    frame= tagpy._tagpy.id3v2_TextIdentificationFrame (tag)
-                                    frame.setText (value)
-                                    t2.addFrame (frame)
+                                    try:
+                                        frame= d[tag][0]
+                                        # frame= tagpy._tagpy.id3v2_TextIdentificationFrame (tag)
+                                        t2.removeFrame (frame, False)
+                                    except KeyError:
+                                        pass
+                                    finally:
+                                        frame= tagpy._tagpy.id3v2_TextIdentificationFrame (tag)
+                                        frame.setText (value)
+                                        t2.addFrame (frame)
 
                         else:
                             # TODO: else?
@@ -299,15 +307,6 @@ class Song (QObject):
                     raise TagWriteError
 
                 self.dirty= False
-
-    def frameSize (self, value):
-        size= len (value)+2 # remember \x00\x00 as string end
-        s= ''
-        for byte in (3, 2, 1, 0):
-            s= chr (size & 255)+s
-            size= size>>8 # next byte, please!
-
-        return s
 
     def metadataNotNull (self):
         if not self.loaded:
