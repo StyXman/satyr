@@ -382,7 +382,7 @@ class QPlayListModel (QAbstractTableModel):
     def setData (self, modelIndex, variant, role=Qt.EditRole):
         # not length or filepath and editing
         if modelIndex.column ()<7 and role==Qt.EditRole:
-            print "QPLM.setData()", modelIndex.row (), modelIndex.column(), role, unicode (variant.toString ())
+            print "QPLM.setData()", modelIndex.row (), modelIndex.column(), role, ">%s<" % unicode (variant.toString ())
             song= self.collaggr.songForIndex (modelIndex.row ())
             attr= self.attrNames[modelIndex.column ()]
             try:
