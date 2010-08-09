@@ -39,7 +39,7 @@ class Song (QObject):
             traceback.print_stack ()
         self.loaded= False
         self.dirty= False
-        self.collection= collection
+        self.coll= collection
         self.filepath= filepath
 
         # artist, year, collection, diskno, album, trackno, title, length
@@ -354,6 +354,6 @@ class Song (QObject):
         return "Song: "+self.filepath
 
     def relPath (self):
-        return self.filepath[len (self.collection.path)+1:]
+        return self.filepath[len (self.coll.path)+1:]
 
 # end

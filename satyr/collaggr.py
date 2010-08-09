@@ -101,7 +101,7 @@ class CollectionAggregator (SatyrObject):
         if len (self.songs)>0:
             index= self.songs.index (song)
         else:
-            collection= song.collection
+            collection= song.coll
             collectionIndex= collection.indexForSong (song)
             if collectionIndex is not None:
                 index= collection.offset+collectionIndex
