@@ -192,7 +192,7 @@ class MainWindow (KXmlGuiWindow):
         """copies the outcome of an edition in a cell
         to all the selected cells in the same column which.
         this lets us implement mass tag edition."""
-        print "complex.copyEditToSelection()", len (self.ui.songsList.selectedIndexes ()), self.appModel.edited
+        # print "complex.copyEditToSelection()", len (self.ui.songsList.selectedIndexes ()), self.appModel.edited
         if len (self.ui.songsList.selectedIndexes ())>1 and self.appModel.edited:
             # more than one cell selected
             # we copy was has just been edited tho the rest of selected cells

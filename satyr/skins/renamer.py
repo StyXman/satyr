@@ -91,15 +91,15 @@ class Renamer (ConfigurableObject):
                 job= KIO.file_move (src, dst)
                 # TODO: emit a finished.
 
-                print "Renamer.rename()", job
+                # print "Renamer.rename()", job
                 job.result.connect (self.jobFinished)
-                print "Renamer.rename(): connected"
+                # print "Renamer.rename(): connected"
                 self.jobs.append (job)
-                print "Renamer.rename(): next!"
+                # print "Renamer.rename(): next!"
             else:
                 print "Renamer.rename(): failed to create", dstDir, ", skipping", dstPath
 
-        print "Renamer.rename(): finished"
+        # print "Renamer.rename(): finished"
 
     def delete (self, songs):
         # TODO: parametrize the trash music colleciton
