@@ -161,6 +161,7 @@ class CollectionIndexer (QThread):
                 # it's not a global
                 mimetype= getMimeType (self.path)
                 if mimetype in mimetypes:
+                    print "CI.run(): found", self.path
                     self.foundSongs.emit (QStringList ([self.path]))
 
 # end

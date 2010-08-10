@@ -185,7 +185,7 @@ class Collection (SatyrObject):
                     song.loadMetadata ()
                 self.newSongs_.append ((index, filepath))
 
-        # print "C.add():", self.newSongs_
+        print "C.add():", self.newSongs_
         self.newSongs.emit ()
 
     def indexForSong (self, song):
