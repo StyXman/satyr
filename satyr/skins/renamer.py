@@ -95,9 +95,9 @@ class Renamer (ConfigurableObject):
                 job.result.connect (self.jobFinished)
                 print "Renamer.rename(): connected"
                 self.jobs.append (job)
-            print "Renamer.rename(): next!"
-        else:
-            print "failed to create", dstDir, ", skipping", dstPath
+                print "Renamer.rename(): next!"
+            else:
+                print "Renamer.rename(): failed to create", dstDir, ", skipping", dstPath
 
         print "Renamer.rename(): finished"
 
