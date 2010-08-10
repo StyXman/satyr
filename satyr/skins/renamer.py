@@ -15,9 +15,15 @@
 # You should have received a copy of the GNU General Public License
 # along with satyr.  If not, see <http://www.gnu.org/licenses/>.
 
+# qt/kde related
 from PyKDE4.kio import KIO
 from PyKDE4.kdecore import KUrl, KJob
+from PyQt4.QtCore import QDir
 
+# other libs
+import os.path
+
+# local
 from satyr.common import ConfigurableObject
 from satyr import utils
 
@@ -63,31 +69,44 @@ class Renamer (ConfigurableObject):
         if job.error()==KJob.NoError:
             # TODO: update iface
             print "Renamer.jobFinished(): success!"
+        else:
+            print "Renamer.jobFinished(): ***** error! *****", job.errorString ()
 
     def rename (self, songs):
         # TODO: parametrize the main music colleciton
         mainColl= self.collaggr.collections[0]
         base= mainColl.path
+        d= QDir ()
 
         for song in songs:
-            print "Renamer.rename()", song.filepath, "->", self.songPath (base, song)
-            src= KUrl (song.filepath)
-            dst= KUrl (self.songPath (base, song))
+            dstPath= self.songPath (base, song)
+            dstDir= os.path.dirname (dstPath)
+            # TODO: QtDir is not net transp. try to make sub jobs creating the missing path
+            if d.mkpath (dstDir):
+                src= KUrl (song.filepath)
+                dst= KUrl (dstPath)
+                print "Renamer.rename()", src, "->", dst
 
-            # TODO: do not launch them all in parallel
-            job= KIO.move (src, dst)
-            # TODO: emit a finished.
+                # TODO: do not launch them all in parallel
+                job= KIO.file_move (src, dst)
+                # TODO: emit a finished.
 
-            print "Renamer.rename()", job
-            job.result.connect (self.jobFinished)
-            self.jobs.append (job)
+                print "Renamer.rename()", job
+                job.result.connect (self.jobFinished)
+                print "Renamer.rename(): connected"
+                self.jobs.append (job)
+            print "Renamer.rename(): next!"
+        else:
+            print "failed to create", dstDir, ", skipping", dstPath
+
+        print "Renamer.rename(): finished"
 
     def delete (self, songs):
         # TODO: parametrize the trash music colleciton
         trashColl= self.collaggr.collections[-1]
-        path= trashColl.path
+        base= trashColl.path
 
         for song in songs:
-            print "Renamer.rename()", song.filepath, "->", self.songPath (path, song)
+            print "Renamer.delete()", song.filepath
 
 # end

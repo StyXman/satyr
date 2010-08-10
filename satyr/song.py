@@ -140,19 +140,14 @@ class Song (QObject):
                     # print "Song.loadMetadata():", d.keys ()
                     for attr, tag in dict (collection='TOAL', diskno='TPOS').items ():
                         try:
-                            value= d[tag][0].toString ().strip () # TODO: support a real list
-                            if attr=='diskno':
-                                if value!='':
-                                    value= int (value)
-                                else:
-                                    value= 0
-
+                            value= self.sanitize (attr, d[tag][0].toString ()) # TODO: support a real list
                         except KeyError:
                             value= ''
 
                         setattr (self, attr, value)
                 else:
                     # TODO: else?
+                    # if we convert to v2 above, there's no else :)
                     pass
             else:
                 print '**** loadMetadata(): file type not supportd yet', type (f)
@@ -164,6 +159,23 @@ class Song (QObject):
         self.loaded= True
 
         return fr
+
+    def sanitize (self, attr, value):
+        value= value.strip ()
+        if attr=='diskno':
+            print "Song.sanitize():", value
+            # sometimes it's stored as x/N
+            pos= value.find ('/')
+            if pos>-1:
+                value= value[:pos]
+            print "Song.sanitize():", value
+            if value!='':
+                value= int (value)
+            else:
+                value= 0
+
+        print "Song.sanitize():", value
+        return value
 
     def __getitem__ (self, key):
         """dict iface so we can simply % it to a pattern"""
