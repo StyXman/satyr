@@ -108,13 +108,7 @@ class Song (QObject):
             for attr in ('collection', 'diskno'):
                 tag= attr.upper ()
                 try:
-                    value= d[tag][0].strip ()
-                    if attr=='diskno':
-                        if value!='':
-                            value= int (value)
-                        else:
-                            value= 0
-
+                    value= self.sanitize (attr, d[tag][0].toString ()) # TODO: support a real list
                 except KeyError:
                     value= ''
 
