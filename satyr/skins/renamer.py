@@ -20,7 +20,7 @@ from PyKDE4.kio import KIO
 from PyKDE4.kdecore import KUrl, KJob
 from PyQt4.QtCore import QDir
 
-# other libs
+# std python
 import os.path
 
 # local

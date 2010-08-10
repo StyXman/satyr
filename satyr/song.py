@@ -272,7 +272,7 @@ class Song (QObject):
                     if type (f)==tagpy._tagpy.mpeg_File:
                         t1= f.ID3v1Tag ()
                         t2= f.ID3v2Tag ()
-                        if not t1.isEmpty ():
+                        if t1 is not None and not t1.isEmpty ():
                             # TODO: strip?
                             pass
 
