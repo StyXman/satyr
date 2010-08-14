@@ -39,9 +39,8 @@ def path2qurl (path):
     # path= '/home/mdione/media/music/Patricio Rey Y Sus Redonditos De Ricota/\xc3\x9altimo bondi a Finisterre/07- La peque\xf1a novia del carioca.wav'
     qba= QByteArray (path)
     qu= QUrl.fromEncoded (qba.toPercentEncoding ("/ "))
-    majV, minV, patchL= phononVersion ()
     # older versions need this, at least for the gstreamer backend
-    if (majV<4) or (majV==4 and minV<3) or (majV==4 and minV==3 and patchL<51):
+    if qu.scheme ()=='':
         qu.setScheme ('file')
 
     return qu
