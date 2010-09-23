@@ -106,23 +106,13 @@ class PlayList (SatyrObject):
         self.randomChanged.emit (self.random)
 
     def setCurrent (self, song=None):
-        # BUG: on clean start:
-        # Traceback (most recent call last):
-        # File "/home/mdione/src/projects/satyr/work/satyr/playlist.py", line 180, in filesAdded
-        #     self.setCurrent ()
-        # File "/home/mdione/src/projects/satyr/work/satyr/playlist.py", line 111, in setCurrent
-        #     self.song= self.collaggr.songForIndex (self.index)
-        # File "/home/mdione/src/projects/satyr/work/satyr/collaggr.py", line 91, in songForIndex
-        #     collection, collectionIndex= self.indexToCollectionIndex (index)
-        # File "/home/mdione/src/projects/satyr/work/satyr/collaggr.py", line 84, in indexToCollectionIndex
-        #     collectionIndex= index-collection.offset
-        # TypeError: unsupported operand type(s) for -: 'NoneType' and 'int'
         if song is None:
             try:
                 print "playlist.setCurrent()", self.index
                 self.song= self.collaggr.songForIndex (self.index)
                 self.filepath= self.song.filepath
-            except IndexError:
+            # IndexError when we're out of bounds, TypeError when index is None
+            except (IndexError, TypeError):
                 # the index saved in the config is bigger than the current collection
                 # fall back to 0
                 try:
