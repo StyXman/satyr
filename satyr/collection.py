@@ -70,7 +70,8 @@ class Collection (SatyrObject):
 
         self.watch= KDirWatch (self)
         self.watch.addDir (self.path,
-            KDirWatch.WatchMode (KDirWatch.WatchFiles|KDirWatch.WatchSubDirs))
+            # KDirWatch.WatchMode (KDirWatch.WatchFiles|KDirWatch.WatchSubDirs))
+            KDirWatch.WatchMode (KDirWatch.WatchFiles))
         self.watch.created.connect (self.newFiles)
 
         self.scanners= []
