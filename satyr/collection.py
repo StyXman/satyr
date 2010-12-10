@@ -26,7 +26,7 @@ from PyQt4.QtCore import pyqtSignal, pyqtSlot, QString
 import dbus.service
 
 # std python
-import os, bisect
+import os, bisect, stat
 
 # local
 from satyr.common import SatyrObject, BUS_NAME
@@ -70,8 +70,7 @@ class Collection (SatyrObject):
 
         self.watch= KDirWatch (self)
         self.watch.addDir (self.path,
-            # KDirWatch.WatchMode (KDirWatch.WatchFiles|KDirWatch.WatchSubDirs))
-            KDirWatch.WatchMode (KDirWatch.WatchFiles))
+            KDirWatch.WatchMode (KDirWatch.WatchFiles|KDirWatch.WatchSubDirs))
         self.watch.created.connect (self.newFiles)
 
         self.scanners= []
@@ -130,8 +129,11 @@ class Collection (SatyrObject):
 
     # @pyqtSlot ()
     def newFiles (self, path):
-        path= utils.qstring2path (path)
-        self.scan (path)
+        s= os.stat (path)
+        # skip dirs, add files only
+        if not stat.S_ISDIR (s.st_mode):
+            path= utils.qstring2path (path)
+            self.scan (path)
 
     def scan (self, path=None, loadMetadata=False):
         self.scanning= True
