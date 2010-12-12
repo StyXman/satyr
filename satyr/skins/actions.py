@@ -17,28 +17,53 @@
 # along with satyr.  If not, see <http://www.gnu.org/licenses/>.
 
 # qt/kde related
-from PyKDE4.kdeui import KAction
+from PyKDE4.kdeui import KAction, KShortcut
 from PyQt4.QtCore import Qt
+
+def traverseObjects (root, fqn):
+    components= fqn.split ('.')
+    name= components.pop ()
+
+    for c in components:
+        root= getattr (root, c)
+
+    return root, name
 
 def create (parent, ac):
     """here be common actions for satyr skins"""
     actions= (
-        ("queue",     Qt.CTRL+Qt.Key_Q),
-        ("rename",    Qt.CTRL+Qt.Key_R),
-        ("toggleVA",  Qt.CTRL+Qt.Key_V),
-        ("delete",    Qt.CTRL+Qt.Key_D),
+        ('queue',    Qt.CTRL+Qt.Key_Q, False, "Queue songs"),
+        ('rename',   Qt.CTRL+Qt.Key_R, False, "Arrange songs"),
+        ('toggleVA', Qt.CTRL+Qt.Key_V, False, "Toggle 'Various Artists' flag"),
+        ('delete',   Qt.CTRL+Qt.Key_D, False, "Delete songs"),
+
+        # globals
+        ('player.prev',  KShortcut (Qt.Key_MediaPrevious), True, "Previous song"),
+        ('player.stop',  KShortcut (Qt.Key_MediaStop),     True, "Stop"),
+        ('player.pause', KShortcut (Qt.Key_MediaPlay),     True, "Toggle pause"),
+        ('player.next',  KShortcut (Qt.Key_MediaNext),     True, "Next song"),
         )
 
-    for name, shortcut in actions:
-        action= KAction (parent)
-        action.setShortcut (shortcut)
-        ac.addAction (name, action)
-
-        # the skin can decide to not implement an action!
-        method= getattr (parent, name, None)
-        if method is not None:
-            action.triggered.connect (method)
+    for fqn, shortcut, globalSC, text in actions:
+        try:
+            obj, name= traverseObjects (parent, fqn)
+        except AttributeError, e:
+            print "actions.create(): %s, shortcut for %s not set" % (e.args[0], fqn)
         else:
-            print "actions.create(): no method", name
+            fqn= "satyr."+fqn
+            action= KAction (text, parent)
+            action.setObjectName (fqn)
+            if globalSC:
+                action.setGlobalShortcut (shortcut)
+            else:
+                action.setShortcut (shortcut)
+            ac.addAction (fqn, action)
+
+            # the skin can decide to not implement an action!
+            method= getattr (obj, name, None)
+            if method is not None:
+                action.triggered.connect (method)
+            else:
+                print "actions.create(): no method %s, shortcut for %s not set" % (name, fqn)
 
 # end

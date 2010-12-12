@@ -46,8 +46,6 @@ class MainWindow (KXmlGuiWindow):
         self.ui.setupUi (self)
         self.collectionsAwaited= 0
 
-        self.ac= KActionCollection (self)
-        actions.create (self, self.actionCollection ())
         self.setupGUI ()
 
     def connectUi (self, player):
@@ -104,6 +102,9 @@ class MainWindow (KXmlGuiWindow):
         # FIXME: temporarily until I resolve the showSong() at boot time
         self.modelIndex= None
         self.songIndexSelectedByUser= None
+
+        actions.create (self, self.actionCollection ())
+
 
     def setModel (self, model):
         print "complex.setModel():", model
