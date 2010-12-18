@@ -171,12 +171,9 @@ class MainWindow (KXmlGuiWindow):
         # self.ui.songsList.setUpdatesEnabled (True)
         pass
 
-    def queryClose (self):
-        self.player.quit ()
-        return True
-
     def search (self, text):
         # TODO: properly implement histeresis
+        # 23:44 < steckmqn> searching w/ the next chr cqn be done only in the qlready found set
         # below 3 chars is too slow (and with big playlists, useless)
         if len (text)>2:
             #                            QString->unicode
@@ -408,8 +405,9 @@ class QPlayListModel (QAbstractTableModel):
             data= QVariant (self.headers[section])
         elif direction==Qt.Vertical:
             if role==Qt.SizeHintRole:
+                # TODO: support bold fonts
                 # again, hacky. 5 for enough witdh for 5 digits
-                size= self.fontMetrics.size (Qt.TextSingleLine, "X"*5)
+                size= self.fontMetrics.size (Qt.TextSingleLine, "M"*5)
                 data= QVariant (size)
             elif role==Qt.TextAlignmentRole:
                 data= QVariant (Qt.AlignRight|Qt.AlignVCenter)
