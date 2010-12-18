@@ -157,18 +157,18 @@ class Song (QObject):
     def sanitize (self, attr, value):
         value= value.strip ()
         if attr=='diskno':
-            print "Song.sanitize():", value
+            # print "Song.sanitize():", value
             # sometimes it's stored as x/N
             pos= value.find ('/')
             if pos>-1:
                 value= value[:pos]
-            print "Song.sanitize():", value
+            # print "Song.sanitize():", value
             if value!='':
                 value= int (value)
             else:
                 value= 0
 
-        print "Song.sanitize():", value
+        # print "Song.sanitize():", value
         return value
 
     def __getitem__ (self, key):
@@ -331,10 +331,6 @@ class Song (QObject):
             # so use the only reasonable thing: the filepath
             ans= cmp (self.filepath, other.filepath)
         elif not other.loaded:
-            # (is this a) BUG?
-            # print '===== cmp()'
-            # print other.filepath
-            # print '===== cmp()'
             # this is not so much a lie as a decision
             ans= -1
         else:
