@@ -23,7 +23,7 @@ from PyQt4.QtCore import QObject
 
 class MainWindow (QObject):
     def __init__ (self, parent=None):
-        KMainWindow.__init__ (self, parent)
+        QObject.__init__ (self, parent)
 
     def setModel (self, model):
         self.model= model
