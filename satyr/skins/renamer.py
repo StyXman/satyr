@@ -28,6 +28,7 @@ from satyr.common import ConfigurableObject
 from satyr import utils
 
 class Renamer (ConfigurableObject):
+    # TODO: move everything to CollAggr
     def __init__ (self, collaggr):
         ConfigurableObject.__init__ (self, 'Renamer')
 
@@ -39,6 +40,7 @@ class Renamer (ConfigurableObject):
             # ('format', unicode, u"{%artist/}{%4year - }{%collection/}{%02diskno - }{%album/}{Disk %02disk/}{%02trackno - }{%title}"),
             ('format', unicode, u"{%artist/}{%4year - }{%album/}{Disk %02diskno/}{%02trackno - }{%title}"),
             ('vaFormat', unicode, u"{%4year - }{%album/}{Disk %02diskno/}{%02trackno - }{%artist - }{%title}"),
+            ('collection', unicode, u"{%artist/}{%4year - }{%collection}/{%02diskno - }{%album}/{%02trackno - }{%title}"),
             )
         self.loadConfig ()
 
@@ -49,7 +51,10 @@ class Renamer (ConfigurableObject):
         ext= song.filepath[-4:]
 
         if not song.variousArtists:
-            songPath= utils.expandConditionally (self.format, song)
+            if song['collection']=='':
+                songPath= utils.expandConditionally (self.format, song)
+            else:
+                songPath= utils.expandConditionally (self.collection, song)
         else:
             songPath= utils.expandConditionally (self.vaFormat, song)
 
@@ -70,7 +75,7 @@ class Renamer (ConfigurableObject):
             # TODO: update iface
             print "Renamer.jobFinished(): success!"
         else:
-            print "Renamer.jobFinished(): ***** error! *****", job.errorString ()
+            print "Renamer.jobFinished(): ***** error! *****", unicode (job.errorString ())
 
     def rename (self, songs):
         # TODO: parametrize the main music colleciton

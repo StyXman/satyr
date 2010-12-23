@@ -23,6 +23,7 @@ from PyQt4.QtCore import QByteArray, QUrl
 
 import re
 import types
+import os.path
 
 def phononVersion ():
     return map (int, Phonon.phononVersion ().split ('.'))
@@ -60,19 +61,27 @@ expansion= re.compile ("(\{(.*?)\%([0-9]*)([a-z]+)([^a-z}]*)\})")
 def expandConditionally (format, values):
     expansions= expansion.findall (format)
     ans= format
+    print "xpandCond(): %s" % ans
     for complete, pre, digits, var, post in expansions:
         try:
             value= values[var]
         except (KeyError, AttributeError):
             value= ''
 
+        print type (value), value
         # year and trackno are int's
         if value!='' and value!=0:
             if type (value)==types.IntType:
                 value= (u"%"+digits+"d") % value
             ans= ans.replace (complete, pre+value+post)
         else:
-            ans= ans.replace (complete, '')
+            if var=='title':
+                # don't let the title to be empty; at least copy the old file name
+                ans= ans.replace (complete, os.path.basename (values['filepath']))
+            else:
+                ans= ans.replace (complete, '')
+
+        print "xpandCond(): %s" % ans
 
     return ans
 
