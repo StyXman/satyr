@@ -37,13 +37,19 @@ class Player (SatyrObject):
     finished= pyqtSignal ()
     stopAfterChanged= pyqtSignal (bool)
 
+    # constants
+    STOPPED= 0
+    PLAYING= 1
+    PAUSED=  2
+
     def __init__ (self, parent, playlist, busName, busPath):
         SatyrObject.__init__ (self, parent, busName, busPath)
 
         self.configValues= (
             # actually it doesn't make much sense to save this two.
-            ('playing', configEntryToBool, False),
-            ('paused', configEntryToBool, False),
+            # ('playing', configEntryToBool, False),
+            # ('paused', configEntryToBool, False),
+            ('state', int, Player.STOPPED),
             ('stopAfter', configEntryToBool, False),
             # or this one...
             ('quitAfter', configEntryToBool, False),
@@ -67,7 +73,7 @@ class Player (SatyrObject):
     def prev (self):
         try:
             self.playlist.prev ()
-            if self.playing:
+            if self.state==Player.PLAYING:
                 self.play ()
         except IndexError:
             print "playlist empty"
@@ -75,12 +81,12 @@ class Player (SatyrObject):
 
     @dbus.service.method (BUS_NAME, in_signature='i', out_signature='')
     def play (self, song=None):
-        if self.paused and self.playing:
+        if self.state==Player.PAUSED:
             self.pause ()
         else:
-            self.playing= True
+            self.state= Player.PLAYING
             # FIXME? this should not be here, but right now seems to be needed
-            time.sleep (0.2)
+            time.sleep (0.4)
 
             # the QPushButton.clicked() emits a bool,
             # and it's False on normal (non-checkable) buttons
@@ -100,23 +106,33 @@ class Player (SatyrObject):
             self.media.play ()
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
+    def play_pause (self):
+        """switches between play and pause"""
+        if self.state in (Player.STOPPED, Player.PAUSED):
+            self.state= Player.PLAYING
+            self.media.play ()
+        else:
+            # Player.PLAYING
+            self.state= Player.PAUSED
+            self.media.pause ()
+
+    @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def pause (self):
         """toggle"""
-        if self.playing:
-            if not self.paused:
-                print "pa!..."
-                self.media.pause ()
-                self.paused= True
-            else:
-                print "...use!"
-                self.media.play ()
-                self.paused= False
+        if self.state==Player.PLAYING:
+            print "pa!..."
+            self.media.pause ()
+            self.state= Player.PAUSED
+        elif self.state==Player.PAUSED:
+            print "...use!"
+            self.media.play ()
+            self.state= Player.PLAYING
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def stop (self):
         print "*screeeech*! stoping!"
         self.media.stop ()
-        self.playing= False
+        self.state= Player.STOPPED
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def next (self):
@@ -135,7 +151,7 @@ class Player (SatyrObject):
                 self.toggleQuitAfter ()
                 self.quit ()
             # FIXME: this should not be here
-            elif self.playing:
+            elif self.state==Player.PLAYING:
                 self.play ()
         except IndexError:
             print "playlist empty"
