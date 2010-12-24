@@ -38,10 +38,15 @@ def create (parent, ac):
         ('delete',   Qt.CTRL+Qt.Key_D, False, "Delete songs"),
 
         # globals
-        ('player.prev',  KShortcut (Qt.Key_MediaPrevious), True, "Previous song"),
-        ('player.stop',  KShortcut (Qt.Key_MediaStop),     True, "Stop"),
-        ('player.pause', KShortcut (Qt.Key_MediaPlay),     True, "Toggle pause"),
-        ('player.next',  KShortcut (Qt.Key_MediaNext),     True, "Next song"),
+        ('player.prev',  KShortcut (Qt.Key_MediaPrevious),  True, "Previous song"),
+        ('player.stop',  KShortcut (Qt.Key_MediaStop),      True, "Stop"),
+        ('player.play',  KShortcut (Qt.Key_MediaPlay),      True, "Play"),
+        ('player.pause', KShortcut (Qt.Key_MediaPause),     True, "Toggle Pause"),
+        ('player.play_pause', KShortcut (Qt.Key_MediaPlay), True, "Switch between Play and Pause"),
+        ('player.next',  KShortcut (Qt.Key_MediaNext),      True, "Next song"),
+        # S+Stop == Eject
+        # ('player.toggleStopAfter', KShortcut (Qt.SHIFT+Qt.Key_MediaStop), True, "Stop after playing current song"),
+        ('player.toggleStopAfter', KShortcut (Qt.Key_Eject), True, "Stop after playing current song"),
         )
 
     for fqn, shortcut, globalSC, text in actions:
