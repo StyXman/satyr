@@ -41,7 +41,7 @@ def create (parent, ac):
         ('player.prev',  KShortcut (Qt.Key_MediaPrevious),  True, "Previous song"),
         ('player.stop',  KShortcut (Qt.Key_MediaStop),      True, "Stop"),
         ('player.play',  KShortcut (Qt.Key_MediaPlay),      True, "Play"),
-        ('player.pause', KShortcut (Qt.Key_MediaPause),     True, "Toggle Pause"),
+        ('player.pause', KShortcut (Qt.Key_Pause),     True, "Toggle Pause"),
         ('player.play_pause', KShortcut (Qt.Key_MediaPlay), True, "Switch between Play and Pause"),
         ('player.next',  KShortcut (Qt.Key_MediaNext),      True, "Next song"),
         # S+Stop == Eject
