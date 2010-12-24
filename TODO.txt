@@ -1,1 +1,24 @@
 * ask the user if he wants to hear the songs just added.
+* convert UI into actions, then a toolbar
+* albums!
+* various artists albums
+* fix hysteresis in search
+* notifications
+* when playing a new file, show the current song only if the cursor is in the
+  previous current song (so not to move it when the user is doing something else)
+* headless!
+
+updateTimer= QTimer ()
+updateTimer.timeout.connect (self.addNewSongsToUI)
+updateTimer.start (1000)
+
+def addNewSongsToUI ():
+    # lock
+    n= scanner.count
+    # lock
+    new= scanner.list[:n]
+    scanner.list= scanner.list[n:]
+    # unlock
+    # add new songs
+    if not scanner.finished:
+        updateTimer.start (1000)
