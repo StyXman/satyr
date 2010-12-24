@@ -46,6 +46,8 @@ class MainWindow (KXmlGuiWindow):
         self.ui.setupUi (self)
         self.collectionsAwaited= 0
 
+        self.oldSearchText= ''
+
         self.setupGUI ()
 
     def connectUi (self, player):
@@ -172,19 +174,26 @@ class MainWindow (KXmlGuiWindow):
         pass
 
     def search (self, text):
-        # TODO: properly implement histeresis
-        # 23:44 < steckmqn> searching w/ the next chr cqn be done only in the qlready found set
-        # below 3 chars is too slow (and with big playlists, useless)
-        if len (text)>2:
+        # TODO: 23:44 < steckmqn> searching w/ the next chr cqn be done only in the qlready found set
+
+        # oST>2 && t>=3 => search
+        # (oST>=1 because it can reach that state when the user presses esc)
+        # oST>=1 && t==0 => normal
+        # otherwise => keep current
+        if len (text)>=3 and len (self.oldSearchText)>=2:
             #                            QString->unicode
             songs= self.playlist.search (unicode (text))
             # we have to keep it
             # otherwise it pufs into inexistence after the function ends
             self.setModel (QPlayListModel (songs=songs, view=self))
-        else:
+        elif len (text)==0 and len (self.oldSearchText)>=1:
             self.setModel (self.appModel)
             # ensure the current song is shown
             self.showSong (self.modelIndex.row ())
+        else:
+            print text, self.oldSearchText
+
+        self.oldSearchText= text
 
     def copyEditToSelection (self, tl, br):
         """copies the outcome of an edition in a cell
