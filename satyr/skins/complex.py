@@ -189,9 +189,11 @@ class MainWindow (KXmlGuiWindow):
         elif len (text)==0 and len (self.oldSearchText)>=1:
             self.setModel (self.appModel)
             # ensure the current song is shown
-            self.showSong (self.modelIndex.row ())
+            if self.modelIndex is not None:
+                self.showSong (self.modelIndex.row ())
         else:
-            print text, self.oldSearchText
+            # print text, self.oldSearchText
+            pass
 
         self.oldSearchText= text
 
