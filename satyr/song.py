@@ -276,7 +276,7 @@ class Song (QObject):
                             # TODO: strip?
                             pass
 
-                        if not t2.isEmpty ():
+                        if t2 is not None and not t2.isEmpty ():
                             # http://www.id3.org/id3v2.3.0
                             # 4.2.1   TOAL    [#TOAL Original album/movie/show title] <-- we (ab)use this one for collection
                             # 4.2.1   TPOS    [#TPOS Part of a set]
