@@ -1,5 +1,4 @@
 from threading import Thread, Lock, Semaphore
-import time
 
 class AsyncQueue (Thread):
     def __init__ (self):
@@ -23,8 +22,8 @@ class AsyncQueue (Thread):
         # for obj, methodName, args, kwargs, signalName in self.queue
         print "AQ.run(): start!"
         while not self.finish:
-            # TODO: make it stoppable
-            if self.sem.acquire (False): # this might block
+            self.sem.acquire () # this might block
+            if self.count>0:
                 self.count-= 1
                 print "AQ.run(): something in the q, %d left" % self.count
                 self.lock.acquire ()
@@ -46,9 +45,12 @@ class AsyncQueue (Thread):
                     except Exception, e:
                         print "bar: %s" % e
             else:
-                print "AQ.run(): nothing in the q, sleeping..."
-                time.sleep (1)
+                print "AQ.run(): nothing in the q, stopping"
+                self.finish= True
 
         print "AQ.run(): finished!"
+
+    def stop (self):
+        self.sem.release ()
 
 # end
