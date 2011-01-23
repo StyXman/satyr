@@ -28,7 +28,6 @@ class AsyncQueue (Thread):
         self.lock.release ()
 
     def run (self):
-        # for obj, methodName, args, kwargs, signalName in self.queue
         print "AQ.run(): start!"
         while not self.finish:
             self.sem.acquire () # this might block
@@ -36,26 +35,21 @@ class AsyncQueue (Thread):
                 self.count-= 1
                 print "AQ.run(): something in the q, %d left" % self.count
                 self.lock.acquire ()
-                obj, methodName, args, kwargs, signalName= self.queue.pop (0)
+                obj, methodName, args, kwargs= self.queue.pop (0)
                 self.lock.release ()
                 try:
                     method= getattr (obj, methodName)
                     print "AQ.run(): got method"
-                    # signal= getattr (obj, signalName)
-                    # print "AQ.run(): got signal"
                 except AttributeError:
                     print "foo"
                 else:
                     try:
                         print "AQ.run(): method()"
                         value= method (*args, **kwargs)
-                        # signal.emit (value)
-                        # print "AQ.run(): signal emited!"
                     except Exception, e:
                         print "bar: %s" % e
             else:
                 print "AQ.run(): nothing in the q"
-                # self.finish= True
 
         print "AQ.run(): finished!"
 
