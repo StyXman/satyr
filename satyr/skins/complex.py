@@ -19,6 +19,7 @@
 # qt/kde related
 from PyKDE4.kdeui import KXmlGuiWindow, KGlobalSettings, KActionCollection
 from PyKDE4.kdeui import KApplication
+from PyKDE4.kdeui import KNotification
 from PyQt4.QtCore import QAbstractTableModel, QModelIndex, QVariant, Qt
 from PyQt4.QtCore import QSignalMapper, QSize, QFile
 from PyQt4.QtGui import QItemSelectionModel, QAbstractItemView, QFontMetrics
@@ -93,6 +94,7 @@ class MainWindow (KXmlGuiWindow):
         self.playlist.queued.connect (self.appModel.dirtyRow)
         self.playlist.dequeued.connect (self.appModel.dirtyRow)
         self.ui.songsList.activated.connect (self.changeSong)
+        self.player.nowPlaying.connect (self.nowPlaying)
 
         # FIXME: kinda hacky
         self.fontMetrics= QFontMetrics (KGlobalSettings.generalFont ())
@@ -106,7 +108,6 @@ class MainWindow (KXmlGuiWindow):
         self.songIndexSelectedByUser= None
 
         actions.create (self, self.actionCollection ())
-
 
     def setModel (self, model):
         print "complex.setModel():", model
@@ -162,6 +163,13 @@ class MainWindow (KXmlGuiWindow):
         song= self.model.collaggr.songForIndex (modelIndex.row ())
         self.songIndexSelectedByUser= (song, modelIndex)
         self.player.play (song)
+
+    def nowPlaying (self, index):
+        print "complex.nowPlaying(): %s" % self.playlist.formatSong (self.playlist.song)
+        # event
+        self.notif= KNotification ("nowPlaying", self)
+        self.notif.setText ("Now Playing: %s" % self.playlist.formatSong (self.playlist.song))
+        self.notif.sendEvent ()
 
     def scanBegins (self):
         # self.ui.songsList.setEnabled (False)
@@ -319,11 +327,12 @@ class QPlayListModel (QAbstractTableModel):
         # FIXME: kinda hacky
         self.fontMetrics= QFontMetrics (KGlobalSettings.generalFont ())
         # FIXME: (even more) hackish
-        self.columnWidths= ("M"*15, "M"*4, "M"*15, "M"*3, "M"*20, "M"*3, "M"*25, "M"*5, "M"*100)
+        self.columnWidths= ("M"*15, "M"*4, "M"*15, "M"*3, "M"*20, "M"*3, "M"*25, "M"*5, "M"*200)
         print "QPLM: ", self
 
     def data (self, modelIndex, role):
         # TODO: allow to enter to edit mode in filepath but don't save any changes
+        # so we can copy the path, that is...
         if modelIndex.isValid () and modelIndex.row ()<self.collaggr.count:
             song= self.collaggr.songForIndex (modelIndex.row ())
 
