@@ -36,6 +36,7 @@ from satyr import utils
 class Player (SatyrObject):
     finished= pyqtSignal ()
     stopAfterChanged= pyqtSignal (bool)
+    nowPlaying= pyqtSignal (int)
 
     # constants
     STOPPED= 0
@@ -46,9 +47,7 @@ class Player (SatyrObject):
         SatyrObject.__init__ (self, parent, busName, busPath)
 
         self.configValues= (
-            # actually it doesn't make much sense to save this two.
-            # ('playing', configEntryToBool, False),
-            # ('paused', configEntryToBool, False),
+            # actually it doesn't make much sense to save this one
             ('state', int, Player.STOPPED),
             ('stopAfter', configEntryToBool, False),
             # or this one...
@@ -86,6 +85,7 @@ class Player (SatyrObject):
         else:
             self.state= Player.PLAYING
             # FIXME? this should not be here, but right now seems to be needed
+            # BUG: and it is still not enough
             time.sleep (0.4)
 
             # the QPushButton.clicked() emits a bool,
@@ -105,16 +105,20 @@ class Player (SatyrObject):
             self.media.setCurrentSource (Phonon.MediaSource (url))
             self.media.play ()
 
+            self.nowPlaying.emit (self.playlist.index)
+
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def play_pause (self):
         """switches between play and pause"""
         if self.state in (Player.STOPPED, Player.PAUSED):
-            self.state= Player.PLAYING
-            self.media.play ()
+            # self.state= Player.PLAYING
+            # self.media.play ()
+            self.play ()
         else:
             # Player.PLAYING
-            self.state= Player.PAUSED
-            self.media.pause ()
+            # self.state= Player.PAUSED
+            # self.media.pause ()
+            self.pause ()
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def pause (self):
@@ -142,6 +146,7 @@ class Player (SatyrObject):
             if self.stopAfter:
                 print "stopping after!"
                 # stopAfter is one time only
+                # BUG: after switching to states, it stops in the wrong song
                 self.toggleStopAfter ()
                 self.stop ()
             # FIXME: this should not be here
@@ -172,9 +177,9 @@ class Player (SatyrObject):
         self.quitAfter= not self.quitAfter
         print self.quitAfter
 
-    @dbus.service.method (BUS_NAME, in_signature='', out_signature='s')
-    def nowPlaying (self):
-        return self.playlist.formatSong (self.playlist.song)
+    # @dbus.service.method (BUS_NAME, in_signature='', out_signature='s')
+    # def nowPlaying (self):
+    #     return self.playlist.formatSong (self.playlist.song)
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def quit (self):
