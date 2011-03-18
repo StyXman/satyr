@@ -195,14 +195,15 @@ class Collection (SatyrObject):
 
     def indexForSong (self, song):
         # BUG?: this is O(n)
-        # HINT: we cannot use bisect now becuase if the metadata is loaded
+        # HINT: we cannot use bisect now because if the metadata is loaded
         # (and if we're here it is pretty sure the case)
         # the order changes: when we Collection.loadOrScan() it's filepath based
         # and now it's metadata based.
-        index= self.songs.index (song)
-        foo= bisect.bisect (self.songs, song)
-        if index!=foo:
-            print "WARN: bisect: %d, index:%d" % (foo, index)
+        # is the abobe no longer true?
+        # index= self.songs.index (song)
+        index= bisect.bisect (self.songs, song)
+        # if index!=foo:
+        #     print "WARN: bisect: %d, index:%d" % (foo, index)
 
         return index
 
