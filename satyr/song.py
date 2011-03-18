@@ -333,15 +333,12 @@ class Song (QObject):
 
     def __cmp__ (self, other):
         # I don't want to implement the myriad of rich comparison
-        if not self.loaded:
-            # don't load metadata on any comparison
-            # this would force it very soon at boot time
-            # so use the only reasonable thing: the filepath
-            ans= cmp (self.filepath, other.filepath)
-        elif not other.loaded:
-            # this is not so much a lie as a decision
-            ans= -1
-        else:
+        ans= cmp (self.filepath, other.filepath)
+        # don't load metadata on any comparison
+        # this would force it very soon at boot time
+        # so use the only reasonable thing: the filepath
+        # and only do it if the paths are different
+        if ans!=0 and self.loaded and other.loaded:
             try:
                 for attr1, attr2 in zip (self.cmpOrder, other.cmpOrder):
                     val1= getattr (self, attr1)
