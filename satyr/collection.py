@@ -26,7 +26,7 @@ from PyQt4.QtCore import pyqtSignal, pyqtSlot, QString
 import dbus.service
 
 # std python
-import os, bisect, stat
+import os, bisect
 
 # local
 from satyr.common import SatyrObject, BUS_NAME
@@ -129,11 +129,13 @@ class Collection (SatyrObject):
 
     # @pyqtSlot ()
     def newFiles (self, path):
-        s= os.stat (path)
-        # skip dirs, add files only
-        if not stat.S_ISDIR (s.st_mode):
-            path= utils.qstring2path (path)
-            self.scan (path)
+        # Traceback (most recent call last):
+        # File "/home/mdione/src/projects/satyr/live/satyr/collection.py", line 132, in newFiles
+            # s= os.stat (path)
+        # UnicodeDecodeError: 'ascii' codec can't decode byte 0xf3 in position 27: ordinal not in range(128)
+        # TODO: use KIO!s
+        path= utils.qstring2path (path)
+        self.scan (path)
 
     def scan (self, path=None, loadMetadata=False):
         self.scanning= True
@@ -177,16 +179,20 @@ class Collection (SatyrObject):
 
             song= Song (self, filepath)
 
-            index= bisect.bisect (self.songs, song)
-            # test if it's not already there
-            # FIXME: use another sorting method?
-            # print index
-            if index==0 or self.songs[index-1]!=song:
-                self.songs.insert (index, song)
-                self.count+= 1
-                if self.loadMetadata:
-                    song.loadMetadata ()
-                self.newSongs_.append ((index, filepath))
+            # this works because Song.__cmp__() does not compare tags if one song
+            # has not loaded them and Song does not do it automatically
+            # so only paths are compared.
+            if song not in self.songs:
+                index= bisect.bisect (self.songs, song)
+                # test if it's not already there
+                # FIXME: use another sorting method?
+                # print index
+                if index==0 or self.songs[index-1]!=song:
+                    self.songs.insert (index, song)
+                    self.count+= 1
+                    if self.loadMetadata:
+                        song.loadMetadata ()
+                    self.newSongs_.append ((index, filepath))
 
         print "C.add():", self.newSongs_
         self.newSongs.emit ()
