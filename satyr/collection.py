@@ -129,11 +129,6 @@ class Collection (SatyrObject):
 
     # @pyqtSlot ()
     def newFiles (self, path):
-        # Traceback (most recent call last):
-        # File "/home/mdione/src/projects/satyr/live/satyr/collection.py", line 132, in newFiles
-            # s= os.stat (path)
-        # UnicodeDecodeError: 'ascii' codec can't decode byte 0xf3 in position 27: ordinal not in range(128)
-        # TODO: use KIO!s
         path= utils.qstring2path (path)
         self.scan (path)
 
@@ -143,6 +138,8 @@ class Collection (SatyrObject):
 
         if path is None:
             path= self.path
+
+        print "C.scan(%s)" % path
 
         scanner= CollectionIndexer (path)
         scanner.scanning.connect (self.progress)
@@ -177,13 +174,16 @@ class Collection (SatyrObject):
                 # paths must be bytes, not ascii or utf-8
                 filepath= utils.qstring2path (filepath)
 
-            song= Song (self, filepath)
+            # normalize! this way we avoid this dupes (couldn't find where they're originated)
+            # C.add(): [(4081, '/home/mdione/media/music/Poison/2000 - Crack a smile... and more!//01 - Best thing you ever had.ogg')]
+            # C.add(): [(4082, '/home/mdione/media/music/Poison/2000 - Crack a smile... and more!/01 - Best thing you ever had.ogg')]
+            song= Song (self, os.path.normpath (filepath))
 
             # this works because Song.__cmp__() does not compare tags if one song
             # has not loaded them and Song does not do it automatically
             # so only paths are compared.
-            if song not in self.songs:
-                index= bisect.bisect (self.songs, song)
+            index= bisect.bisect (self.songs, song)
+            if index==len (self.songs) or self.songs[index+1]!=song:
                 self.songs.insert (index, song)
                 self.count+= 1
                 if self.loadMetadata:
@@ -200,6 +200,9 @@ class Collection (SatyrObject):
         # the order changes: when we Collection.loadOrScan() it's filepath based
         # and now it's metadata based.
         index= self.songs.index (song)
+        foo= bisect.bisect (self.songs, song)
+        if index!=foo:
+            print "WARN: bisect: %d, index:%d" % (foo, index)
 
         return index
 
