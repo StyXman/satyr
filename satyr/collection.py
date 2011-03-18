@@ -184,15 +184,11 @@ class Collection (SatyrObject):
             # so only paths are compared.
             if song not in self.songs:
                 index= bisect.bisect (self.songs, song)
-                # test if it's not already there
-                # FIXME: use another sorting method?
-                # print index
-                if index==0 or self.songs[index-1]!=song:
-                    self.songs.insert (index, song)
-                    self.count+= 1
-                    if self.loadMetadata:
-                        song.loadMetadata ()
-                    self.newSongs_.append ((index, filepath))
+                self.songs.insert (index, song)
+                self.count+= 1
+                if self.loadMetadata:
+                    song.loadMetadata ()
+                self.newSongs_.append ((index, filepath))
 
         print "C.add():", self.newSongs_
         self.newSongs.emit ()
