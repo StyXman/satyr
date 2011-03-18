@@ -46,12 +46,13 @@ class Renamer (ConfigurableObject):
 
         self.jobs= []
 
+    # TODO: make this a method of Song called properPath()
     def songPath (self, base, song):
         # TODO: take ext from file format?
         ext= song.filepath[-4:]
 
         if not song.variousArtists:
-            if song['collection']=='':
+            if song.collection==u'':
                 songPath= utils.expandConditionally (self.format, song)
             else:
                 songPath= utils.expandConditionally (self.collection, song)
@@ -75,7 +76,9 @@ class Renamer (ConfigurableObject):
             # TODO: update iface
             print "Renamer.jobFinished(): success!"
         else:
+            # job.errorString () is a QString
             print "Renamer.jobFinished(): ***** error! *****", unicode (job.errorString ())
+            # TODO: Renamer.jobFinished(): ***** error! ***** A file named foo already exists.
 
     def rename (self, songs):
         # TODO: parametrize the main music colleciton
@@ -88,7 +91,13 @@ class Renamer (ConfigurableObject):
             dstDir= os.path.dirname (dstPath)
             # TODO: QtDir is not net transp. try to make sub jobs creating the missing path
             if d.mkpath (dstDir):
-                src= KUrl (song.filepath)
+                # HINT: KUrl because KIO.* use KUrl
+                # src= KUrl (song.filepath)
+                src= KUrl (utils.path2qurl (song.filepath))
+                # BUG: Renamer.rename()
+                # PyQt4.QtCore.QUrl(u'file:///home/mdione/media/music/new/bandidos rurales/05 - uruguay, uruguay.mp3') ->
+                # PyQt4.QtCore.QUrl(u'file:///home/mdione/media/music/Le\xf3n Gieco/2001 - Bandidos rurales/05 - Uruguay, Uruguay.mp3')
+                #                                                       ^^^^
                 dst= KUrl (dstPath)
                 print "Renamer.rename()", src, "->", dst
 
