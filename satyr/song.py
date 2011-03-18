@@ -30,6 +30,7 @@ class TagWriteError (Exception):
 class Song (QObject):
     # TODO: do not return int's for year or track?
     # no, we need them as int's so we can %02d
+    # updated?
     metadadaChanged= pyqtSignal ()
 
     def __init__ (self, collection, filepath, onDemand=True, va=False):
@@ -77,8 +78,13 @@ class Song (QObject):
             props= fr.audioProperties ()
             # incredibly enough, tagpy also express lenght as a astring
             # even when taglib uses an int (?!?)
+            # BUG: this is wrong, the internal repr should be in seconds
+            # and the visual part shoould ask for the visual repr
+            # no, we need it for % it to the pattern. see __getitem__()
+            # HINT: props has string attrs, not unicode
             self.length= self.formatSeconds (props.length)
 
+            # HINT: info has unicode attrs
             info= fr.tag ()
         except Exception, e:
             print '----- loadMetadata()'
@@ -144,10 +150,10 @@ class Song (QObject):
                     # if we convert to v2 above, there's no else :)
                     pass
             else:
-                print '**** loadMetadata(): file type not supportd yet', type (f)
+                print '**** loadMetadata(): file type not supported yet', type (f)
 
         else:
-            print '**** loadMetadata(): file type not supportd yet', type (info)
+            print '**** loadMetadata(): file type not supported yet', type (info)
 
         self.metadadaChanged.emit ()
         self.loaded= True
@@ -259,6 +265,7 @@ class Song (QObject):
                         tag= attr.upper ()
                         value= getattr (self, attr)
                         if value!='' and value!=0:
+                            # the conversion to unicode is because the values are int
                             info.addField (tag, unicode (value), True) # yes, replace
                         else:
                             info.removeField (tag)
@@ -284,11 +291,12 @@ class Song (QObject):
                             d= t2.frameListMap ()
                             # print "Song.saveMetadata():", d.keys ()
                             for attr, tag in dict (collection='TOAL', diskno='TPOS').items ():
+                                # BUG? why
                                 value= unicode (getattr (self, attr))
                                 # convert to ByteVector
                                 # value= value.encode ('utf-16')
 
-                                if value not in ('', '0'):
+                                if value not in (u'', u'0'):
                                     try:
                                         frame= d[tag][0]
                                         # frame= tagpy._tagpy.id3v2_TextIdentificationFrame (tag)
