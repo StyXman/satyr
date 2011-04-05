@@ -56,6 +56,7 @@ class ConfigurableObject (object):
             self.config.config ().sync ()
 
     def loadConfig (self):
+        # key, type, default
         for k, t, v in self.configValues:
             if not self.config is None:
                 # print 'reading config entry %s.%s [%s]' % (unicode (self.config.name ()), k, v),

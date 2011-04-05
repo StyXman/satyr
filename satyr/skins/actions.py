@@ -47,6 +47,8 @@ def create (parent, ac):
         # S+Stop == Eject
         # ('player.toggleStopAfter', KShortcut (Qt.SHIFT+Qt.Key_MediaStop), True, "Stop after playing current song"),
         ('player.toggleStopAfter', KShortcut (Qt.Key_Eject), True, "Stop after playing current song"),
+        # TODO: S-P/P -> cycle random
+        # TODO: S-|<</>>| -> beginning/prev album, next album
         )
 
     for fqn, shortcut, globalSC, text in actions:

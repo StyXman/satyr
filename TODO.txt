@@ -7,6 +7,7 @@
 * when playing a new file, show the current song only if the cursor is in the
   previous current song (so not to move it when the user is doing something else)
 * headless!
+* lock/unlock the grid
 
 updateTimer= QTimer ()
 updateTimer.timeout.connect (self.addNewSongsToUI)

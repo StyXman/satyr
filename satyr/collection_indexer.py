@@ -62,6 +62,7 @@ def validMimetype (mimetype):
     # mimetype video/x-ms-asf not supported
     valid= valid or mimetype.startswith ('video')
     valid= valid or mimetype=='application/ogg'
+    # TODO: filter out playlists (.m3u)
 
     return valid
 
@@ -87,7 +88,7 @@ class CollectionIndexer (QThread):
         initMimetypes ()
 
     def walk (self, root, subdir='', relative=False):
-        print root, subdir
+        print "CI.walk():", root, subdir
         # TODO: support single filenames
         # if not os.path.isdir (root):
         #     return root
@@ -104,6 +105,7 @@ class CollectionIndexer (QThread):
             path= root+'/'+subdir+'/'+name
 
             if os.path.isdir (path):
+                print "CI.walk(): [DIR] %s" % path
                 dirs.append (name)
             else:
                 nondirs.append (name)
@@ -126,17 +128,13 @@ class CollectionIndexer (QThread):
                     yield x
 
     def run (self):
-        # BUG:
-        # Traceback (most recent call last):
-        # File "/home/mdione/src/projects/satyr/playlist-listmodel/collection_indexer.py", line 112, in run
-        #     mode= os.stat (self.path).st_mode
-        # OSError: [Errno 2] No such file or directory: '/home/mdione/media/music/Various Artists/abcde.de10c40e/track01.ogg'
         try:
             mode= os.stat (self.path).st_mode
         except OSError, e:
             print e
         else:
             if stat.S_ISDIR (mode):
+                # os.path.join fails on non-ASCII UTF-8 filenames
                 # http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=481795
                 for root, dirs, files in self.walk (self.path, relative=self.relative):
                     self.scanning.emit (root)

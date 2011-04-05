@@ -200,8 +200,9 @@ class Collection (SatyrObject):
         # the order changes: when we Collection.loadOrScan() it's filepath based
         # and now it's metadata based.
         # is the abobe no longer true?
-        # index= self.songs.index (song)
-        index= bisect.bisect (self.songs, song)
+        # somehow it is :(
+        index= self.songs.index (song)
+        # index= bisect.bisect (self.songs, song)
         # if index!=foo:
         #     print "WARN: bisect: %d, index:%d" % (foo, index)
 
