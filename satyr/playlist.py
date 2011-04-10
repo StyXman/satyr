@@ -24,7 +24,7 @@ from PyQt4.QtCore import pyqtSignal, QModelIndex, QStringList
 import dbus.service
 
 # std python
-import random, bisect
+import random, bisect, collections
 
 # local
 from satyr.common import SatyrObject, BUS_NAME, configEntryToBool, configEntryToIntList
@@ -38,7 +38,8 @@ class PlayList (SatyrObject):
     # TODO: get rid of primes, use normal random and a bounded list
     finished= pyqtSignal ()
     randomChanged= pyqtSignal (bool)
-    songChanged= pyqtSignal (int)
+    # songChanged= pyqtSignal (int)
+    songChanged= pyqtSignal (str)
     queued= pyqtSignal (int)
     dequeued= pyqtSignal (int)
 
@@ -51,6 +52,8 @@ class PlayList (SatyrObject):
             collection.scanFinished.connect (self.filesAdded)
 
         self.songQueue= []
+        # TODO: save this?
+        # self.played= collections.deque (100)
         self.song= None
         self.filepath= None
 
@@ -58,7 +61,9 @@ class PlayList (SatyrObject):
             ('random', configEntryToBool, False),
             ('seed', int, 0),
             ('prime', int, -1),
-            ('index', int, 0),
+            # TODO: make the current song to be savable again
+            # ('index', int, 0),
+            ('filepath', str, None)
             # ('indexQueue', configEntryToIntList, QStringList ())
             # TODO: make songQueue to be saved again
             # ('songQueue', configEntryToIntList, QStringList ())
@@ -108,48 +113,49 @@ class PlayList (SatyrObject):
         self.randomChanged.emit (self.random)
 
     def setCurrent (self, song=None):
-        if song is None:
-            try:
-                print "playlist.setCurrent()", self.index
-                self.song= self.collaggr.songForIndex (self.index)
-                self.filepath= self.song.filepath
-            # IndexError when we're out of bounds, TypeError when index is None
-            except (IndexError, TypeError):
-                # the index saved in the config is bigger than the current collection
-                # fall back to 0
-                try:
-                    self.index= 0
-                    self.song= self.collaggr.songForIndex (self.index)
-                    self.filepath= self.song.filepath
-                except IndexError:
-                    # we cannot even select the first song
-                    # which means there are no songs
-                    self.index= None
-                    self.song= None
-                    self.filepath= None
-        else:
-            print "playlist.setCurrent()", song
+        print "playlist.setCurrent()", song
+        if song is not None:
+            # self.index= self.collaggr.indexForSong (song)
             self.song= song
             self.filepath= song.filepath
-            self.index= self.collaggr.indexForSong (song)
-            print "playlist.setCurrent()", self.index
+        else:
+            # take the current from saved status
+            print "playlist.setCurrent()", self.filepath
+            # self.song= self.collaggr.songForIndex (self.index)
+            if self.filepath is None:
+                # none saved, use first
+                self.song= self.collaggr.songForIndex (0)
+                self.filepath= self.song.filepath
+            else:
+                song= self.collaggr.songForFilepath (self.filepath)
+                if song is not None:
+                    self.song= song
+                else:
+                    # sorry, we don't have that song anymore
+                    self.song= self.collaggr.songForIndex (0)
+                    self.filepath= self.song.filepath
 
         # we cannot emit the song because Qt (and I don't mean PyQt4 here)
         # knows nothing about it, so (with the help of, yes this time, PyQt4)
         # it basically emits its id(), which is useless
-        self.songChanged.emit (self.index)
+        # self.songChanged.emit (self.index)
+        self.songChanged.emit (self.filepath)
 
     def prev (self):
         print "¡prev",
         if self.random:
-            random= self.seed
-            self.index= (self.index-random) % self.collaggr.count
-            random= (self.seed-self.prime) % self.collaggr.count
-            self.seed= random
+            # random= self.seed
+            # self.index= (self.index-random) % self.collaggr.count
+            # random= (self.seed-self.prime) % self.collaggr.count
+            # self.seed= random
+            # TODO: implement played
+            index= random.randint (0, self.collaggr.count)
+            song= self.collaggr.songForIndex (index)
         else:
-            self.index= (self.index-1) % self.collaggr.count
+            # self.index= (self.index-1) % self.collaggr.count
+            song= self.collaggr.prev (self.song)
 
-        self.setCurrent ()
+        self.setCurrent (song)
 
     def next (self):
         print "next!",
@@ -162,12 +168,16 @@ class PlayList (SatyrObject):
             song= self.songQueue.pop (0)
         else:
             if self.random:
-                random= (self.seed+self.prime) % self.collaggr.count
-                self.index= (self.index+random) % self.collaggr.count
-                self.seed= random
+                # random= (self.seed+self.prime) % self.collaggr.count
+                # self.index= (self.index+random) % self.collaggr.count
+                # self.seed= random
+                index= random.randint (0, self.collaggr.count)
+                song= self.collaggr.songForIndex (index)
             else:
-                self.index= (self.index+1) % self.collaggr.count
+                # self.index= (self.index+1) % self.collaggr.count
+                song= self.collaggr.next (self.song)
 
+        # self.lastPlayed.append ()
         self.setCurrent (song)
 
     def filesAdded (self):

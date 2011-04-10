@@ -118,19 +118,21 @@ class MainWindow (KXmlGuiWindow):
     def log (self, *args):
         print args
 
-    def showSong (self, index):
+    def showSong (self, filepath):
+        # filepath comes from a signal, convert back to a str
+        filepath= utils.qstring2path (filepath)
         # save the old modelIndex so we can update that row and the new one
         oldModelIndex= self.modelIndex
         if self.songIndexSelectedByUser is None:
+            song= self.playlist.collaggr.songForFilepath (filepath)
+            index= self.playlist.collaggr.indexForSong (song)
             print "complex.showSong()", index
-            # we use the playlist model because the index is *always* refering
-            # to that model
-            song= self.playlist.collaggr.songForIndex (index)
             # we save the new modelIndex in self so we can show it
             # when we come back from searching
             modelIndex= self.modelIndex= self.model.index (index, 0)
         else:
             (song, modelIndex)= self.songIndexSelectedByUser
+            index= self.playlist.collaggr.indexForSong (song)
             # I also have to save it for the same reason
             # but using the other model!
             # BUG: this is getting ugly
@@ -164,8 +166,8 @@ class MainWindow (KXmlGuiWindow):
         self.songIndexSelectedByUser= (song, modelIndex)
         self.player.play (song)
 
-    def nowPlaying (self, index):
-        print "complex.nowPlaying(): %s" % self.playlist.formatSong (self.playlist.song)
+    def nowPlaying (self):
+        # print "complex.nowPlaying(): %s" % self.playlist.formatSong (self.playlist.song)
         # event
         self.notif= KNotification ("nowPlaying", self)
         self.notif.setText ("Now Playing: %s" % self.playlist.formatSong (self.playlist.song))
@@ -239,7 +241,9 @@ class MainWindow (KXmlGuiWindow):
         # but processed from the main loop, isn't it?
         self.collectionsAwaited-= 1
         if self.collectionsAwaited==0:
-            self.showSong (self.playlist.index)
+            # TODO: fix
+            # self.showSong (self.playlist.index)
+            pass
 
     # session management
     def saveProperties (self, config):

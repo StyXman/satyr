@@ -19,9 +19,13 @@
 # qt/kde related
 from PyQt4.QtCore import QSignalMapper
 
+# std python
+import os.path
+
 # local
 from satyr.common import SatyrObject, BUS_NAME
 from satyr.collection import Collection
+from satyr.song import Song
 
 class CollectionAggregator (SatyrObject):
     def __init__ (self, parent, collections=None, songs=None, busName=None, busPath=None):
@@ -129,5 +133,29 @@ class CollectionAggregator (SatyrObject):
                 self.count+= collection.count
 
         print "PLM: count:", self.count
+
+    def prev (self, song):
+        # TODO: implement some other way?
+        index= self.indexForSong (song)
+        return self.songForIndex ((index-1) % self.count)
+
+    def next (self, song):
+        index= self.indexForSong (song)
+        return self.songForIndex ((index+1) % self.count)
+
+    def songForFilepath (self, filepath):
+        coll= None
+        song= None
+
+        if filepath is not None:
+            for c in self.collections:
+                if os.path.commonprefix ([c.path, filepath])==c.path:
+                    coll= c
+                    break
+
+            if coll is not None:
+                song= Song (coll, filepath)
+
+        return song
 
 # end

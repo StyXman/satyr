@@ -105,7 +105,9 @@ class Player (SatyrObject):
             self.media.setCurrentSource (Phonon.MediaSource (url))
             self.media.play ()
 
-            self.nowPlaying.emit (self.playlist.index)
+            # TODO: emit something!
+            # self.nowPlaying.emit (self.playlist.index)
+            self.nowPlaying.emit (self.filepath)
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def play_pause (self):
