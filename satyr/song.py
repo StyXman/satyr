@@ -20,9 +20,12 @@
 # qt/kde related
 from PyQt4.QtCore import QObject, pyqtSignal
 
+# std python
+import types
+import traceback
+
 # other libs
 import tagpy
-import types
 
 class TagWriteError (Exception):
     pass
