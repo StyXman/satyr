@@ -50,7 +50,7 @@ class PlayList (SatyrObject):
         for collection in self.collections:
             collection.scanFinished.connect (self.filesAdded)
 
-        # self.indexQueue= []
+        self.songQueue= []
         self.song= None
         self.filepath= None
 
@@ -59,7 +59,9 @@ class PlayList (SatyrObject):
             ('seed', int, 0),
             ('prime', int, -1),
             ('index', int, 0),
-            ('indexQueue', configEntryToIntList, QStringList ())
+            # ('indexQueue', configEntryToIntList, QStringList ())
+            # TODO: make songQueue to be saved again
+            # ('songQueue', configEntryToIntList, QStringList ())
             )
         self.loadConfig ()
 
@@ -151,11 +153,13 @@ class PlayList (SatyrObject):
 
     def next (self):
         print "next!",
-        if len (self.indexQueue)>0:
+        song= None
+        if len (self.songQueue)>0:
             print 'from queue!',
             # BUG: this is destructive, so we can't go back properly
             # TODO: also, users want semi-ephemeral queues
-            self.index= self.indexQueue.pop (0)
+            # self.index= self.indexQueue.pop (0)
+            song= self.songQueue.pop (0)
         else:
             if self.random:
                 random= (self.seed+self.prime) % self.collaggr.count
@@ -164,7 +168,7 @@ class PlayList (SatyrObject):
             else:
                 self.index= (self.index+1) % self.collaggr.count
 
-        self.setCurrent ()
+        self.setCurrent (song)
 
     def filesAdded (self):
         # we must recompute the prime
@@ -190,18 +194,21 @@ class PlayList (SatyrObject):
 
         return prime
 
-    @dbus.service.method (BUS_NAME, in_signature='i', out_signature='')
-    def queue (self, collectionIndex):
+    # TODO: reenable this dbus method?
+    # @dbus.service.method (BUS_NAME, in_signature='i', out_signature='')
+    # def queue (self, collectionIndex):
+    def queue (self, collectionIndex, song):
+        # song= self.collaggr.songForIndex (collectionIndex)
         try:
-            listIndex= self.indexQueue.index (collectionIndex)
+            listIndex= self.songQueue.index (song)
             # exists; dequeue
-            print 'PL.queue(): dequeuing index [%d, %d]' % (listIndex, collectionIndex)
-            self.indexQueue.pop (listIndex)
+            print 'PL.queue(): dequeuing [%d, %s]' % (listIndex, song)
+            self.songQueue.pop (listIndex)
             self.dequeued.emit (collectionIndex)
         except ValueError:
             # doesn't exist; append
-            print 'PL.queue(): queuing [%d]' % (collectionIndex)
-            self.indexQueue.append (collectionIndex)
+            print 'PL.queue(): queuing [%s]' % (song)
+            self.songQueue.append (song)
             self.queued.emit (collectionIndex)
 
     @dbus.service.method (BUS_NAME, in_signature='s', out_signature='a(is)')

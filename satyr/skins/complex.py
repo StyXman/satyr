@@ -278,8 +278,9 @@ class MainWindow (KXmlGuiWindow):
                 # not so fast, cowboy. PlayList.queue() spects 'global' indexes
                 # TODO: this is not very efficient
                 song= self.model.collaggr.songForIndex (modelIndex.row ())
+                # BUG: this is horrible
                 index= self.appModel.collaggr.indexForSong (song)
-                self.playlist.queue (index)
+                self.playlist.queue (index, song)
                 selectedSongs.append (modelIndex.row ())
 
     def rename (self):
@@ -345,7 +346,7 @@ class QPlayListModel (QAbstractTableModel):
                 elif attr=='title' and role!=Qt.EditRole:
                     # don't (even try to) add the [#] to the title
                     try:
-                        queueIndex= self.playlist.indexQueue.index (modelIndex.row ())
+                        queueIndex= self.playlist.songQueue.index (song)
                         # make it show as starting in 1, otherwise it's confusing
                         rawData= "[%d] %s" % (queueIndex+1, rawData)
                     except ValueError:
@@ -363,7 +364,7 @@ class QPlayListModel (QAbstractTableModel):
                     data= QVariant (QApplication.palette ().dark ())
                 else:
                     try:
-                        queueIndex= self.playlist.indexQueue.index (modelIndex.row ())
+                        queueIndex= self.playlist.songQueue.index (song)
                         data= QVariant (QApplication.palette ().mid ())
                     except ValueError:
                         data= QVariant ()
