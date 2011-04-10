@@ -28,8 +28,8 @@ import random, bisect, collections
 
 # local
 from satyr.common import SatyrObject, BUS_NAME, configEntryToBool, configEntryToIntList
-from satyr.primes import primes
 from satyr.collaggr import CollectionAggregator
+from satyr.song import Song
 
 class StopAfter (Exception):
     pass
@@ -39,7 +39,7 @@ class PlayList (SatyrObject):
     finished= pyqtSignal ()
     randomChanged= pyqtSignal (bool)
     # songChanged= pyqtSignal (int)
-    songChanged= pyqtSignal (str)
+    songChanged= pyqtSignal (Song)
     queued= pyqtSignal (int)
     dequeued= pyqtSignal (int)
 
@@ -139,7 +139,7 @@ class PlayList (SatyrObject):
         # knows nothing about it, so (with the help of, yes this time, PyQt4)
         # it basically emits its id(), which is useless
         # self.songChanged.emit (self.index)
-        self.songChanged.emit (self.filepath)
+        self.songChanged.emit (self.song)
 
     def prev (self):
         print "¡prev",
@@ -181,28 +181,7 @@ class PlayList (SatyrObject):
         self.setCurrent (song)
 
     def filesAdded (self):
-        # we must recompute the prime
-        if self.collaggr.count>2:
-            # if count is 1, it make no sense to select a prime
-            # if it's 2, the prime selected would be 2
-            # if you turn on random and hit next
-            # you get the same song over and over again...
-            self.prime= self.randomPrime ()
-            print "prime selected:", self.prime
-        else:
-            # so instead we hadrcode it to 1
-            self.prime= 1
-
         self.setCurrent ()
-
-    def randomPrime (self):
-        # select a random prime based on the amount of songs in the playlist
-        top= bisect.bisect (primes, self.collaggr.count)
-        # select from the upper 2/3,
-        # so in large playlists the same artist is not picked consecutively
-        prime= random.choice (primes[top/3:top])
-
-        return prime
 
     # TODO: reenable this dbus method?
     # @dbus.service.method (BUS_NAME, in_signature='i', out_signature='')

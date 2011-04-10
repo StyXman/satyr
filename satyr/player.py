@@ -31,12 +31,13 @@ import time
 
 # local
 from satyr.common import SatyrObject, BUS_NAME, configEntryToBool
+from satyr.song import Song
 from satyr import utils
 
 class Player (SatyrObject):
     finished= pyqtSignal ()
     stopAfterChanged= pyqtSignal (bool)
-    nowPlaying= pyqtSignal (int)
+    nowPlaying= pyqtSignal (Song)
 
     # constants
     STOPPED= 0
@@ -97,8 +98,10 @@ class Player (SatyrObject):
             if song is not None:
                 print "player.play()", song
                 self.playlist.setCurrent (song)
-
-            self.filepath= self.playlist.filepath
+            else:
+                song= self.playlist.song
+                
+            self.filepath= song.filepath
 
             print "playing", self.filepath
             url= utils.path2qurl (self.filepath)
@@ -107,7 +110,7 @@ class Player (SatyrObject):
 
             # TODO: emit something!
             # self.nowPlaying.emit (self.playlist.index)
-            self.nowPlaying.emit (self.filepath)
+            self.nowPlaying.emit (song)
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def play_pause (self):
