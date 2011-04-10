@@ -96,7 +96,7 @@ class Player (SatyrObject):
             # False
             if song is not None:
                 print "player.play()", song
-                self.playlist.jumpToSong (song)
+                self.playlist.setCurrent (song)
 
             self.filepath= self.playlist.filepath
 

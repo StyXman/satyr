@@ -237,16 +237,4 @@ class PlayList (SatyrObject):
 
         return songs
 
-    @dbus.service.method (BUS_NAME, in_signature='i', out_signature='')
-    def jumpToIndex (self, index):
-        # print 'jU..'
-        print "playlist.jumpToIndex()", index
-        self.index= index
-        self.setCurrent ()
-        # print 'Mp!'
-
-    # we can't export this through dbus because it's a Song
-    def jumpToSong (self, song):
-        self.setCurrent (song)
-
 # end
