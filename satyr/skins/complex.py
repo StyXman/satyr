@@ -78,7 +78,7 @@ class MainWindow (KXmlGuiWindow):
         majV, minV, patchL= utils.phononVersion ()
         if (majV>4) or (majV==4 and minV>3) or (majV==4 and minV==3 and patchL>1):
             # self.ui.timeSlider.setMediaObject (self.player.media)
-            # we disabled it because it needed a ptched system
+            # we disabled it because it needed a patched system
             pass
 
         # TODO: better name?
@@ -125,8 +125,6 @@ class MainWindow (KXmlGuiWindow):
         print args
 
     def showSong (self, song):
-        # filepath comes from a signal, convert back to a str
-        # filepath= utils.qstring2path (filepath)
         # save the old modelIndex so we can update that row and the new one
         oldModelIndex= self.modelIndex
         if self.songIndexSelectedByUser is not None:
@@ -209,7 +207,7 @@ class MainWindow (KXmlGuiWindow):
         """copies the outcome of an edition in a cell
         to all the selected cells in the same column which.
         this lets us implement mass tag edition."""
-        # print "complex.copyEditToSelection()", len (self.ui.songsList.selectedIndexes ()), self.appModel.edited
+
         if len (self.ui.songsList.selectedIndexes ())>1 and self.appModel.edited:
             # more than one cell selected
             # we copy was has just been edited tho the rest of selected cells
@@ -276,12 +274,7 @@ class MainWindow (KXmlGuiWindow):
         for modelIndex in self.ui.songsList.selectedIndexes ():
             print "complex.queue()", modelIndex.row ()
             if modelIndex.row () not in selectedSongs:
-                # self.playlist.queue (modelIndex.row ())
-                # not so fast, cowboy. PlayList.queue() spects 'global' indexes
-                # TODO: this is not very efficient
                 song= self.model.collaggr.songForIndex (modelIndex.row ())
-                # BUG: this is horrible
-                # index= self.appModel.collaggr.indexForSong (song)
                 index= modelIndex.row ()
                 self.playlist.queue (index, song)
                 selectedSongs.append (modelIndex.row ())

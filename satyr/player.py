@@ -108,21 +108,14 @@ class Player (SatyrObject):
             self.media.setCurrentSource (Phonon.MediaSource (url))
             self.media.play ()
 
-            # TODO: emit something!
-            # self.nowPlaying.emit (self.playlist.index)
             self.nowPlaying.emit (song)
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def play_pause (self):
         """switches between play and pause"""
         if self.state in (Player.STOPPED, Player.PAUSED):
-            # self.state= Player.PLAYING
-            # self.media.play ()
             self.play ()
         else:
-            # Player.PLAYING
-            # self.state= Player.PAUSED
-            # self.media.pause ()
             self.pause ()
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
@@ -182,6 +175,7 @@ class Player (SatyrObject):
         self.quitAfter= not self.quitAfter
         print self.quitAfter
 
+    # TODO: re-enable this
     # @dbus.service.method (BUS_NAME, in_signature='', out_signature='s')
     # def nowPlaying (self):
     #     return self.playlist.formatSong (self.playlist.song)
