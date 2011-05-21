@@ -25,10 +25,12 @@ import dbus.service
 
 # std python
 import random, bisect
+from collections import deque
+from random import randint
 
 # local
 from satyr.common import SatyrObject, BUS_NAME, configEntryToBool, configEntryToIntList
-from satyr.primes import primes
+# from satyr.primes import primes
 from satyr.collaggr import CollectionAggregator
 
 class StopAfter (Exception):
@@ -50,15 +52,18 @@ class PlayList (SatyrObject):
         for collection in self.collections:
             collection.scanFinished.connect (self.filesAdded)
 
-        # self.indexQueue= []
         self.song= None
         self.filepath= None
+
+        self.played= deque ([], 100)
+        self.playedIndex= -1
 
         self.configValues= (
             ('random', configEntryToBool, False),
             ('seed', int, 0),
             ('prime', int, -1),
             ('index', int, 0),
+            # ('playedIndex', int, -1), # TODO: here?
             ('indexQueue', configEntryToIntList, QStringList ())
             )
         self.loadConfig ()
@@ -138,32 +143,62 @@ class PlayList (SatyrObject):
         self.songChanged.emit (self.index)
 
     def prev (self):
-        print "¡prev",
-        if self.random:
-            random= self.seed
-            self.index= (self.index-random) % self.collaggr.count
-            random= (self.seed-self.prime) % self.collaggr.count
-            self.seed= random
-        else:
-            self.index= (self.index-1) % self.collaggr.count
+        print "¡prev", self.playedIndex, self.played,
+        # HINT: yes, they might be equivalent,
+        # but I keep them for clarity's sake
+        if len (self.played)==0 or self.playedIndex==0:
+            if self.random:
+                print 'random'
+                self.index= randint (0, self.collaggr.count-1)
+            else:
+                print 'sequential'
+                self.index-= 1
 
+            # append and appendleft are equivalent here
+            # but appendleft is conceptualy more accurate
+            self.played.appendleft (self.index)
+            self.playedIndex= 0
+        else:
+            # HINT: this has an ugly collateral damage
+            # when switching from random to sequential and then hitting prev
+            # the song is picked from the played list and does not select
+            # the song sequentially previous in the collection
+            print 'from played'
+            self.playedIndex-= 1
+            self.index= self.played[self.playedIndex]
+
+        print "¡prev", self.playedIndex, self.played,
+        self.song= self.collaggr.songForIndex (self.index)
         self.setCurrent ()
 
     def next (self):
-        print "next!",
-        if len (self.indexQueue)>0:
-            print 'from queue!',
-            # BUG: this is destructive, so we can't go back properly
-            # TODO: also, users want semi-ephemeral queues
-            self.index= self.indexQueue.pop (0)
-        else:
-            if self.random:
-                random= (self.seed+self.prime) % self.collaggr.count
-                self.index= (self.index+random) % self.collaggr.count
-                self.seed= random
+        print "next!", self.playedIndex, self.played,
+        if self.playedIndex==len (self.played)-1:
+            if len (self.indexQueue)>0:
+                print 'from queue!',
+                # BUG: this is destructive, so we can't go back properly
+                # TODO: also, users want semi-ephemeral queues
+                self.index= self.indexQueue.pop (0)
+            elif self.random:
+                print 'random'
+                self.index= randint (0, self.collaggr.count-1)
             else:
-                self.index= (self.index+1) % self.collaggr.count
+                print 'sequential'
+                self.index+= 1
 
+            self.played.append (self.index)
+            self.playedIndex= len (self.played)-1
+        else:
+            # HINT: this has an ugly collateral damage
+            # when switching from random to sequential and then hitting prev
+            # the song is picked from the played list and does not select
+            # the song sequentially previous in the collection
+            print 'from played'
+            self.playedIndex+= 1
+            self.index= self.played[self.playedIndex]
+
+        print "next!", self.playedIndex, self.played
+        self.song= self.collaggr.songForIndex (self.index)
         self.setCurrent ()
 
     def filesAdded (self):
