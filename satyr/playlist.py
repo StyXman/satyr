@@ -56,7 +56,7 @@ class PlayList (SatyrObject):
         self.filepath= None
 
         self.played= deque ([], 100)
-        self.playedIndex= -1
+        # self.playedIndex= -1
 
         self.configValues= (
             ('random', configEntryToBool, False),
@@ -143,61 +143,39 @@ class PlayList (SatyrObject):
         self.songChanged.emit (self.index)
 
     def prev (self):
-        print "¡prev", self.playedIndex, self.played,
-        # HINT: yes, they might be equivalent,
-        # but I keep them for clarity's sake
-        if len (self.played)==0 or self.playedIndex==0:
+        print "¡prev", self.played,
+        if len (self.played)==0:
             if self.random:
                 print 'random'
                 self.index= randint (0, self.collaggr.count-1)
             else:
                 print 'sequential'
                 self.index-= 1
-
-            # append and appendleft are equivalent here
-            # but appendleft is conceptualy more accurate
-            self.played.appendleft (self.index)
-            self.playedIndex= 0
         else:
-            # HINT: this has an ugly collateral damage
-            # when switching from random to sequential and then hitting prev
-            # the song is picked from the played list and does not select
-            # the song sequentially previous in the collection
             print 'from played'
-            self.playedIndex-= 1
-            self.index= self.played[self.playedIndex]
+            self.index= self.played.pop ()
 
-        print "¡prev", self.playedIndex, self.played,
+        print "¡prev", self.played,
         self.song= self.collaggr.songForIndex (self.index)
         self.setCurrent ()
 
     def next (self):
-        print "next!", self.playedIndex, self.played,
-        if self.playedIndex==len (self.played)-1:
-            if len (self.indexQueue)>0:
-                print 'from queue!',
-                # BUG: this is destructive, so we can't go back properly
-                # TODO: also, users want semi-ephemeral queues
-                self.index= self.indexQueue.pop (0)
-            elif self.random:
-                print 'random'
-                self.index= randint (0, self.collaggr.count-1)
-            else:
-                print 'sequential'
-                self.index+= 1
-
-            self.played.append (self.index)
-            self.playedIndex= len (self.played)-1
+        print "next!", self.played,
+        if len (self.indexQueue)>0:
+            print 'from queue!',
+            # BUG: this is destructive, so we can't go back properly
+            # TODO: also, users want semi-ephemeral queues
+            self.index= self.indexQueue.pop (0)
+        elif self.random:
+            print 'random'
+            self.index= randint (0, self.collaggr.count-1)
         else:
-            # HINT: this has an ugly collateral damage
-            # when switching from random to sequential and then hitting prev
-            # the song is picked from the played list and does not select
-            # the song sequentially previous in the collection
-            print 'from played'
-            self.playedIndex+= 1
-            self.index= self.played[self.playedIndex]
+            print 'sequential'
+            self.index+= 1
 
-        print "next!", self.playedIndex, self.played
+        self.played.append (self.index)
+
+        print "next!", self.played
         self.song= self.collaggr.songForIndex (self.index)
         self.setCurrent ()
 
