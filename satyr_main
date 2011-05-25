@@ -26,7 +26,7 @@ import dbus.service
 import sys
 
 # local
-from satyr.common import BUS_NAME, ConfigurableObject
+from satyr.common import BUS_NAME, ConfigurableObject, ConfigEntry
 from satyr.player import Player
 from satyr.playlist import PlayList
 from satyr.collection import Collection
@@ -44,7 +44,7 @@ def main ():
     # synthetize a config
     config= ConfigurableObject ('MainWindow')
     config.configValues= (
-        ('skin', str, 'default'),
+        ConfigEntry ('skin', str, 'default'),
         )
     config.loadConfig ()
 

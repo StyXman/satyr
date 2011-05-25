@@ -20,7 +20,7 @@
 from PyQt4.QtCore import QSignalMapper
 
 # local
-from satyr.common import SatyrObject, BUS_NAME
+from satyr.common import SatyrObject, BUS_NAME, ConfigEntry
 from satyr.collection import Collection
 
 class CollectionAggregator (SatyrObject):
@@ -28,7 +28,7 @@ class CollectionAggregator (SatyrObject):
         SatyrObject.__init__ (self, parent, busName, busPath)
 
         self.configValues= (
-            ('collsNo', int, 0),
+            ConfigEntry ('collsNo', int, 0),
             )
         self.loadConfig ()
 

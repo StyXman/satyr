@@ -24,13 +24,12 @@ from PyQt4.QtCore import pyqtSignal, QModelIndex, QStringList
 import dbus.service
 
 # std python
-import random, bisect
+import bisect
 from collections import deque
 from random import randint
 
 # local
-from satyr.common import SatyrObject, BUS_NAME, configEntryToBool, configEntryToIntList
-# from satyr.primes import primes
+from satyr.common import SatyrObject, BUS_NAME, ConfigEntry
 from satyr.collaggr import CollectionAggregator
 
 class StopAfter (Exception):
@@ -55,18 +54,16 @@ class PlayList (SatyrObject):
         self.song= None
         self.filepath= None
 
-        self.played= deque ([], 100)
-        # self.playedIndex= -1
-
         self.configValues= (
-            ('random', configEntryToBool, False),
-            ('seed', int, 0),
-            ('prime', int, -1),
-            ('index', int, 0),
-            # ('playedIndex', int, -1), # TODO: here?
-            ('indexQueue', configEntryToIntList, QStringList ())
+            ConfigEntry ('random', bool, False),
+            ConfigEntry ('index', int, 0),
+            # we had to change the whole API just for this entry... :|
+            ConfigEntry ('played', deque, deque ([], 100)),
+            ConfigEntry ('playedIndex', int, -1),
+            ConfigEntry ('indexQueue', list, [], subtype=int)
             )
         self.loadConfig ()
+        print self.played, self.playedIndex
 
         # TODO: config
         # TODO: optional parts
@@ -180,28 +177,7 @@ class PlayList (SatyrObject):
         self.setCurrent ()
 
     def filesAdded (self):
-        # we must recompute the prime
-        if self.collaggr.count>2:
-            # if count is 1, it make no sense to select a prime
-            # if it's 2, the prime selected would be 2
-            # if you turn on random and hit next
-            # you get the same song over and over again...
-            self.prime= self.randomPrime ()
-            print "prime selected:", self.prime
-        else:
-            # so instead we hadrcode it to 1
-            self.prime= 1
-
         self.setCurrent ()
-
-    def randomPrime (self):
-        # select a random prime based on the amount of songs in the playlist
-        top= bisect.bisect (primes, self.collaggr.count)
-        # select from the upper 2/3,
-        # so in large playlists the same artist is not picked consecutively
-        prime= random.choice (primes[top/3:top])
-
-        return prime
 
     @dbus.service.method (BUS_NAME, in_signature='i', out_signature='')
     def queue (self, collectionIndex):

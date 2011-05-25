@@ -30,7 +30,7 @@ import dbus.service
 import time
 
 # local
-from satyr.common import SatyrObject, BUS_NAME, configEntryToBool
+from satyr.common import SatyrObject, BUS_NAME, ConfigEntry
 from satyr import utils
 
 class Player (SatyrObject):
@@ -48,10 +48,10 @@ class Player (SatyrObject):
 
         self.configValues= (
             # actually it doesn't make much sense to save this one
-            ('state', int, Player.STOPPED),
-            ('stopAfter', configEntryToBool, False),
+            ConfigEntry ('state', int, Player.STOPPED),
+            ConfigEntry ('stopAfter', bool, False),
             # or this one...
-            ('quitAfter', configEntryToBool, False),
+            ConfigEntry ('quitAfter', bool, False),
             )
         self.loadConfig ()
 

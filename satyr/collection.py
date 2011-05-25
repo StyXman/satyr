@@ -29,7 +29,7 @@ import dbus.service
 import os, bisect
 
 # local
-from satyr.common import SatyrObject, BUS_NAME
+from satyr.common import SatyrObject, BUS_NAME, ConfigEntry
 from satyr.collection_indexer import CollectionIndexer
 from satyr.song import Song
 from satyr import utils
@@ -54,7 +54,7 @@ class Collection (SatyrObject):
         # BUG: path is not reread from the config file!
         # it breaks rescanning
         self.configValues= (
-            ('path', str, path),
+            ConfigEntry ('path', str, path),
             )
         self.loadConfig ()
         # print busPath, self.path
@@ -129,6 +129,7 @@ class Collection (SatyrObject):
 
     # @pyqtSlot ()
     def newFiles (self, path):
+        # print path.toLatin1()
         path= utils.qstring2path (path)
         self.scan (path)
 

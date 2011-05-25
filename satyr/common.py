@@ -23,20 +23,64 @@ from PyQt4.QtCore import QObject, QVariant, QStringList
 # dbus
 import dbus.service
 
+# std python
+from collections import deque
+
 # globals :|
 BUS_NAME= 'org.kde.satyr'
 
-def configEntryToBool (s):
-    return s!='false'
+# v is a QVariant
+def configEntryToBool (v):
+    return v.toString ()!='false'
 
-def configEntryToIntList (s):
-    # print ">%s<" % s
-    if s=='':
-        ans= []
-    else:
-        ans= [int (x) for x in list (s)]
-    return ans
+def configEntryToStr (v):
+    return str (v.toString ())
 
+def configEntryToUnicode (v):
+    return unicode (v.toString ())
+
+def configEntryToInt (v):
+    return v.toInt ()[0]
+
+def configEntryToStrList (v):
+    return list (v.toStringList ())
+
+def configEntryToIntList (v):
+    return [int (x) for x in configEntryToStrList (v)]
+
+def configEntryToDeque (v):
+    l= configEntryToIntList (v)
+    v= deque (l, 100)
+    # print "cETD:", l, v,
+    return v
+
+def listToConfigEntry (l):
+    return QStringList (map (str, l))
+
+class ConfigEntry (object):
+    def __init__ (self, key, _type, default, subtype=None):
+        self.key= key
+        self.type= _type
+        self.default= default
+        self.subtype= subtype
+
+readFunctions= {
+    bool: configEntryToBool,
+    int:  configEntryToInt,
+    str:  configEntryToStr,
+    unicode: configEntryToUnicode,
+    list: {
+        str: configEntryToStrList,
+        int: configEntryToIntList,
+        },
+    # we could do it more generic, but we don't use it
+    deque: configEntryToDeque,
+    }
+
+writeFunctions= {
+    list: listToConfigEntry,
+    deque: listToConfigEntry,
+    }
 
 class ConfigurableObject (object):
     def __init__ (self, groupName=None):
@@ -49,27 +93,34 @@ class ConfigurableObject (object):
 
     def saveConfig (self):
         if not self.config is None:
-            for k, t, v in self.configValues:
+            for configEntry in self.configValues:
+                k= configEntry.key
                 v= getattr (self, k)
-                # print 'writing config entry %s= %s' % (k, v)
-                self.config.writeEntry (k, QVariant (v))
+                print 'writing config entry %s= %s' % (k, v)
+                w= writeFunctions.get (configEntry.type, QVariant)
+                # use the write function
+                v= w (v)
+                self.config.writeEntry (k, v)
             self.config.config ().sync ()
 
     def loadConfig (self):
-        # key, type, default
-        for k, t, v in self.configValues:
+        for configEntry in self.configValues:
+            k= configEntry.key
             if not self.config is None:
-                # print 'reading config entry %s.%s [%s]' % (unicode (self.config.name ()), k, v),
-                a= self.config.readEntry (k, QVariant (v))
-                if type (v)==QStringList:
-                    # print "QSL!"
-                    s= a.toStringList ()
-                else:
-                    # print "just a QS...", type (v)
-                    s= a.toString ()
-                # print type (s),
-                v= t (s)
-                # print s, v
+                w= writeFunctions.get (configEntry.type, QVariant)
+                v= configEntry.default
+                print 'reading config entry %s.%s [%s:%s]' % (unicode (self.config.name ()), k, v, type (v)),
+                # use the write function to give a default that KConfig can understand
+                v= w (v)
+                a= self.config.readEntry (k, v)
+                # we always have a read function, otherwise they're all QVariants
+                r= readFunctions[configEntry.type]
+                if configEntry.subtype is not None:
+                    r= r[configEntry.subtype]
+                v= r (a)
+                print a.toString (), v
+            else:
+                v= configEntry.default
 
             setattr (self, k, v)
 
