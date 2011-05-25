@@ -150,7 +150,8 @@ class PlayList (SatyrObject):
                 self.index-= 1
         else:
             print 'from played'
-            self.index= self.played.pop ()
+            self.played.pop ()
+            self.index= self.played[-1]
 
         print "¡prev", self.played,
         self.song= self.collaggr.songForIndex (self.index)
