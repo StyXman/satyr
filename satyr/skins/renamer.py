@@ -38,9 +38,9 @@ class Renamer (ConfigurableObject):
         # artist, year, collection, diskno, album, trackno, title, length
         self.configValues= (
             # ('format', unicode, u"{%artist/}{%4year - }{%collection/}{%02diskno - }{%album/}{Disk %02disk/}{%02trackno - }{%title}"),
-            ('format', unicode, u"{%artist/}{%4year - }{%album/}{Disk %02diskno/}{%02trackno - }{%title}"),
-            ('vaFormat', unicode, u"{%4year - }{%album/}{Disk %02diskno/}{%02trackno - }{%artist - }{%title}"),
-            ('collection', unicode, u"{%artist/}{%4year - }{%collection}/{%02diskno - }{%album}/{%02trackno - }{%title}"),
+            ('format',     unicode, None, u"{%artist/}{%4year - }{%album/}{Disk %02diskno/}{%02trackno - }{%title}"),
+            ('vaFormat',   unicode, None, u"{%4year - }{%album/}{Disk %02diskno/}{%02trackno - }{%artist - }{%title}"),
+            ('collection', unicode, None, u"{%artist/}{%4year - }{%collection}/{%02diskno - }{%album}/{%02trackno - }{%title}"),
             )
         self.loadConfig ()
 

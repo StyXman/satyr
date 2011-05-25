@@ -26,17 +26,25 @@ import dbus.service
 # globals :|
 BUS_NAME= 'org.kde.satyr'
 
-def configEntryToBool (s):
-    return s!='false'
+# HINT: this is beginning to suck
+# v is a QVariant
+def configEntryToBool (v):
+    return v.toString ()!='false'
 
-def configEntryToIntList (s):
-    # print ">%s<" % s
-    if s=='':
-        ans= []
-    else:
-        ans= [int (x) for x in list (s)]
-    return ans
+def configEntryToStr (v):
+    return str (v.toString ())
 
+def configEntryToInt (v):
+    return v.toInt ()[0]
+
+def configEntryToStrList (v):
+    return list (v.toStringList ())
+
+def configEntryToIntList (v):
+    return [int (x) for x in configEntryToStrList (v)]
+
+def listToConfigEntry (l):
+    return QStringList (map (str, l))
 
 class ConfigurableObject (object):
     def __init__ (self, groupName=None):
@@ -49,27 +57,29 @@ class ConfigurableObject (object):
 
     def saveConfig (self):
         if not self.config is None:
-            for k, t, v in self.configValues:
+            # key, read, wrinte, default
+            for k, r, w, v in self.configValues:
                 v= getattr (self, k)
-                # print 'writing config entry %s= %s' % (k, v)
+                if w is not None:
+                    # use the write function
+                    v= w (v)
+                print 'writing config entry %s= %s' % (k, v)
                 self.config.writeEntry (k, QVariant (v))
             self.config.config ().sync ()
 
     def loadConfig (self):
-        # key, type, default
-        for k, t, v in self.configValues:
+        # key, read, write, default
+        for k, r, w, v in self.configValues:
             if not self.config is None:
-                # print 'reading config entry %s.%s [%s]' % (unicode (self.config.name ()), k, v),
+                if w is not None:
+                    # use the write function to give a default that KConfig can understand
+                    # HINT: yes, this sucks
+                    v= w (v)
+                print 'reading config entry %s.%s [%s:%s]' % (unicode (self.config.name ()), k, v, type (v)),
                 a= self.config.readEntry (k, QVariant (v))
-                if type (v)==QStringList:
-                    # print "QSL!"
-                    s= a.toStringList ()
-                else:
-                    # print "just a QS...", type (v)
-                    s= a.toString ()
-                # print type (s),
-                v= t (s)
-                # print s, v
+                # we always have a read function, otherwise they're all QVariants
+                v= r (a)
+                print a.toString (), v
 
             setattr (self, k, v)
 

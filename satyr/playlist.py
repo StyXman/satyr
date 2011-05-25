@@ -29,11 +29,18 @@ from collections import deque
 from random import randint
 
 # local
-from satyr.common import SatyrObject, BUS_NAME, configEntryToBool, configEntryToIntList
+from satyr.common import SatyrObject, BUS_NAME, configEntryToBool, configEntryToInt
+from satyr.common import configEntryToIntList, listToConfigEntry
 from satyr.collaggr import CollectionAggregator
 
 class StopAfter (Exception):
     pass
+
+def configEntryToDeque (s):
+    l= configEntryToIntList (s)
+    v= deque (l, 100)
+    print "cETD:", l, v
+    return v
 
 class PlayList (SatyrObject):
     # TODO: get rid of primes, use normal random and a bounded list
@@ -54,16 +61,16 @@ class PlayList (SatyrObject):
         self.song= None
         self.filepath= None
 
-        self.played= deque ([], 100)
-        self.playedIndex= -1
-
         self.configValues= (
-            ('random', configEntryToBool, False),
-            ('index', int, 0),
-            # ('playedIndex', int, -1), # TODO: here?
-            ('indexQueue', configEntryToIntList, QStringList ())
+            ('random', configEntryToBool, None, False),
+            ('index', configEntryToInt, None, 0),
+            # we had to change the whole API just for this entry... :|
+            ('played', configEntryToDeque, listToConfigEntry, deque ([], 100)),
+            ('playedIndex', configEntryToInt, None, -1),
+            ('indexQueue', configEntryToIntList, listToConfigEntry, [])
             )
         self.loadConfig ()
+        print self.played, self.playedIndex
 
         # TODO: config
         # TODO: optional parts
