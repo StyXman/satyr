@@ -57,7 +57,7 @@ class PlayList (SatyrObject):
         self.configValues= (
             ConfigEntry ('random', bool, False),
             ConfigEntry ('index', int, 0),
-            # we had to change the whole API just for this entry... :|
+            ConfigEntry ('shrinkPlayed', bool, True),
             ConfigEntry ('played', deque, deque ([], 100)),
             ConfigEntry ('playedIndex', int, -1),
             ConfigEntry ('indexQueue', list, [], subtype=int)
@@ -161,6 +161,8 @@ class PlayList (SatyrObject):
             # the song is picked from the played list and does not select
             # the song sequentially previous in the collection
             print 'from played'
+            if self.shrinkPlayed:
+                self.played.pop ()
             self.playedIndex-= 1
             self.index= self.played[self.playedIndex]
 
@@ -184,7 +186,7 @@ class PlayList (SatyrObject):
                 self.index+= 1
 
             self.played.append (self.index)
-            self.playedIndex= len (self.played)-1
+            self.playedIndex+= 1
         else:
             # HINT: this has an ugly collateral damage
             # when switching from random to sequential and then hitting prev
