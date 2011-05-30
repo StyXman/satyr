@@ -75,7 +75,7 @@ class PlayList (SatyrObject):
         # File "/home/mdione/src/projects/satyr/playlist-listmodel/models.py", line 180, in songForIndex
         #     song= collection.songs[collectionIndex]
         # IndexError: list index out of range
-        self.setCurrent ()
+        self.indexToSong ()
 
     # ** DO NOT REMOVE ** we're still using it for setting the window title
     def formatSong (self, song):
@@ -105,7 +105,7 @@ class PlayList (SatyrObject):
         print self.random
         self.randomChanged.emit (self.random)
 
-    def setCurrent (self, song=None):
+    def indexToSong (self, song=None):
         if song is None:
             try:
                 print "playlist.setCurrent()", self.index
@@ -132,6 +132,7 @@ class PlayList (SatyrObject):
             self.index= self.collaggr.indexForSong (song)
             print "playlist.setCurrent()", self.index
 
+    def setCurrent (self):
         # we cannot emit the song because Qt (and I don't mean PyQt4 here)
         # knows nothing about it, so (with the help of, yes this time, PyQt4)
         # it basically emits its id(), which is useless
@@ -147,7 +148,7 @@ class PlayList (SatyrObject):
         else:
             self.index= (self.index-1) % self.collaggr.count
 
-        self.setCurrent ()
+        self.indexToSong ()
 
     def next (self):
         print "next!",
@@ -164,7 +165,7 @@ class PlayList (SatyrObject):
             else:
                 self.index= (self.index+1) % self.collaggr.count
 
-        self.setCurrent ()
+        self.indexToSong ()
 
     def filesAdded (self):
         # we must recompute the prime
@@ -179,7 +180,7 @@ class PlayList (SatyrObject):
             # so instead we hadrcode it to 1
             self.prime= 1
 
-        self.setCurrent ()
+        self.indexToSong ()
 
     def randomPrime (self):
         # select a random prime based on the amount of songs in the playlist
@@ -235,11 +236,11 @@ class PlayList (SatyrObject):
         # print 'jU..'
         print "playlist.jumpToIndex()", index
         self.index= index
-        self.setCurrent ()
+        self.indexToSong ()
         # print 'Mp!'
 
     # we can't export this through dbus because it's a Song
     def jumpToSong (self, song):
-        self.setCurrent (song)
+        self.indexToSong (song)
 
 # end

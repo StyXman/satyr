@@ -58,7 +58,9 @@ class Player (SatyrObject):
         self.playlist= playlist
 
         self.media= Phonon.createPlayer (Phonon.MusicCategory)
-        self.media.finished.connect (self.next)
+        # self.media.finished.connect (self.next)
+        self.media.aboutToFinish.connect (self.queueNext)
+        self.media.currentSourceChanged.connect (self.sourceChanged)
         self.media.stateChanged.connect (self.stateChanged)
 
     def stateChanged (self, new, old):
@@ -86,7 +88,7 @@ class Player (SatyrObject):
             self.state= Player.PLAYING
             # FIXME? this should not be here, but right now seems to be needed
             # BUG: and it is still not enough
-            time.sleep (0.4)
+            # time.sleep (0.4)
 
             # the QPushButton.clicked() emits a bool,
             # and it's False on normal (non-checkable) buttons
@@ -137,6 +139,19 @@ class Player (SatyrObject):
         print "*screeeech*! stoping!"
         self.media.stop ()
         self.state= Player.STOPPED
+
+    def queueNext (self):
+        print "queueing next!"
+        self.playlist.next ()
+        self.filepath= self.playlist.filepath
+        print "--> queueing next!", self.filepath
+        url= utils.path2qurl (self.filepath)
+        source= Phonon.MediaSource (url)
+        self.media.enqueue (source)
+
+    def sourceChanged (self, source):
+        print "source changed!", source.fileName ().toLatin1 ()
+        self.playlist.setCurrent ()
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def next (self):
