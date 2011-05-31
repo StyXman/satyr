@@ -59,6 +59,7 @@ class Player (SatyrObject):
 
         self.media= Phonon.createPlayer (Phonon.MusicCategory)
         # self.media.finished.connect (self.next)
+        # self.media.finished.connect ()
         self.media.aboutToFinish.connect (self.queueNext)
         self.media.currentSourceChanged.connect (self.sourceChanged)
         self.media.stateChanged.connect (self.stateChanged)
@@ -107,8 +108,6 @@ class Player (SatyrObject):
             self.media.setCurrentSource (Phonon.MediaSource (url))
             self.media.play ()
 
-            self.nowPlaying.emit (self.playlist.index)
-
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def play_pause (self):
         """switches between play and pause"""
@@ -151,6 +150,7 @@ class Player (SatyrObject):
 
     def sourceChanged (self, source):
         print "source changed!", source.fileName ().toLatin1 ()
+        self.nowPlaying.emit (self.playlist.index)
         self.playlist.setCurrent ()
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
