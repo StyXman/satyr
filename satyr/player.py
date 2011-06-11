@@ -70,6 +70,8 @@ class Player (SatyrObject):
             print "ERROR: %d: %s" % (self.media.errorType (), self.media.errorString ())
             # just skip it
             self.next ()
+        else:
+            print "Player.stateChanged(): %s-> %s" % (old, new)
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def prev (self):
@@ -84,6 +86,7 @@ class Player (SatyrObject):
     @dbus.service.method (BUS_NAME, in_signature='i', out_signature='')
     def play (self, song=None):
         if self.state==Player.PAUSED:
+            # let pause() handle unpausing...
             self.pause ()
         else:
             self.state= Player.PLAYING
@@ -112,13 +115,9 @@ class Player (SatyrObject):
     def play_pause (self):
         """switches between play and pause"""
         if self.state in (Player.STOPPED, Player.PAUSED):
-            # self.state= Player.PLAYING
-            # self.media.play ()
             self.play ()
         else:
             # Player.PLAYING
-            # self.state= Player.PAUSED
-            # self.media.pause ()
             self.pause ()
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
@@ -150,28 +149,29 @@ class Player (SatyrObject):
 
     def sourceChanged (self, source):
         print "source changed!", source.fileName ().toLatin1 ()
-        self.nowPlaying.emit (self.playlist.index)
         self.playlist.setCurrent ()
+        if self.stopAfter:
+            print "stopping after!"
+            # stopAfter is one time only
+            # BUG: after switching to states, it stops in the wrong song
+            self.toggleStopAfter ()
+            self.stop ()
+
+        if self.quitAfter:
+            print "quiting after!"
+            # quitAfter is one time only
+            self.toggleQuitAfter ()
+            self.quit ()
+
+        if self.state==Player.PLAYING:
+            self.nowPlaying.emit (self.playlist.index)
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def next (self):
         try:
             self.playlist.next ()
             # FIXME: this should not be here
-            if self.stopAfter:
-                print "stopping after!"
-                # stopAfter is one time only
-                # BUG: after switching to states, it stops in the wrong song
-                self.toggleStopAfter ()
-                self.stop ()
-            # FIXME: this should not be here
-            if self.quitAfter:
-                print "quiting after!"
-                # quitAfter is one time only
-                self.toggleQuitAfter ()
-                self.quit ()
-            # FIXME: this should not be here
-            elif self.state==Player.PLAYING:
+            if self.state==Player.PLAYING:
                 self.play ()
         except IndexError:
             print "playlist empty"
