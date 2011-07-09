@@ -61,14 +61,18 @@ expansion= re.compile ("(\{(.*?)\%([0-9]*)([a-z]+)([^a-z}]*)\})")
 def expandConditionally (format, values):
     expansions= expansion.findall (format)
     ans= format
-    print "xpandCond(): %s" % ans
+    # print "xpandCond(): %s" % ans
     for complete, pre, digits, var, post in expansions:
         try:
             value= values[var]
         except (KeyError, AttributeError):
             value= ''
 
-        print type (value), value
+        # / is not valid in filenames
+        # in our case it creates a subdir
+        value.replace ('/', '-')
+
+        # print type (value), value
         # year and trackno are int's
         if value!='' and value!=0:
             if type (value)==types.IntType:
@@ -81,7 +85,7 @@ def expandConditionally (format, values):
             else:
                 ans= ans.replace (complete, '')
 
-        print "xpandCond(): %s" % ans
+        # print "xpandCond(): %s" % ans
 
     return ans
 
