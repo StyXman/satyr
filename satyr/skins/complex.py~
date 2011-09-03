@@ -77,7 +77,7 @@ class MainWindow (KXmlGuiWindow):
         self.ui.searchEntry.textChanged.connect (self.search)
         majV, minV, patchL= utils.phononVersion ()
         if (majV>4) or (majV==4 and minV>3) or (majV==4 and minV==3 and patchL>1):
-            self.ui.seekSlider.setMediaObject (self.player.media)
+            self.ui.timeSlider.setMediaObject (self.player.media)
         # TODO: self.ui.volumeSlider
 
         # TODO: better name?

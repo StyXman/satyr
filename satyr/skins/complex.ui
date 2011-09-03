@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>865</width>
+    <width>767</width>
     <height>800</height>
    </rect>
   </property>
@@ -16,7 +16,7 @@
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout">
     <item>
-     <layout class="QHBoxLayout" name="horizontalLayout">
+     <layout class="QHBoxLayout" name="horizontalLayout_2">
       <item>
        <widget class="QPushButton" name="prevButton">
         <property name="text">
@@ -52,6 +52,40 @@
         </property>
        </widget>
       </item>
+      <item>
+       <spacer name="horizontalSpacer_3">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <widget class="QLabel" name="timeElapsed">
+        <property name="text">
+         <string notr="true">00:00</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="Phonon::SeekSlider" name="seekSlider"/>
+      </item>
+      <item>
+       <widget class="QLabel" name="timeLeft">
+        <property name="text">
+         <string notr="true">00:00</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item>
+     <layout class="QHBoxLayout" name="horizontalLayout">
       <item>
        <widget class="QCheckBox" name="randomCheck">
         <property name="text">
@@ -92,6 +126,22 @@
       <item>
        <widget class="SearchEntry" name="searchEntry"/>
       </item>
+      <item>
+       <spacer name="horizontalSpacer_2">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <widget class="Phonon::VolumeSlider" name="volumeSlider"/>
+      </item>
      </layout>
     </item>
     <item>
@@ -117,6 +167,16 @@
   </widget>
  </widget>
  <customwidgets>
+  <customwidget>
+   <class>Phonon::SeekSlider</class>
+   <extends>QWidget</extends>
+   <header location="global">phonon/seekslider.h</header>
+  </customwidget>
+  <customwidget>
+   <class>Phonon::VolumeSlider</class>
+   <extends>QWidget</extends>
+   <header location="global">phonon/volumeslider.h</header>
+  </customwidget>
   <customwidget>
    <class>SearchEntry</class>
    <extends>QLineEdit</extends>
