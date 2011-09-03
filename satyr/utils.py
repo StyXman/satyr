@@ -24,6 +24,7 @@ from PyQt4.QtCore import QByteArray, QUrl
 import re
 import types
 import os.path
+from datetime import time
 
 def phononVersion ():
     return map (int, Phonon.phononVersion ().split ('.'))
@@ -90,5 +91,10 @@ def expandConditionally (format, values):
         print "xpandCond(): %s" % ans
 
     return ans
+
+def secondsToTime (seconds):
+    minutes= int (seconds/60.0)
+    seconds= abs (seconds-minutes*60)
+    return u"%02d:%02d" % (minutes, seconds)
 
 # end
