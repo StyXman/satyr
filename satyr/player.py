@@ -58,7 +58,10 @@ class Player (SatyrObject):
         self.playlist= playlist
 
         self.media= Phonon.createPlayer (Phonon.MusicCategory)
-        self.media.finished.connect (self.next)
+        # self.media.finished.connect (self.next)
+        # self.media.finished.connect ()
+        self.media.aboutToFinish.connect (self.queueNext)
+        self.media.currentSourceChanged.connect (self.sourceChanged)
         self.media.stateChanged.connect (self.stateChanged)
 
     def stateChanged (self, new, old):
@@ -67,6 +70,8 @@ class Player (SatyrObject):
             print "ERROR: %d: %s" % (self.media.errorType (), self.media.errorString ())
             # just skip it
             self.next ()
+        else:
+            print "Player.stateChanged(): %s-> %s" % (old, new)
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def prev (self):
@@ -81,12 +86,13 @@ class Player (SatyrObject):
     @dbus.service.method (BUS_NAME, in_signature='i', out_signature='')
     def play (self, song=None):
         if self.state==Player.PAUSED:
+            # let pause() handle unpausing...
             self.pause ()
         else:
             self.state= Player.PLAYING
             # FIXME? this should not be here, but right now seems to be needed
             # BUG: and it is still not enough
-            time.sleep (0.4)
+            # time.sleep (0.4)
 
             # the QPushButton.clicked() emits a bool,
             # and it's False on normal (non-checkable) buttons
@@ -105,19 +111,13 @@ class Player (SatyrObject):
             self.media.setCurrentSource (Phonon.MediaSource (url))
             self.media.play ()
 
-            self.nowPlaying.emit (self.playlist.index)
-
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def play_pause (self):
         """switches between play and pause"""
         if self.state in (Player.STOPPED, Player.PAUSED):
-            # self.state= Player.PLAYING
-            # self.media.play ()
             self.play ()
         else:
             # Player.PLAYING
-            # self.state= Player.PAUSED
-            # self.media.pause ()
             self.pause ()
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
@@ -138,25 +138,40 @@ class Player (SatyrObject):
         self.media.stop ()
         self.state= Player.STOPPED
 
+    def queueNext (self):
+        print "queueing next!"
+        self.playlist.next ()
+        self.filepath= self.playlist.filepath
+        print "--> queueing next!", self.filepath
+        url= utils.path2qurl (self.filepath)
+        source= Phonon.MediaSource (url)
+        self.media.enqueue (source)
+
+    def sourceChanged (self, source):
+        print "source changed!", source.fileName ().toLatin1 ()
+        self.playlist.setCurrent ()
+        if self.stopAfter:
+            print "stopping after!"
+            # stopAfter is one time only
+            # BUG: after switching to states, it stops in the wrong song
+            self.toggleStopAfter ()
+            self.stop ()
+
+        if self.quitAfter:
+            print "quiting after!"
+            # quitAfter is one time only
+            self.toggleQuitAfter ()
+            self.quit ()
+
+        if self.state==Player.PLAYING:
+            self.nowPlaying.emit (self.playlist.index)
+
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def next (self):
         try:
             self.playlist.next ()
             # FIXME: this should not be here
-            if self.stopAfter:
-                print "stopping after!"
-                # stopAfter is one time only
-                # BUG: after switching to states, it stops in the wrong song
-                self.toggleStopAfter ()
-                self.stop ()
-            # FIXME: this should not be here
-            if self.quitAfter:
-                print "quiting after!"
-                # quitAfter is one time only
-                self.toggleQuitAfter ()
-                self.quit ()
-            # FIXME: this should not be here
-            elif self.state==Player.PLAYING:
+            if self.state==Player.PLAYING:
                 self.play ()
         except IndexError:
             print "playlist empty"
