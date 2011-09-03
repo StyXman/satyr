@@ -66,7 +66,7 @@
        </spacer>
       </item>
       <item>
-       <widget class="QLabel" name="timeElapsed">
+       <widget class="QLabel" name="elapsedTime">
         <property name="text">
          <string notr="true">00:00</string>
         </property>
@@ -76,7 +76,7 @@
        <widget class="Phonon::SeekSlider" name="seekSlider"/>
       </item>
       <item>
-       <widget class="QLabel" name="timeLeft">
+       <widget class="QLabel" name="remainingTime">
         <property name="text">
          <string notr="true">00:00</string>
         </property>
