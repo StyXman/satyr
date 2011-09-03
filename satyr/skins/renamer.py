@@ -27,8 +27,6 @@ import os.path
 from satyr.common import ConfigurableObject
 from satyr import utils
 
-print __file__
-
 class Renamer (ConfigurableObject):
     # TODO: move everything to CollAggr
     def __init__ (self, collaggr):
