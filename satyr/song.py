@@ -24,6 +24,9 @@ from PyQt4.QtCore import QObject, pyqtSignal
 import tagpy
 import types
 
+# local
+import utils
+
 class TagWriteError (Exception):
     pass
 
@@ -62,10 +65,7 @@ class Song (QObject):
     def formatSeconds (self, seconds):
         """convert length from seconds to mm:ss"""
         if seconds is not None:
-            s= float (seconds)
-            seconds= int (s) % 60
-            minutes= int (s) / 60
-            return u"%02d:%02d" % (minutes, seconds)
+            return utils.secondsToTime (float (seconds))
         else:
             return "???"
 
@@ -76,13 +76,13 @@ class Song (QObject):
             fr= tagpy.FileRef (self.filepath)
 
             props= fr.audioProperties ()
-            # incredibly enough, tagpy also express lenght as a astring
+            # incredibly enough, tagpy also express length as a astring
             # even when taglib uses an int (?!?)
             # BUG: this is wrong, the internal repr should be in seconds
             # and the visual part shoould ask for the visual repr
             # no, we need it for % it to the pattern. see __getitem__()
             # HINT: props has string attrs, not unicode
-            self.length= self.formatSeconds (props.length)
+            self.length= int (props.length)
 
             # HINT: info has unicode attrs
             info= fr.tag ()
@@ -182,6 +182,10 @@ class Song (QObject):
         if not self.loaded:
             self.loadMetadata ()
         val= getattr (self, key)
+
+        if key=='length':
+            val= self.formatSeconds (val)
+        
         # if it's, then a) it's either year or trackno; b) leave it empty
         if val==0:
             val= ''
