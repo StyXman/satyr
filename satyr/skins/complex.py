@@ -77,6 +77,9 @@ class MainWindow (KXmlGuiWindow):
         self.ui.searchEntry.textChanged.connect (self.search)
         majV, minV, patchL= utils.phononVersion ()
         if (majV>4) or (majV==4 and minV>3) or (majV==4 and minV==3 and patchL>1):
+            # each second
+            self.player.media.setTickInterval (1000);
+            self.player.media.tick.connect (self.updateTimes)
             self.ui.seekSlider.setMediaObject (self.player.media)
         # TODO: self.ui.volumeSlider
 
@@ -204,6 +207,16 @@ class MainWindow (KXmlGuiWindow):
 
         self.oldSearchText= text
 
+    def updateTimes (self, tick):
+        elapsed= tick/1000 # ms to s
+        song= self.model.collaggr.songForIndex (self.modelIndex.row ())
+        length= int (song.length)
+        remaining= elapsed-length
+        # print "tick! %d [%d] / %d / %d" % (elapsed, tick, length, remaining)
+        
+        self.ui.elapsedTime.setText (utils.secondsToTime (elapsed))
+        self.ui.remainingTime.setText (utils.secondsToTime (remaining))
+
     def copyEditToSelection (self, tl, br):
         """copies the outcome of an edition in a cell
         to all the selected cells in the same column which.
@@ -239,27 +252,6 @@ class MainWindow (KXmlGuiWindow):
         self.collectionsAwaited-= 1
         if self.collectionsAwaited==0:
             self.showSong (self.playlist.index)
-
-    # session management
-    def saveProperties (self, config):
-        print "saveProperties():"
-
-    def restoreProperties (self, config):
-        # not automatically called, add code in main()
-        # see http://techbase.kde.org/Development/Tutorials/Session_Management#Add_session_management_support_to_your_main.28.29_function
-        print "restoreProperties():"
-
-    def queryClose (self):
-        print "queryClose():"
-        # , KApplication.sessionSaving ()
-        self.player.quit ()
-        self.renamer.saveConfig ()
-        return True
-
-    def queryExit (self):
-        print "queryExit():"
-        # , KApplication.sessionSaving ()
-        return True
 
     def selectedSongs (self):
         return [self.model.collaggr.songForIndex (modelIndex.row ())
@@ -297,6 +289,27 @@ class MainWindow (KXmlGuiWindow):
         songs= self.selectedSongs ()
 
         self.renamer.delete (songs)
+
+    ### session management ###
+    def saveProperties (self, config):
+        print "saveProperties():"
+
+    def restoreProperties (self, config):
+        # not automatically called, add code in main()
+        # see http://techbase.kde.org/Development/Tutorials/Session_Management#Add_session_management_support_to_your_main.28.29_function
+        print "restoreProperties():"
+
+    def queryClose (self):
+        print "queryClose():"
+        # , KApplication.sessionSaving ()
+        self.player.quit ()
+        self.renamer.saveConfig ()
+        return True
+
+    def queryExit (self):
+        print "queryExit():"
+        # , KApplication.sessionSaving ()
+        return True
 
 
 class QPlayListModel (QAbstractTableModel):
