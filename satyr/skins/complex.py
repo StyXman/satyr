@@ -209,7 +209,7 @@ class MainWindow (KXmlGuiWindow):
 
     def updateTimes (self, tick):
         elapsed= tick/1000 # ms to s
-        song= self.model.collaggr.songForIndex (self.modelIndex.row ())
+        song= self.appModel.collaggr.songForIndex (self.modelIndex.row ())
         length= int (song.length)
         remaining= elapsed-length
         # print "tick! %d [%d] / %d / %d" % (elapsed, tick, length, remaining)
