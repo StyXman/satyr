@@ -32,6 +32,7 @@ import os, bisect
 from satyr.common import SatyrObject, BUS_NAME
 from satyr.collection_indexer import CollectionIndexer
 from satyr.song import Song
+from satyr.album import Album
 from satyr import utils
 
 class ErrorNoDatabase (Exception):
@@ -40,6 +41,7 @@ class ErrorNoDatabase (Exception):
 class Collection (SatyrObject):
     """A Collection of Albums"""
     newSongs= pyqtSignal ()
+    newAlbum= pyqtSignal ()
     scanBegins= pyqtSignal ()
     scanFinished= pyqtSignal ()
 
@@ -47,6 +49,7 @@ class Collection (SatyrObject):
         SatyrObject.__init__ (self, parent, busName, busPath)
 
         self.songs= []
+        self.albums= {}
         self.count= 0
         # (re)defined by an aggregator if we're in one of those
         self.offset= 0
@@ -55,6 +58,7 @@ class Collection (SatyrObject):
         # it breaks rescanning
         self.configValues= (
             ('path', str, path),
+            ('vaSubdir', str, 'Various Artists'),
             )
         self.loadConfig ()
         # print busPath, self.path
@@ -156,11 +160,13 @@ class Collection (SatyrObject):
 
     def scanFinished_ (self):
         print "C.scanFinished()"
+        # BUG: we only finished if we have one last scanner
         self.scanning= False
+        # TODO: forget the scanner
         self.scanFinished.emit ()
 
     def progress (self, path):
-        # print 'scanning', path
+        print 'scanning', path
         # TODO: emit a signal?
         pass
 
@@ -174,10 +180,22 @@ class Collection (SatyrObject):
                 # paths must be bytes, not ascii or utf-8
                 filepath= utils.qstring2path (filepath)
 
+            # we remove the (common) prefix (plus a '/')
+            # and check if the filepath is in the va dir
+            # for the latter we split by the separator and take the fisrt component
+            # TODO: use system's separator
+            if filepath[len (self.path)+1:].split ('/')[0]==self.vaSubdir:
+                va= True
+            else:
+                va= False
+
+            # FIXME: what if the filepath already exists?
+            # onDemand=False => this is going to hurt
             # normalize! this way we avoid this dupes (couldn't find where they're originated)
             # C.add(): [(4081, '/home/mdione/media/music/Poison/2000 - Crack a smile... and more!//01 - Best thing you ever had.ogg')]
             # C.add(): [(4082, '/home/mdione/media/music/Poison/2000 - Crack a smile... and more!/01 - Best thing you ever had.ogg')]
-            song= Song (self, os.path.normpath (filepath))
+            song= Song (self, os.path.normpath (filepath), onDemand=False, va=va)
+            album= self.getAlbum (song)
 
             # this works because Song.__cmp__() does not compare tags if one song
             # has not loaded them and Song does not do it automatically
@@ -192,6 +210,23 @@ class Collection (SatyrObject):
 
         print "C.add():", self.newSongs_
         self.newSongs.emit ()
+
+    def getAlbum (self, song):
+        if song.variousArtists:
+            # BUG: year reduces the chances, but this still might give some clashes
+            # so we will have to rely on the user's input at some point anyways
+            key= (song.album, song.year)
+        else:
+            key= (song.artist, song.album)
+
+        try:
+            album= self.albums[key]
+        except KeyError:
+            album= Album (key)
+            self.albums[key]= album
+            self.newAlbum.emit ()
+
+        return album
 
     def indexForSong (self, song):
         # BUG?: this is O(n)
