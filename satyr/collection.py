@@ -183,7 +183,12 @@ class Collection (SatyrObject):
             # has not loaded them and Song does not do it automatically
             # so only paths are compared.
             index= bisect.bisect (self.songs, song)
-            if index==len (self.songs) or self.songs[index+1]!=song:
+            s= len (self.songs)
+            print "C.add(): %d==0, %d==%d, %d" % (s, index, s-1, index)
+            #  empty list or
+            #          index is the last position or
+            #                        the new Song is not the same already in the position (to the left)
+            if s==0 or index==s-1 or self.songs[index-1]!=song:
                 self.songs.insert (index, song)
                 self.count+= 1
                 if self.loadMetadata:
