@@ -192,6 +192,8 @@
   <tabstop>nextButton</tabstop>
   <tabstop>randomCheck</tabstop>
   <tabstop>stopAfterCheck</tabstop>
+  <tabstop>seekSlider</tabstop>
+  <tabstop>volumeSlider</tabstop>
   <tabstop>searchEntry</tabstop>
  </tabstops>
  <resources/>
