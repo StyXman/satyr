@@ -26,7 +26,7 @@ from PyQt4.QtCore import pyqtSignal, pyqtSlot, QString
 import dbus.service
 
 # std python
-import os, bisect
+import os, bisect, os.path
 
 # local
 from satyr.common import SatyrObject, BUS_NAME
@@ -45,6 +45,9 @@ class Collection (SatyrObject):
 
     def __init__ (self, parent, path="", relative=False, busName=None, busPath=None):
         SatyrObject.__init__ (self, parent, busName, busPath)
+
+        path= os.path.abspath (path)
+        print "Collection(): %s" % path
 
         self.songs= []
         self.count= 0
