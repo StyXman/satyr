@@ -67,7 +67,7 @@ RUNNING:
 
 satyr still lacks of configure dialogs, but can be configured from the
 command line the first time it's run. So far you can configure the skin
-to show (use the -s/--skin option to change it) and the paths to the
+shown (use the -s/--skin option to change it) and the paths to the
 collections. Run 'satyr_main <path to collection>...'. satyr will
 remember all this, so next runs can simply be 'satyr_main', unless you
 want to change something.
