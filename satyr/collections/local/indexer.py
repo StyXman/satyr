@@ -76,7 +76,7 @@ def getMimeType (filepath):
 
     return str (mimetype.name ())
 
-class CollectionIndexer (QThread):
+class Indexer (QThread):
     # finished= pyqtSignal (QThread)
     scanning= pyqtSignal (unicode)
     foundSongs= pyqtSignal (QStringList)
