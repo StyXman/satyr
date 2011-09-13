@@ -17,20 +17,23 @@
 # along with satyr.  If not, see <http://www.gnu.org/licenses/>.
 
 # qt/kde related
-from PyQt4.QtCore import QSignalMapper
+from PyQt4.QtCore import QSignalMapper, QStringList
 
 # local
 from satyr.common import SatyrObject, BUS_NAME
-from satyr.collection import Collection
+# from satyr.collection import Collection
+from satyr import utils
 
 class CollectionAggregator (SatyrObject):
-    def __init__ (self, parent, collections=None, songs=None, busName=None, busPath=None):
+    def __init__ (self, parent, songs=None, busName=None, busPath=None):
         SatyrObject.__init__ (self, parent, busName, busPath)
 
         self.configValues= (
-            ('collsNo', int, 0),
+            # ('collsNo', int, 0),
+            ('collTypes', list, list ()), # TBFixed with the merge of work from branch lastplayed
             )
         self.loadConfig ()
+        self.collsNo= len (self.collTypes)
 
         self.signalMapper= QSignalMapper ()
         self.collections= []
@@ -43,24 +46,25 @@ class CollectionAggregator (SatyrObject):
             self.count= len (songs)
 
         # if collections is not None we it means the may have changed
-        if self.collsNo>0 and collections is None:
-            print "loading collections from config", self.collsNo
-            for index in xrange (self.collsNo):
-                collection= Collection (self, busName=busName, busPath="/collection_%04d" % index)
+        if self.collsNo>0:
+            for index, module in enumerate (self.collTypes):
+                print "CollectionAggregator(): ", index, module
+                mod= utils.import_ (str (module))
+
+                collection= mod.Collection (self, busName=busName, busPath="/collection_%04d" % index)
+                print "CollectionAggregator(): %s" % collection
                 self.append (collection)
-        else:
-            if collections is not None:
-                for collection in collections:
-                    self.append (collection)
 
         self.signalMapper.mapped.connect (self.addSongs)
 
-    def append (self, collection):
+    def append (self, collection, collType=None):
         print "adding collection", collection
         collection.loadOrScan ()
         self.collections.append (collection)
         self.collsNo= len (self.collections)
-
+        if collType is not None:
+            self.collTypes.append (collType)
+        
         index= len (self.collections)-1
         collection.newSongs.connect (self.signalMapper.map)
         self.signalMapper.setMapping (collection, index)
