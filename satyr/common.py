@@ -23,6 +23,9 @@ from PyQt4.QtCore import QObject, QVariant, QStringList
 # dbus
 import dbus.service
 
+# std python
+import types
+
 # globals :|
 BUS_NAME= 'org.kde.satyr'
 
@@ -64,6 +67,9 @@ class ConfigurableObject (object):
                 if type (v)==QStringList:
                     # print "QSL!"
                     s= a.toStringList ()
+                elif type (v)==types.ListType:
+                    # print "list!"
+                    s= [ str (x) for x in a.toStringList () ]
                 else:
                     # print "just a QS...", type (v)
                     s= a.toString ()
