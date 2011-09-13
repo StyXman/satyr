@@ -30,8 +30,8 @@ import os, bisect, os.path
 
 # local
 from satyr.common import SatyrObject, BUS_NAME
-from satyr.collection_indexer import CollectionIndexer
-from satyr.song import Song
+from satyr.collections.local.indexer import Indexer
+from satyr.collections.local.song import Song
 from satyr import utils
 
 class ErrorNoDatabase (Exception):
@@ -43,10 +43,13 @@ class Collection (SatyrObject):
     scanBegins= pyqtSignal ()
     scanFinished= pyqtSignal ()
 
-    def __init__ (self, parent, path="", relative=False, busName=None, busPath=None):
+    def __init__ (self, parent, path=None, relative=False, busName=None, busPath=None):
         SatyrObject.__init__ (self, parent, busName, busPath)
 
-        path= os.path.abspath (path)
+        if path is not None:
+            path= os.path.abspath (path)
+        else:
+            path= ""
         print "Collection(): %s" % path
 
         self.songs= []
@@ -144,7 +147,7 @@ class Collection (SatyrObject):
 
         print "C.scan(%s)" % path
 
-        scanner= CollectionIndexer (path)
+        scanner= Indexer (path)
         scanner.scanning.connect (self.progress)
         scanner.foundSongs.connect (self.add)
         scanner.terminated.connect (self.log)
