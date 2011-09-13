@@ -29,7 +29,8 @@ import sys
 from satyr.common import BUS_NAME, ConfigurableObject
 from satyr.player import Player
 from satyr.playlist import PlayList
-from satyr.collection import Collection
+# BUG: hardcoded
+from satyr.collections.local.collection import Collection
 from satyr.collaggr import CollectionAggregator
 from satyr import utils
 import satyr
@@ -64,12 +65,13 @@ def main ():
         print "no collections, picking from args"
         for index in xrange (args.count ()):
             path= args.arg (index)
+            print "found arg: %s" % path
 
             # paths must be bytes, not ascii or utf-8
             path= utils.qstring2path (path)
 
             collection= Collection (app, path, busName=busName, busPath="/collection_%04d" % index)
-            collaggr.append (collection)
+            collaggr.append (collection, collection.__module__)
 
     for collection in collaggr.collections:
         collection.scanBegins.connect (mw.scanBegins)
