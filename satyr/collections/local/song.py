@@ -18,56 +18,24 @@
 
 
 # qt/kde related
-from PyQt4.QtCore import QObject, pyqtSignal
 
 # other libs
 import tagpy
 import types
 
 # local
-import utils
+import satyr.song
 
 class TagWriteError (Exception):
     pass
 
-class Song (QObject):
-    # TODO: do not return int's for year or track?
-    # no, we need them as int's so we can %02d
-    # updated?
-    metadadaChanged= pyqtSignal ()
-
+class Song (satyr.song.Song):
     def __init__ (self, collection, filepath, onDemand=True, va=False):
-        QObject.__init__ (self)
-        if not isinstance (filepath, str):
-            print filepath, "is a", type (filepath), "!"
-            traceback.print_stack ()
-        self.loaded= False
-        self.dirty= False
-        self.coll= collection
-        self.filepath= filepath
-
-        # artist, year, collection, diskno, album, trackno, title, length
-
-        self.variousArtists= va
-        if not self.variousArtists:
-            self.cmpOrder= ('artist', 'year', 'collection', 'diskno', 'album', 'trackno', 'title', 'length')
-        else:
-            # note that the year is not used in this case!
-            self.cmpOrder= ('album', 'trackno', 'title', 'artist', 'length')
-
         # tagpy presents trackno as track, so we map them
         # no, I don't want to change everything to match this
         self.tagForAttr= dict (artist='artist', year='year', album='album', trackno='track', title='title')
 
-        if not onDemand:
-            self.loadMetadata ()
-
-    def formatSeconds (self, seconds):
-        """convert length from seconds to mm:ss"""
-        if seconds is not None:
-            return utils.secondsToTime (float (seconds))
-        else:
-            return "???"
+        satyr.song.Song.__init__ (self, collection, filepath, onDemand, va)
 
     def loadMetadata (self):
         try:
@@ -159,59 +127,6 @@ class Song (QObject):
         self.loaded= True
 
         return fr
-
-    def sanitize (self, attr, value):
-        value= value.strip ()
-        if attr=='diskno':
-            # print "Song.sanitize():", value
-            # sometimes it's stored as x/N
-            pos= value.find ('/')
-            if pos>-1:
-                value= value[:pos]
-            # print "Song.sanitize():", value
-            if value!='':
-                value= int (value)
-            else:
-                value= 0
-
-        # print "Song.sanitize():", value
-        return value
-
-    def __getitem__ (self, key):
-        """dict iface so we can simply % it to a pattern"""
-        if not self.loaded:
-            self.loadMetadata ()
-        val= getattr (self, key)
-
-        if key=='length':
-            val= self.formatSeconds (val)
-        
-        # if it's, then a) it's either year or trackno; b) leave it empty
-        if val==0:
-            val= ''
-
-        return val
-
-    def __setitem__ (self, key, value):
-        """dict iface so we don't have to make special case in __setattr__()"""
-
-        # these two must be int()s
-        if key in ('diskno', 'trackno', 'year'):
-            print "converting from %s to int for %s" % (type (value), key)
-            try:
-                value= int (value)
-            except ValueError:
-                value= 0
-
-        # we cache; otherwise we could set loaded to False
-        # and let other functions to resolve it.
-        try:
-            print "__setitem__():", key, value
-            setattr (self, key, value)
-        except AttributeError:
-            raise TagWriteError
-
-        self.dirty= True
 
     def rollbackMetadata (self):
         # let the Song reload the metadata from the file
