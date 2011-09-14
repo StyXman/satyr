@@ -49,11 +49,14 @@ class CollectionAggregator (SatyrObject):
         if self.collsNo>0:
             for index, module in enumerate (self.collTypes):
                 print "CollectionAggregator(): ", index, module
-                mod= utils.import_ (str (module))
-
-                collection= mod.Collection (self, busName=busName, busPath="/collection_%04d" % index)
-                print "CollectionAggregator(): %s" % collection
-                self.append (collection)
+                try:
+                    mod= utils.import_ (str (module))
+                except ImportError:
+                    print "no support for %s, skipping collection" % module
+                else:
+                    collection= mod.Collection (self, busName=busName, busPath="/collection_%04d" % index)
+                    print "CollectionAggregator(): %s" % collection
+                    self.append (collection)
 
         self.signalMapper.mapped.connect (self.addSongs)
 
