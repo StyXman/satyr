@@ -30,8 +30,8 @@ import os, bisect, os.path
 
 # local
 from satyr.common import SatyrObject, BUS_NAME
-from satyr.collections.local.indexer import Indexer
-from satyr.collections.local.song import Song
+from satyr.collections.file.indexer import Indexer
+from satyr.collections.file.song import Song
 from satyr import utils
 
 class ErrorNoDatabase (Exception):

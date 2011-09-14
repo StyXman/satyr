@@ -30,7 +30,7 @@ from satyr.common import BUS_NAME, ConfigurableObject
 from satyr.player import Player
 from satyr.playlist import PlayList
 # BUG: hardcoded
-from satyr.collections.local.collection import Collection
+from satyr.collections.file.collection import Collection
 from satyr.collaggr import CollectionAggregator
 from satyr import utils
 import satyr
