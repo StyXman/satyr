@@ -65,30 +65,16 @@ def main ():
     mw= mod.MainWindow ()
     config.saveConfig ()
 
-    collaggr= CollectionAggregator (app, busName=busName, busPath='/collaggr')
-    if collaggr.collsNo==0:
-        print "no collections, picking from args"
-        for index in xrange (args.count ()):
-            path= args.arg (index)
-
-            # paths must be bytes, not ascii or utf-8
-            path= utils.qstring2path (path)
-
-            collection= Collection (app, path, busName=busName, busPath="/collection_%04d" % index)
-            collaggr.append (collection)
-
-    for collection in collaggr.collections:
-        collection.scanBegins.connect (mw.scanBegins)
-        collection.scanFinished.connect (mw.scanFinished)
+    # for collection in collaggr.collections:
+    #     collection.scanBegins.connect (mw.scanBegins)
+    #     collection.scanFinished.connect (mw.scanFinished)
         # they're loaded by the CollAggr
         # collection.loadOrScan ()
-        mw.collectionAdded ()
+    #     mw.collectionAdded ()
 
-    playlist= PlayList (app, collaggr, busName=busName, busPath='/playlist')
-    player= Player (app, playlist, busName, '/player')
-    player.finished.connect (app.quit)
+    # player.finished.connect (app.quit)
 
-    mw.connectUi (player)
+    # mw.connectUi (player)
     mw.show ()
 
     return app.exec_ ()

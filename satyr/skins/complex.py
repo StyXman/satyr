@@ -302,8 +302,8 @@ class MainWindow (KXmlGuiWindow):
     def queryClose (self):
         print "queryClose():"
         # , KApplication.sessionSaving ()
-        self.player.quit ()
-        self.renamer.saveConfig ()
+        # self.player.quit ()
+        # self.renamer.saveConfig ()
         return True
 
     def queryExit (self):
