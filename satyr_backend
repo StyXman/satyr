@@ -29,7 +29,7 @@ import sys
 
 # local
 from satyr.common import BUS_NAME
-from satyr.backend import Backend
+from satyr.backend import Backend, getBackend
 import satyr
 
 def main ():
@@ -40,13 +40,11 @@ def main ():
     dbus.mainloop.qt.DBusQtMainLoop (set_as_default=True)
     bus= dbus.SessionBus ()
 
-    # try to detect a backend
-    try:
-        proxy= bus.get_object (BUS_NAME, '/backend')
-        proxy.ping ()
+    backend= getBackend (bus)
+    if backend is not None:
         print "*** another satyr backend instance found, bailing out ***"
         ans= 24
-    except dbus.DBusException:
+    else:
         busName= dbus.service.BusName (BUS_NAME, bus=bus)
 
         backend= Backend (app, args, busName=busName, busPath='/backend')

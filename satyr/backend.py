@@ -28,6 +28,15 @@ from satyr.collection import Collection
 from satyr.collaggr import CollectionAggregator
 from satyr import utils
 
+def getBackend (bus):
+    try:
+        proxy= bus.get_object (BUS_NAME, '/backend')
+        proxy.ping ()
+    except dbus.DBusException:
+        proxy= None
+
+    return proxy
+
 class Backend (SatyrObject):
     def __init__ (self, app, args, busName=None, busPath=None):
         SatyrObject.__init__ (self, app, busName, busPath)
