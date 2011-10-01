@@ -17,6 +17,9 @@
 # You should have received a copy of the GNU General Public License
 # along with satyr.  If not, see <http://www.gnu.org/licenses/>.
 
+# qt/kde
+from PyKDE4.kdecore import KCmdLineOptions, ki18n
+
 # dbus
 import dbus
 import dbus.mainloop.qt
@@ -35,7 +38,10 @@ from satyr import utils
 import satyr
 
 def main ():
-    app, args= satyr.createApp ()
+    options= KCmdLineOptions ()
+    options.add ("s").add ("skin <skin-name>", ki18n ("skin"), "")
+    
+    app, args= satyr.createApp (options=options)
 
     dbus.mainloop.qt.DBusQtMainLoop (set_as_default=True)
     bus= dbus.SessionBus ()

@@ -17,6 +17,9 @@
 # You should have received a copy of the GNU General Public License
 # along with satyr.  If not, see <http://www.gnu.org/licenses/>.
 
+# qt/kde
+from PyKDE4.kdecore import KCmdLineOptions, ki18n
+
 # dbus
 import dbus
 import dbus.mainloop.qt
@@ -30,7 +33,9 @@ from satyr.backend import Backend
 import satyr
 
 def main ():
-    app, args= satyr.createApp ()
+    options= KCmdLineOptions ()
+    options.add ("+path", ki18n ("paths to your music collections"))
+    app, args= satyr.createApp (name="satyr-backend", options=options)
 
     dbus.mainloop.qt.DBusQtMainLoop (set_as_default=True)
     bus= dbus.SessionBus ()

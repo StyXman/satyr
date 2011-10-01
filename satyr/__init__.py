@@ -18,7 +18,6 @@
 
 # qt/kde related
 from PyKDE4.kdecore import KCmdLineArgs, KAboutData, i18n, ki18n
-from PyKDE4.kdecore import KCmdLineOptions
 
 # std python
 import sys
@@ -26,19 +25,19 @@ import sys
 # local
 from satyr.app import App
 
-def createApp (args=sys.argv):
+def createApp (args=sys.argv, name="satyr", options=None):
     #########################################
     # all the bureaucratic init of a KDE App
     # the appName must not contain any chars besides a-zA-Z0-9_
     # because KMainWindowPrivate::polish() calls QDBusConnection::sessionBus().registerObject()
     # see QDBusUtil::isValidCharacterNoDash()
-    appName     = "satyr"
+    appName     = name
     catalog     = ""
-    programName = ki18n ("satyr")                 #ki18n required here
+    programName = ki18n (name)                 #ki18n required here
     version     = "0.5.0"
     description = ki18n ("I need a media player that thinks about music the way I think about it. This is such a program.")         #ki18n required here
     license     = KAboutData.License_GPL
-    copyright   = ki18n ("(c) 2009, 2010 Marcos Dione")    #ki18n required here
+    copyright   = ki18n ("(c) 2009, 2010, 2011 Marcos Dione and others")    #ki18n required here
     text        = ki18n ("none")                    #ki18n required here
     homePage    = "http://savannah.nongnu.org/projects/satyr/"
     bugEmail    = "mdione@grulic.org.ar"
@@ -51,10 +50,8 @@ def createApp (args=sys.argv):
     aboutData.addAuthor (ki18n ("Sebastián Álvarez"), ki18n ("features, bugfixes and testing"))
 
     KCmdLineArgs.init (args, aboutData)
-    options= KCmdLineOptions ()
-    options.add ("s").add ("skin <skin-name>", ki18n ("skin"), "")
-    options.add ("+path", ki18n ("paths to your music collections"))
-    KCmdLineArgs.addCmdLineOptions (options)
+    if options is not None:
+        KCmdLineArgs.addCmdLineOptions (options)
 
     app= App ()
     args= KCmdLineArgs.parsedArgs ()
