@@ -20,7 +20,6 @@
 # dbus
 import dbus
 import dbus.mainloop.qt
-import dbus.service
 
 # std python
 import sys
@@ -35,11 +34,21 @@ def main ():
 
     dbus.mainloop.qt.DBusQtMainLoop (set_as_default=True)
     bus= dbus.SessionBus ()
-    busName= dbus.service.BusName (BUS_NAME, bus=bus)
 
-    backend= Backend (app, args, busName=busName, busPath='/backend')
+    # try to detect a backend
+    try:
+        proxy= bus.get_object (BUS_NAME, '/backend')
+        proxy.ping ()
+        print "*** another satyr backend instance found, bailing out ***"
+        ans= 24
+    except dbus.DBusException:
+        busName= dbus.service.BusName (BUS_NAME, bus=bus)
 
-    return app.exec_ ()
+        backend= Backend (app, args, busName=busName, busPath='/backend')
+
+        ans= app.exec_ ()
+
+    return ans
 
 if __name__=='__main__':
     sys.exit (main ())
