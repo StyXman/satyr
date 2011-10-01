@@ -35,6 +35,7 @@ from satyr.playlist import PlayList
 from satyr.collection import Collection
 from satyr.collaggr import CollectionAggregator
 from satyr import utils
+from satyr.backend import getBackend
 import satyr
 
 def main ():
@@ -64,6 +65,13 @@ def main ():
     mod= utils.import_ ('satyr.skins.'+config.skin)
     mw= mod.MainWindow ()
     config.saveConfig ()
+
+    backend= getBackend (bus)
+    if backend is None:
+        # instantiate it
+        pass
+    else:
+        mw.backendReady (backend)
 
     # for collection in collaggr.collections:
     #     collection.scanBegins.connect (mw.scanBegins)

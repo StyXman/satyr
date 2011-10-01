@@ -32,6 +32,7 @@ from satyr.song import TagWriteError
 from satyr.skins import actions
 from satyr.common import BUS_NAME
 from satyr.skins.renamer import Renamer
+from satyr.backend import getBackend
 from satyr import utils
 
 class MainWindow (KXmlGuiWindow):
@@ -110,6 +111,14 @@ class MainWindow (KXmlGuiWindow):
         self.songIndexSelectedByUser= None
 
         actions.create (self, self.actionCollection ())
+
+    def backendReady (self, backend=None):
+        print "Complex.backendReady(): got a backend!"
+        if backend is None:
+            backend= getBackend
+
+        # do I need to store it?
+        self.backend= backend
 
     def setModel (self, model):
         print "complex.setModel():", model
