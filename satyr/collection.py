@@ -46,8 +46,6 @@ class Collection (SatyrObject):
     def __init__ (self, parent, path="", relative=False, busName=None, busPath=None):
         SatyrObject.__init__ (self, parent, busName, busPath)
 
-        path= os.path.abspath (path)
-        print "Collection(): %s" % path
 
         self.songs= []
         self.count= 0
@@ -64,12 +62,14 @@ class Collection (SatyrObject):
 
         # if the user requests a new path, use it
         if self.path!=path and path!="":
+            path= os.path.abspath (path)
             self.path= path
             self.forceScan= True
             print "new path, forcing (re)scan"
         else:
             self.forceScan= False
         self.relative= relative
+        print "Collection(): %s" % self.path
 
         self.watch= KDirWatch (self)
         self.watch.addDir (self.path,
@@ -187,7 +187,7 @@ class Collection (SatyrObject):
             # so only paths are compared.
             index= bisect.bisect (self.songs, song)
             s= len (self.songs)
-            print "C.add(): %d==0, %d==%d, %d" % (s, index, s-1, index)
+            # print "C.add(): %d==0, %d==%d, %d" % (s, index, s-1, index)
             #  empty list or
             #          index is the last position or
             #                        the new Song is not the same already in the position (to the left)
