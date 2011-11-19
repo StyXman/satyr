@@ -36,7 +36,7 @@ from satyr.backend import getBackend
 from satyr import utils
 
 class MainWindow (KXmlGuiWindow):
-    def __init__ (self, parent=None):
+    def __init__ (self, parent=None, bus=None):
         KXmlGuiWindow.__init__ (self, parent)
 
         # load the .ui file
@@ -51,6 +51,8 @@ class MainWindow (KXmlGuiWindow):
         self.oldSearchText= ''
 
         self.setupGUI ()
+
+        self.bus= bus
 
     def connectUi (self, player):
         self.player= player
@@ -115,10 +117,12 @@ class MainWindow (KXmlGuiWindow):
     def backendReady (self, backend=None):
         print "Complex.backendReady(): got a backend!"
         if backend is None:
-            backend= getBackend
+            backend= getBackend (self.bus)
 
         # do I need to store it?
         self.backend= backend
+
+        
 
     def setModel (self, model):
         print "complex.setModel():", model
