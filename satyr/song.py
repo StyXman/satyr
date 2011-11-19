@@ -98,6 +98,7 @@ class Song (QObject):
             print type (e), e
             fr= None
             info= None
+            f= None
             self.length= 0
 
         for attr, tag in self.tagForAttr.items ():
