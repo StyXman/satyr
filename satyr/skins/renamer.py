@@ -49,7 +49,11 @@ class Renamer (ConfigurableObject):
     # TODO: make this a method of Song called properPath()
     def songPath (self, base, song):
         # TODO: take ext from file format?
-        ext= song.filepath[-4:]
+        lastDot= song.filepath.rfind ('.')
+        if lastDot==-1:
+            ext= ''
+        else:
+            ext= song.filepath[lastDot:]
 
         if not song.variousArtists:
             if song.collection==u'':
