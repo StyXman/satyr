@@ -96,7 +96,7 @@ class MainWindow (KXmlGuiWindow):
         self.playlist.queued.connect (self.appModel.dirtyRow)
         self.playlist.dequeued.connect (self.appModel.dirtyRow)
         self.ui.songsList.activated.connect (self.changeSong)
-        self.player.nowPlaying.connect (self.nowPlaying)
+        self.player.songChanged.connect (self.nowPlaying)
 
         # FIXME: kinda hacky
         self.fontMetrics= QFontMetrics (KGlobalSettings.generalFont ())

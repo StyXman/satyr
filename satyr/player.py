@@ -36,7 +36,7 @@ from satyr import utils
 class Player (SatyrObject):
     finished= pyqtSignal ()
     stopAfterChanged= pyqtSignal (bool)
-    nowPlaying= pyqtSignal (int)
+    songChanged= pyqtSignal (int)
 
     # constants
     STOPPED= 0
@@ -163,8 +163,9 @@ class Player (SatyrObject):
             self.toggleQuitAfter ()
             self.quit ()
 
+        # TODO: move to state changed
         if self.state==Player.PLAYING:
-            self.nowPlaying.emit (self.playlist.index)
+            self.songChanged.emit (self.playlist.index)
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def next (self):
@@ -192,9 +193,9 @@ class Player (SatyrObject):
         self.quitAfter= not self.quitAfter
         print self.quitAfter
 
-    # @dbus.service.method (BUS_NAME, in_signature='', out_signature='s')
-    # def nowPlaying (self):
-    #     return self.playlist.formatSong (self.playlist.song)
+    @dbus.service.method (BUS_NAME, in_signature='', out_signature='s')
+    def nowPlaying (self):
+        return self.playlist.formatSong (self.playlist.song)
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def quit (self):
