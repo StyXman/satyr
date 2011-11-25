@@ -116,20 +116,24 @@ class PlayList (SatyrObject):
             self.song= song
             self.filepath= song.filepath
         else:
-            # take the current from saved status
-            print "playlist.indexToSong()", self.filepath
-            if self.filepath is None:
-                # none saved, use first
-                self.song= self.collaggr.songForIndex (0)
-                self.filepath= self.song.filepath
-            else:
-                song= self.collaggr.songForFilepath (self.filepath)
-                if song is not None:
-                    self.song= song
-                else:
-                    # sorry, we don't have that song anymore
+            try:
+                # take the current from saved status
+                print "playlist.indexToSong()", self.filepath
+                if self.filepath is None:
+                    # none saved, use first
                     self.song= self.collaggr.songForIndex (0)
                     self.filepath= self.song.filepath
+                else:
+                    song= self.collaggr.songForFilepath (self.filepath)
+                    if song is not None:
+                        self.song= song
+                    else:
+                        # sorry, we don't have that song anymore
+                        self.song= self.collaggr.songForIndex (0)
+                        self.filepath= self.song.filepath
+            except IndexError:
+                self.song= None
+                self.filepath= None
 
         self.songChanged.emit (self.song)
 
