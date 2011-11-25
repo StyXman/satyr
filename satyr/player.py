@@ -98,20 +98,21 @@ class Player (SatyrObject):
             # also, 0!=False is False?
             # >>> 0!=False
             # False
-            if song is not None:
-                print "player.play()", song
-                self.playlist.setCurrent (song)
-            else:
-                song= self.playlist.song
-                
-            self.filepath= song.filepath
 
-            print "playing", self.filepath
-            url= utils.path2qurl (self.filepath)
+            # BUG: somethong's veeeeery wrong here...
+            if song is not None:
+                self.song= song
+                print "player.play()", song
+                self.playlist.indexToSong (song)
+            else:
+                self.song= self.playlist.song
+                
+            print "playing", self.song
+            url= utils.path2qurl (self.song.filepath)
             self.media.setCurrentSource (Phonon.MediaSource (url))
             self.media.play ()
 
-            self.nowPlaying.emit (song)
+            # self.songChanged.emit (song)
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def play_pause (self):
@@ -143,9 +144,9 @@ class Player (SatyrObject):
     def queueNext (self):
         print "queueing next!"
         self.playlist.next ()
-        self.filepath= self.playlist.filepath
-        print "--> queueing next!", self.filepath
-        url= utils.path2qurl (self.filepath)
+        self.song= self.playlist.song
+        print "--> queueing next!", self.song
+        url= utils.path2qurl (self.song.filepath)
         source= Phonon.MediaSource (url)
         self.media.enqueue (source)
 
@@ -167,7 +168,7 @@ class Player (SatyrObject):
 
         # TODO: move to state changed
         if self.state==Player.PLAYING:
-            self.songChanged.emit (self.playlist.index)
+            self.songChanged.emit (self.song)
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def next (self):
