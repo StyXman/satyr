@@ -26,7 +26,7 @@ from PyQt4.QtCore import pyqtSignal, pyqtSlot, QString
 import dbus.service
 
 # std python
-import os, bisect
+import os, bisect, os.path
 
 # local
 from satyr.common import SatyrObject, BUS_NAME
@@ -46,6 +46,7 @@ class Collection (SatyrObject):
     def __init__ (self, parent, path="", relative=False, busName=None, busPath=None):
         SatyrObject.__init__ (self, parent, busName, busPath)
 
+
         self.songs= []
         self.count= 0
         # (re)defined by an aggregator if we're in one of those
@@ -61,12 +62,14 @@ class Collection (SatyrObject):
 
         # if the user requests a new path, use it
         if self.path!=path and path!="":
+            path= os.path.abspath (path)
             self.path= path
             self.forceScan= True
             print "new path, forcing (re)scan"
         else:
             self.forceScan= False
         self.relative= relative
+        print "Collection(): %s" % self.path
 
         self.watch= KDirWatch (self)
         self.watch.addDir (self.path,
@@ -183,7 +186,12 @@ class Collection (SatyrObject):
             # has not loaded them and Song does not do it automatically
             # so only paths are compared.
             index= bisect.bisect (self.songs, song)
-            if index==len (self.songs) or self.songs[index+1]!=song:
+            s= len (self.songs)
+            # print "C.add(): %d==0, %d==%d, %d" % (s, index, s-1, index)
+            #  empty list or
+            #          index is the last position or
+            #                        the new Song is not the same already in the position (to the left)
+            if s==0 or index==s-1 or self.songs[index-1]!=song:
                 self.songs.insert (index, song)
                 self.count+= 1
                 if self.loadMetadata:

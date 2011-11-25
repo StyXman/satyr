@@ -10,11 +10,11 @@ It pretends to have the following features:
  * Yours is a Collection of Albums, nothing else[3].
  * Some Albums are from the same artists and some are compilations[3].
  * If you want an ephemeral playlist you could queue songs.
- * If you want non-ephemeral playlists, then this player is not for you.
+ * If you want non-ephemeral playlists, then this player is not for you[5].
  * Ability to search à la xmms, but in the same interface
  * Skinneable.
  * Tag reading and writing.
- * Order you collection based on the tags[3].
+ * Order you collection based on the tags[6].
  * The collection discovers new files and adds them to the playlist on the fly[4].
  * Be able to use the whole interface only with your keyboard (die, mouse, die!).
 
@@ -22,7 +22,12 @@ It pretends to have the following features:
 [2] There is no 2.
 [3] Not yet available.
 [4] Of course this only works if it's running. Otherwise, you can always ask for
-  a rescan[1].
+    a rescan[1].
+[5] Yet?
+[6] Not completely available; compilations are not supported completely in the
+    sense that they're not detected automatically and even when you can say
+    «this song comes from a compilation», the state is not saved.
+
 
 DEPENDENCIES:
 ============
@@ -62,10 +67,17 @@ RUNNING:
 
 satyr still lacks of configure dialogs, but can be configured from the
 command line the first time it's run. So far you can configure the skin
-to show (use the -s/--skin option to change it) and the paths to the
+shown (use the -s/--skin option to change it) and the paths to the
 collections. Run 'satyr_main <path to collection>...'. satyr will
 remember all this, so next runs can simply be 'satyr_main', unless you
 want to change something.
+
+
+SHORTCUTS:
+=========
+
+Discover them using the Settings -> Configure shortcuts menu entry.
+Also, modify at will!
 
 
 ABOUT:
@@ -78,6 +90,7 @@ Marcos Dione <mdione@grulic.org.ar>
 
 or contact me via irc: I'm StyXman on the freenode network. Good luck
 and happy song listening!
+
 
 Shooting troubles in the head (a.k.a FAQ):
 =========================================
@@ -94,5 +107,5 @@ No mimetypes! do you have any Phonon backend installed, configured and/or workin
 Q: Search takes ages!
 A: Yes, I know. I'm looking for alternatives, but so far they have
     proven even worse. Also, sometimes it takes some time to load the
-    tags of songs show for the first time, specially when the program
-    has just been run.
+    tags of the songs that are shown for the first time, specially when
+    the program has just been run.

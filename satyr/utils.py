@@ -24,6 +24,7 @@ from PyQt4.QtCore import QByteArray, QUrl
 import re
 import types
 import os.path
+from datetime import time
 
 def phononVersion ():
     return map (int, Phonon.phononVersion ().split ('.'))
@@ -68,11 +69,17 @@ def expandConditionally (format, values):
         except (KeyError, AttributeError):
             value= ''
 
-        print type (value), value
-        # year and trackno are int's
         if value!='' and value!=0:
+            print "%s: >%s<" % (type (value), value)
+            # year and trackno are int's
             if type (value)==types.IntType:
                 value= (u"%"+digits+"d") % value
+            else:
+                # / is not valid in filenames
+                # in our case it creates a subdir
+                value= value.replace ('/', '-')
+                print "%s: >%s<" % (type (value), value)
+
             ans= ans.replace (complete, pre+value+post)
         else:
             if var=='title':
@@ -84,5 +91,10 @@ def expandConditionally (format, values):
         print "xpandCond(): %s" % ans
 
     return ans
+
+def secondsToTime (seconds):
+    minutes= int (seconds/60.0)
+    seconds= abs (seconds-minutes*60)
+    return u"%02d:%02d" % (minutes, seconds)
 
 # end

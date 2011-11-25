@@ -38,9 +38,9 @@ class Renamer (ConfigurableObject):
         # artist, year, collection, diskno, album, trackno, title, length
         self.configValues= (
             # ('format', unicode, u"{%artist/}{%4year - }{%collection/}{%02diskno - }{%album/}{Disk %02disk/}{%02trackno - }{%title}"),
-            ('format', unicode, u"{%artist/}{%4year - }{%album/}{Disk %02diskno/}{%02trackno - }{%title}"),
-            ('vaFormat', unicode, u"{%4year - }{%album/}{Disk %02diskno/}{%02trackno - }{%artist - }{%title}"),
-            ('collection', unicode, u"{%artist/}{%4year - }{%collection}/{%02diskno - }{%album}/{%02trackno - }{%title}"),
+            ('format', unicode, u"{%artist}/{%4year - }{%album}/{Disk %02diskno}/{%02trackno - }{%title}"),
+            ('vaFormat', unicode, u"{%4year - }{%album}/{Disk %02diskno}/{%02trackno - }{%artist - }{%title}"),
+            ('collection', unicode, u"{%artist}/{%4year - }{%collection}/{%02diskno - }{%album}/{%02trackno - }{%title}"),
             )
         self.loadConfig ()
 
@@ -49,7 +49,11 @@ class Renamer (ConfigurableObject):
     # TODO: make this a method of Song called properPath()
     def songPath (self, base, song):
         # TODO: take ext from file format?
-        ext= song.filepath[-4:]
+        lastDot= song.filepath.rfind ('.')
+        if lastDot==-1:
+            ext= ''
+        else:
+            ext= song.filepath[lastDot:]
 
         if not song.variousArtists:
             if song.collection==u'':

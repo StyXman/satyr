@@ -27,6 +27,9 @@ import traceback
 # other libs
 import tagpy
 
+# local
+import utils
+
 class TagWriteError (Exception):
     pass
 
@@ -65,10 +68,7 @@ class Song (QObject):
     def formatSeconds (self, seconds):
         """convert length from seconds to mm:ss"""
         if seconds is not None:
-            s= float (seconds)
-            seconds= int (s) % 60
-            minutes= int (s) / 60
-            return u"%02d:%02d" % (minutes, seconds)
+            return utils.secondsToTime (float (seconds))
         else:
             return "???"
 
@@ -77,24 +77,31 @@ class Song (QObject):
             # tagpy doesn't handle unicode filepaths (somehow makes sense)
             # we cannot keep the FileRef or the Tag because the file stays open.
             fr= tagpy.FileRef (self.filepath)
+            f= fr.file ()
 
             props= fr.audioProperties ()
-            # incredibly enough, tagpy also express lenght as a astring
+            # incredibly enough, tagpy also express length as a astring
             # even when taglib uses an int (?!?)
             # BUG: this is wrong, the internal repr should be in seconds
             # and the visual part shoould ask for the visual repr
             # no, we need it for % it to the pattern. see __getitem__()
             # HINT: props has string attrs, not unicode
-            self.length= self.formatSeconds (props.length)
+            self.length= int (props.length)
 
             # HINT: info has unicode attrs
             info= fr.tag ()
+
+            if type (info)==tagpy._tagpy.Tag and type (f)==tagpy._tagpy.flac_File:
+                # flac files use xiph comments
+                # grab the original tagset
+                info= f.xiphComment ()
         except Exception, e:
             print '----- loadMetadata()'
             print self.filepath
             print type (e), e
             fr= None
             info= None
+            f= None
             self.length= 0
 
         for attr, tag in self.tagForAttr.items ():
@@ -108,13 +115,16 @@ class Song (QObject):
         for attr in ('collection', 'diskno'):
             setattr (self, attr, '')
 
+        # print "loadMetadata():", type (info), type (f)
         if type (info)==tagpy._tagpy.ogg_XiphComment:
+
             # with Xiph comments we're free to set our own
-            # names must(?) be uppercase
             d= info.fieldListMap ()
             # TODO: make it a class attr
             # print 'Song.loadMetadata():', self.filepath, info.fieldCount (), info.fieldListMap ().keys ()
             for attr in ('collection', 'diskno'):
+                # names must(?) be uppercase
+                # «It is case insensitive, so artist and ARTIST are the same field»
                 tag= attr.upper ()
                 try:
                     value= self.sanitize (attr, d[tag][0]) # TODO: support a real list
@@ -126,7 +136,6 @@ class Song (QObject):
         elif type (info)==tagpy._tagpy.Tag:
             # this is somewhat generic, so we try guessing different types
             # mpeg first
-            f= fr.file ()
             if type (f)==tagpy._tagpy.mpeg_File:
                 t1= f.ID3v1Tag ()
                 t2= f.ID3v2Tag ()
@@ -156,11 +165,15 @@ class Song (QObject):
                 print '**** loadMetadata(): file type not supported yet', type (f)
 
         else:
-            print '**** loadMetadata(): file type not supported yet', type (info)
+            print '**** loadMetadata(): tagset type not supported yet', type (info)
 
         self.metadadaChanged.emit ()
         self.loaded= True
 
+        #Traceback (most recent call last):
+          #File "/home/mdione/src/projects/satyr/git/satyr/skins/complex.py", line 213, in updateTimes
+            #length= int (song.length)
+        #AttributeError: 'Song' object has no attribute 'length'
         return fr
 
     def sanitize (self, attr, value):
@@ -185,6 +198,10 @@ class Song (QObject):
         if not self.loaded:
             self.loadMetadata ()
         val= getattr (self, key)
+
+        if key=='length':
+            val= self.formatSeconds (val)
+        
         # if it's, then a) it's either year or trackno; b) leave it empty
         if val==0:
             val= ''
@@ -224,10 +241,11 @@ class Song (QObject):
                 # BUG: makes no fucking sense! what was I drinking?
                 # we loose all the changes we want to save!
                 print "*** ERROR: loadMetadata() while saveMetadata()!!!"
-                fr= self.loadMetadata ()
+                # fr= self.loadMetadata ()
             else:
                 try:
                     fr= tagpy.FileRef (self.filepath)
+                    f= fr.file ()
                 except Exception, e:
                     print '----- saveMetadata()'
                     print self.filepath
@@ -238,6 +256,11 @@ class Song (QObject):
                 raise TagWriteError
             else:
                 info= fr.tag ()
+
+                if type (info)==tagpy._tagpy.Tag and type (f)==tagpy._tagpy.flac_File:
+                    # flac files use xiph comments
+                    # grab the original tagset
+                    info= f.xiphComment ()
 
                 # BUG:
                 #Traceback (most recent call last):
@@ -262,9 +285,10 @@ class Song (QObject):
                 if type (info)==tagpy._tagpy.ogg_XiphComment:
                     # http://www.xiph.org/vorbis/doc/v-comment.html
                     # with Xiph comments we're free to set our own
-                    # names must(?) be uppercase
                     # TODO: make it a class attr
                     for attr in ('collection', 'diskno'):
+                        # names must(?) be uppercase
+                        # «It is case insensitive, so artist and ARTIST are the same field»
                         tag= attr.upper ()
                         value= getattr (self, attr)
                         if value!='' and value!=0:
@@ -278,7 +302,6 @@ class Song (QObject):
                 elif type (info)==tagpy._tagpy.Tag:
                     # this is somewhat generic, so we try guessing different types
                     # mpeg first
-                    f= fr.file ()
                     if type (f)==tagpy._tagpy.mpeg_File:
                         t1= f.ID3v1Tag ()
                         t2= f.ID3v2Tag ()
@@ -315,10 +338,10 @@ class Song (QObject):
                             # TODO: else?
                             pass
                     else:
-                        print '**** loadMetadata(): file type not supportd yet', type (f)
+                        print '**** saveMetadata(): file type not supportd yet', type (f)
 
                 else:
-                    print '**** loadMetadata(): file type not supportd yet', type (info)
+                    print '**** saveMetadata(): file type not supportd yet', type (info)
 
                 if not fr.save ():
                     raise TagWriteError

@@ -38,7 +38,6 @@ class PlayList (SatyrObject):
     # TODO: get rid of primes, use normal random and a bounded list
     finished= pyqtSignal ()
     randomChanged= pyqtSignal (bool)
-    # songChanged= pyqtSignal (int)
     songChanged= pyqtSignal (Song)
     queued= pyqtSignal (int)
     dequeued= pyqtSignal (int)
@@ -81,7 +80,7 @@ class PlayList (SatyrObject):
         # File "/home/mdione/src/projects/satyr/playlist-listmodel/models.py", line 180, in songForIndex
         #     song= collection.songs[collectionIndex]
         # IndexError: list index out of range
-        self.setCurrent ()
+        self.indexToSong ()
 
     # ** DO NOT REMOVE ** we're still using it for setting the window title
     def formatSong (self, song):
@@ -111,14 +110,14 @@ class PlayList (SatyrObject):
         print self.random
         self.randomChanged.emit (self.random)
 
-    def setCurrent (self, song=None):
-        print "playlist.setCurrent()", song
+    def indexToSong (self, song=None):
         if song is not None:
+            print "playlist.indexToSong()", song
             self.song= song
             self.filepath= song.filepath
         else:
             # take the current from saved status
-            print "playlist.setCurrent()", self.filepath
+            print "playlist.indexToSong()", self.filepath
             if self.filepath is None:
                 # none saved, use first
                 self.song= self.collaggr.songForIndex (0)
@@ -134,6 +133,9 @@ class PlayList (SatyrObject):
 
         self.songChanged.emit (self.song)
 
+    def setCurrent (self):
+        self.songChanged.emit (self.song)
+
     def prev (self):
         print "¡prev",
         if self.random:
@@ -143,7 +145,8 @@ class PlayList (SatyrObject):
         else:
             song= self.collaggr.prev (self.song)
 
-        self.setCurrent (song)
+        # self.setCurrent (song)
+        self.indexToSong (song)
 
     def next (self):
         print "next!",
@@ -161,14 +164,14 @@ class PlayList (SatyrObject):
                 song= self.collaggr.next (self.song)
 
         # self.lastPlayed.append ()
-        self.setCurrent (song)
+        # self.setCurrent (song)
+        self.indexToSong (song)
 
     def filesAdded (self):
-        self.setCurrent ()
+        self.indexToSong ()
 
     # TODO: reenable this dbus method?
     # @dbus.service.method (BUS_NAME, in_signature='i', out_signature='')
-    # def queue (self, collectionIndex):
     def queue (self, collectionIndex, song):
         try:
             listIndex= self.songQueue.index (song)
