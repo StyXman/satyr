@@ -112,7 +112,7 @@ class Song (QObject):
         for attr in ('collection', 'diskno'):
             setattr (self, attr, '')
 
-        print "loadMetadata():", type (info), type (f)
+        # print "loadMetadata():", type (info), type (f)
         if type (info)==tagpy._tagpy.ogg_XiphComment:
 
             # with Xiph comments we're free to set our own
