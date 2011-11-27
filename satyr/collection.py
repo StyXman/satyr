@@ -48,6 +48,7 @@ class Collection (SatyrObject):
 
 
         self.songs= []
+        self.songsById= {}
         self.count= 0
         # (re)defined by an aggregator if we're in one of those
         self.offset= 0
@@ -193,6 +194,7 @@ class Collection (SatyrObject):
             #                        the new Song is not the same already in the position (to the left)
             if s==0 or index==s-1 or self.songs[index-1]!=song:
                 self.songs.insert (index, song)
+                self.songsById[song.id]= song
                 self.count+= 1
                 if self.loadMetadata:
                     song.loadMetadata ()
@@ -202,7 +204,7 @@ class Collection (SatyrObject):
         self.newSongs.emit ()
 
     def indexForSong (self, song):
-        # BUG?: this is O(n)
+        # BUG: this is O(n)
         # HINT: we cannot use bisect now because if the metadata is loaded
         # (and if we're here it is pretty sure the case)
         # the order changes: when we Collection.loadOrScan() it's filepath based
