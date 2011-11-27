@@ -76,10 +76,28 @@ def getMimeType (filepath):
 
     return str (mimetype.name ())
 
+# BUG:
+#Renamer.rename() PyQt4.QtCore.QUrl(u'file:///home/mdione/media/music/Peter Gabriel/Secret world live/2/01-Digging in the dirt.mp3') -> PyQt4.QtCore.QUrl(u'file:///home/mdione/media/music/Peter Gabriel/1994 - Secret world live/Disk 02/01 - Digging in the dirt.mp3')
+#C.scan(/home/mdione/media/music/Peter Gabriel/1994 - Secret world live/Disk 02)
+#CI.walk(): /home/mdione/media/music/Peter Gabriel/1994 - Secret world live/Disk 02
+#C.scan(/home/mdione/media/music/Peter Gabriel/1994 - Secret world live/Disk 02/01 - Digging in the dirt.mp3)
+#CI.run(): found /home/mdione/media/music/Peter Gabriel/1994 - Secret world live/Disk 02/01 - Digging in the dirt.mp3
+#Renamer.jobFinished(): success!
+#C.add(): [(8129, '/home/mdione/media/music/Peter Gabriel/1994 - Secret world live/Disk 02//01 - Digging in the dirt.mp3')]
+#C.scanFinished()
+#PLM: count: 17943
+#prime selected: 1429
+#playlist.setCurrent() 8131
+#C.add(): [(8130, '/home/mdione/media/music/Peter Gabriel/1994 - Secret world live/Disk 02/01 - Digging in the dirt.mp3')]
+#C.scanFinished()
+#PLM: count: 17944
+#prime selected: 719
+#playlist.setCurrent() 8131
+
 class CollectionIndexer (QThread):
     # finished= pyqtSignal (QThread)
     scanning= pyqtSignal (unicode)
-    foundSongs= pyqtSignal (QStringList)
+    foundSongs= pyqtSignal (list)
 
     def __init__ (self, path, parent=None, relative=False):
         QThread.__init__ (self, parent)
@@ -145,14 +163,14 @@ class CollectionIndexer (QThread):
                         # detect mimetype and add only if it's suppourted
                         mimetype= getMimeType (filepath)
                         if mimetype in mimetypes:
-                            filepaths.append (filepath)
+                            filepaths.append ((None, filepath))
                         else:
                             # print mimetype, mimetypes
                             pass
 
                     # pyqt4 doesn't do this automatically
                     # print "CI.run(): found", filepaths
-                    self.foundSongs.emit (QStringList (filepaths))
+                    self.foundSongs.emit (filepaths)
 
             elif stat.S_ISREG (mode):
                 # HINT: collection_indexer.py:110: Local variable (mimetype) shadows global defined on line 37
@@ -160,6 +178,6 @@ class CollectionIndexer (QThread):
                 mimetype= getMimeType (self.path)
                 if mimetype in mimetypes:
                     print "CI.run(): found", self.path
-                    self.foundSongs.emit (QStringList ([self.path]))
+                    self.foundSongs.emit ([ (None, self.path]) ])
 
 # end
