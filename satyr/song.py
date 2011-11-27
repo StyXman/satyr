@@ -22,7 +22,7 @@ from PyQt4.QtCore import QObject, pyqtSignal
 
 # std python
 import types
-import traceback
+from md5 import md5
 
 # other libs
 import tagpy
@@ -39,7 +39,7 @@ class Song (QObject):
     # updated?
     metadadaChanged= pyqtSignal ()
 
-    def __init__ (self, collection, filepath, onDemand=True, va=False):
+    def __init__ (self, collection, filepath, id=None, onDemand=True, va=False):
         QObject.__init__ (self)
         if not isinstance (filepath, str):
             print filepath, "is a", type (filepath), "!"
@@ -48,6 +48,10 @@ class Song (QObject):
         self.dirty= False
         self.coll= collection
         self.filepath= filepath
+        if id is None:
+            self.id= md5 (filepath).hexdigest ()
+        else:
+            self.id= id
 
         # artist, year, collection, diskno, album, trackno, title, length
 
