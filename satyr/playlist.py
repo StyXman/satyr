@@ -61,12 +61,14 @@ class PlayList (SatyrObject):
             ('seed', int, 0),
             ('prime', int, -1),
             # TODO: make the current song to be savable again
-            ('filepath', str, None)
+            ('current', str, None)
             # ('indexQueue', configEntryToIntList, QStringList ())
             # TODO: make songQueue to be saved again
             # ('songQueue', configEntryToIntList, QStringList ())
             )
         self.loadConfig ()
+        # BUG: current is not properly loaded, returns ''
+        print "PlayList():", repr (self.current)
 
         # TODO: config
         # TODO: optional parts
@@ -112,32 +114,27 @@ class PlayList (SatyrObject):
 
     def indexToSong (self, song=None):
         if song is not None:
-            print "playlist.indexToSong()", song
-            self.song= song
-            self.filepath= song.filepath
+            print "playlist.indexToSong() -->", song
         else:
-            try:
-                # take the current from saved status
-                print "playlist.indexToSong()", self.filepath
-                if self.filepath is None:
-                    # none saved, use first
+            # take the current from saved status
+            if self.current is not None:
+                song= self.collaggr.songForId (self.current)
+
+            if song is None:
+                # sorry, we don't have that song anymore, use the first one
+                try:
                     self.song= self.collaggr.songForIndex (0)
-                    self.filepath= self.song.filepath
-                else:
-                    song= self.collaggr.songForFilepath (self.filepath)
-                    if song is not None:
-                        self.song= song
-                    else:
-                        # sorry, we don't have that song anymore
-                        self.song= self.collaggr.songForIndex (0)
-                        self.filepath= self.song.filepath
-            except IndexError:
-                self.song= None
-                self.filepath= None
+                except IndexError:
+                    self.song= None
 
-        self.songChanged.emit (self.song)
+        print "playlist.indexToSong()", self.current, song
+        self.setCurrent (song)
 
-    def setCurrent (self):
+    def setCurrent (self, song=None):
+        if song is not None:
+            self.song= song
+            self.current= song.id
+
         self.songChanged.emit (self.song)
 
     def prev (self):
@@ -149,7 +146,6 @@ class PlayList (SatyrObject):
         else:
             song= self.collaggr.prev (self.song)
 
-        # self.setCurrent (song)
         self.indexToSong (song)
 
     def next (self):
@@ -167,8 +163,6 @@ class PlayList (SatyrObject):
             else:
                 song= self.collaggr.next (self.song)
 
-        # self.lastPlayed.append ()
-        # self.setCurrent (song)
         self.indexToSong (song)
 
     def filesAdded (self):
