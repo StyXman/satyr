@@ -103,7 +103,7 @@ class Player (SatyrObject):
             if song is not None:
                 self.song= song
                 print "player.play()", song
-                self.playlist.indexToSong (song)
+                self.playlist.setCurrent (song)
             else:
                 self.song= self.playlist.song
                 
