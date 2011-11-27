@@ -178,6 +178,6 @@ class CollectionIndexer (QThread):
                 mimetype= getMimeType (self.path)
                 if mimetype in mimetypes:
                     print "CI.run(): found", self.path
-                    self.foundSongs.emit ([ (None, self.path]) ])
+                    self.foundSongs.emit ([ (None, self.path) ])
 
 # end
