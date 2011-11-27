@@ -98,8 +98,8 @@ class Collection (SatyrObject):
             # this oneliner seems to be the fastest against:
             # * fp= []; f= open(); for line in f.readlines(): fp.append (line)
             # * fp= []; f= open(); for line in f: fp.append (line)
-            filepaths= [ line[:-1] for line in open (self.collectionFile) ]
-            self.add (filepaths)
+            fileinfos= [ line[:-1].split (',', 1) for line in open (self.collectionFile) ]
+            self.add (fileinfos)
             ans= True
         except IOError, e:
             print "no database!"
@@ -115,7 +115,7 @@ class Collection (SatyrObject):
                 f= open (self.collectionFile, 'w+')
                 # we must add the trailing newline
                 for song in self.songs:
-                    f.write (song.filepath+'\n')
+                    f.write ("%s,%s\n" %(song.id, song.filepath))
                 f.close ()
             except Exception, e:
                 # any problem we kill the bastard
@@ -170,7 +170,7 @@ class Collection (SatyrObject):
     def add (self, filepaths):
         self.newSongs_= []
         # we get a QStringList; convert to a list so we can python-iterate it
-        for filepath in list (filepaths):
+        for id, filepath in list (filepaths):
             # filepath can be a QString because this method
             # is also connected to a signal and they get converted by ptqt4
             if isinstance (filepath, QString):
@@ -180,7 +180,7 @@ class Collection (SatyrObject):
             # normalize! this way we avoid this dupes (couldn't find where they're originated)
             # C.add(): [(4081, '/home/mdione/media/music/Poison/2000 - Crack a smile... and more!//01 - Best thing you ever had.ogg')]
             # C.add(): [(4082, '/home/mdione/media/music/Poison/2000 - Crack a smile... and more!/01 - Best thing you ever had.ogg')]
-            song= Song (self, os.path.normpath (filepath))
+            song= Song (self, os.path.normpath (filepath), id=id)
 
             # this works because Song.__cmp__() does not compare tags if one song
             # has not loaded them and Song does not do it automatically
@@ -207,7 +207,7 @@ class Collection (SatyrObject):
         # (and if we're here it is pretty sure the case)
         # the order changes: when we Collection.loadOrScan() it's filepath based
         # and now it's metadata based.
-        # is the abobe no longer true?
+        # is the above no longer true?
         # somehow it is :(
         index= self.songs.index (song)
         # index= bisect.bisect (self.songs, song)
