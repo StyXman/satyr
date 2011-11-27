@@ -143,18 +143,15 @@ class CollectionAggregator (SatyrObject):
         index= self.indexForSong (song)
         return self.songForIndex ((index+1) % self.count)
 
-    def songForFilepath (self, filepath):
+    def songForId (self, id):
         coll= None
         song= None
 
-        if filepath is not None:
+        if id is not None:
             for c in self.collections:
-                if os.path.commonprefix ([c.path, filepath])==c.path:
-                    coll= c
+                song= c.songsById.get (id, None)
+                if song is not None:
                     break
-
-            if coll is not None:
-                song= Song (coll, filepath)
 
         return song
 
