@@ -24,7 +24,7 @@ from PyQt4.QtCore import pyqtSignal, QModelIndex, QStringList
 import dbus.service
 
 # std python
-import random, bisect, collections
+import random, collections
 
 # local
 from satyr.common import SatyrObject, BUS_NAME, configEntryToBool, configEntryToIntList
@@ -61,7 +61,7 @@ class PlayList (SatyrObject):
             ('seed', int, 0),
             ('prime', int, -1),
             # TODO: make the current song to be savable again
-            ('current', str, None)
+            ('current', str, '')
             # ('indexQueue', configEntryToIntList, QStringList ())
             # TODO: make songQueue to be saved again
             # ('songQueue', configEntryToIntList, QStringList ())
@@ -117,7 +117,7 @@ class PlayList (SatyrObject):
             print "playlist.indexToSong() -->", song
         else:
             # take the current from saved status
-            if self.current is not None:
+            if self.current!='':
                 song= self.collaggr.songForId (self.current)
 
             if song is None:
@@ -125,6 +125,7 @@ class PlayList (SatyrObject):
                 try:
                     self.song= self.collaggr.songForIndex (0)
                 except IndexError:
+                    # there are no songs!
                     self.song= None
 
         print "playlist.indexToSong()", self.current, song
