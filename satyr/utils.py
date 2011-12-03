@@ -97,4 +97,20 @@ def secondsToTime (seconds):
     seconds= abs (seconds-minutes*60)
     return u"%02d:%02d" % (minutes, seconds)
 
+def bisect (a, x, f=cmp):
+    # shamelessly taken from python's bisect.py
+    # TODO: check license
+    lo= 0
+    hi= len (a)
+    
+    while lo < hi:
+        mid = (lo+hi)//2
+        # cmp (a, b)==-1 \eq a < b
+        if f (a[mid], x)==-1:
+            lo = mid+1
+        else:
+            hi = mid
+
+    return lo
+
 # end
