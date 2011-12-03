@@ -26,7 +26,7 @@ from PyQt4.QtCore import pyqtSignal, pyqtSlot, QString
 import dbus.service
 
 # std python
-import os, bisect, os.path
+import os, os.path
 
 # local
 from satyr.common import SatyrObject, BUS_NAME
@@ -186,7 +186,7 @@ class Collection (SatyrObject):
             # this works because Song.__cmp__() does not compare tags if one song
             # has not loaded them and Song does not do it automatically
             # so only paths are compared.
-            index= bisect.bisect (self.songs, song)
+            index= utils.bisect (self.songs, song)
             s= len (self.songs)
             # print "C.add(): %d==0, %d==%d, %d" % (s, index, s-1, index)
             #  empty list or
@@ -211,8 +211,8 @@ class Collection (SatyrObject):
         # and now it's metadata based.
         # is the above no longer true?
         # somehow it is :(
-        index= self.songs.index (song)
-        # index= bisect.bisect (self.songs, song)
+        # index= self.songs.index (song)
+        index= utils.bisect (self.songs, song, Song.cmpByFilepath)
         # if index!=foo:
         #     print "WARN: bisect: %d, index:%d" % (foo, index)
 
