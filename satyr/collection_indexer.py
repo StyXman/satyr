@@ -27,7 +27,7 @@ from PyQt4.phonon import Phonon
 import dbus.service
 
 # std python
-import sys, os, os.path, time, bisect, stat, random
+import sys, os, os.path, time, stat, random
 
 # local
 from satyr.common import SatyrObject, BUS_NAME
