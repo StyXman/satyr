@@ -118,7 +118,7 @@ class MainWindow (KXmlGuiWindow):
         actions.create (self, self.actionCollection ())
 
     def setModel (self, model):
-        print "complex.setModel():", model
+        # print "complex.setModel():", model
         self.model= model
         self.ui.songsList.setModel (self.model)
         self.ui.songsList.resizeRowsToContents ()
@@ -147,7 +147,7 @@ class MainWindow (KXmlGuiWindow):
             self.appModel.dirtyRow (oldModelIndex.row ())
         self.appModel.dirtyRow (self.modelIndex.row ())
 
-        print "default.showSong()", song
+        # print "complex.showSong()", song
         # FIXME? QAbstractItemView.EnsureVisible config?
         self.ui.songsList.scrollTo (modelIndex, QAbstractItemView.PositionAtCenter)
         # move the selection cursor too
@@ -159,7 +159,7 @@ class MainWindow (KXmlGuiWindow):
 
     def changeSong (self, modelIndex):
         # FIXME: later we ask for the index... doesn't make sense!
-        print "default.changeSong()", modelIndex.row ()
+        print "complex.changeSong()", modelIndex.row ()
         song= self.model.collaggr.songForIndex (modelIndex.row ())
         self.songIndexSelectedByUser= (song, modelIndex)
         self.player.play (song)
@@ -223,12 +223,12 @@ class MainWindow (KXmlGuiWindow):
         if len (self.ui.songsList.selectedIndexes ())>1 and self.appModel.edited:
             # more than one cell selected
             # we copy was has just been edited tho the rest of selected cells
-            print "complex.copyEditToSelection()", self.copying
+            # print "complex.copyEditToSelection()", self.copying
             if not self.copying:
                 self.copying= True
                 # data() already returns QVariant
                 value= self.appModel.data (tl, Qt.DisplayRole)
-                print "complex.copyEditToSelection()", value
+                # print "complex.copyEditToSelection()", value
                 # just copy the column that has been edited...
                 column= tl.column ()
                 for modelIndex in self.ui.songsList.selectedIndexes ():
@@ -259,11 +259,11 @@ class MainWindow (KXmlGuiWindow):
 
     ### actions ###
     def queue (self):
-        print "complex.queue()"
+        # print "complex.queue()"
         # so we don't keep (de)queuing if several cells of the same song are selected
         selectedSongs= []
         for modelIndex in self.ui.songsList.selectedIndexes ():
-            print "complex.queue()", modelIndex.row ()
+            # print "complex.queue()", modelIndex.row ()
             if modelIndex.row () not in selectedSongs:
                 song= self.model.collaggr.songForIndex (modelIndex.row ())
                 index= modelIndex.row ()
@@ -271,7 +271,7 @@ class MainWindow (KXmlGuiWindow):
                 selectedSongs.append (modelIndex.row ())
 
     def rename (self):
-        print "complex.rename()"
+        # print "complex.rename()"
         songs= self.selectedSongs ()
 
         self.renamer.rename (songs)
@@ -279,6 +279,8 @@ class MainWindow (KXmlGuiWindow):
     def toggleVA (self):
         print "complex.toggleVA()"
         songs= self.selectedSongs ()
+        for song in songs:
+            song.variousArtists= not song.variousArtists
 
     def delete (self):
         # we actually move it to a 'trash' collection
@@ -359,6 +361,8 @@ class QPlayListModel (QAbstractTableModel):
                         rawData= "[%d] %s" % (queueIndex+1, rawData)
                     except ValueError:
                         pass
+                    if song.variousArtists:
+                        rawData= '* '+rawData
                 data= QVariant (rawData)
 
             elif role==Qt.SizeHintRole:
@@ -458,7 +462,7 @@ class QPlayListModel (QAbstractTableModel):
             self.dataChanged.emit (modelIndex, modelIndex)
 
     def dirtyRow (self, index):
-        print "QLMP.dirtyRow():", index
+        # print "QLMP.dirtyRow():", index
         columns= self.columnCount ()
         start= self.index (index, 0)
         end=   self.index (index, columns)
