@@ -26,6 +26,10 @@ import dbus.service
 # std python
 import random, collections
 
+# logging
+import logging
+logger = logging.getLogger(__name__)
+
 # local
 from satyr.common import SatyrObject, BUS_NAME, configEntryToBool, configEntryToIntList
 from satyr.collaggr import CollectionAggregator
@@ -107,14 +111,13 @@ class PlayList (SatyrObject):
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def toggleRandom (self):
         """toggle"""
-        print "toggle: random",
         self.random= not self.random
-        print self.random
+        logger.debug ("toggle: random", self.random)
         self.randomChanged.emit (self.random)
 
     def indexToSong (self, song=None):
         if song is not None:
-            # print "playlist.indexToSong() -->", song
+            logger.debug ("playlist.indexToSong() --> %s", song )
             pass
         else:
             # take the current from saved status
@@ -129,7 +132,7 @@ class PlayList (SatyrObject):
                     # there are no songs!
                     self.song= None
 
-        # print "playlist.indexToSong()", self.current, song
+        logger.debug ("playlist.indexToSong(): %s, %s", self.current, song)
         self.setCurrent (song)
 
     def setCurrent (self, song=None):
@@ -140,7 +143,7 @@ class PlayList (SatyrObject):
         self.songChanged.emit (self.song)
 
     def prev (self):
-        print "¡prev",
+        logger.debug ("¡prev")
         if self.random:
             # TODO: implement played
             index= random.randint (0, self.collaggr.count)
@@ -151,10 +154,10 @@ class PlayList (SatyrObject):
         self.indexToSong (song)
 
     def next (self):
-        # print "next!",
+        logger.debug ("next!")
         song= None
         if len (self.songQueue)>0:
-            # print 'from queue!',
+            logger.debug ('from queue!')
             # BUG: this is destructive, so we can't go back properly
             # TODO: also, users want semi-ephemeral queues
             song= self.songQueue.pop (0)
@@ -176,12 +179,12 @@ class PlayList (SatyrObject):
         try:
             listIndex= self.songQueue.index (song)
             # exists; dequeue
-            print 'PL.queue(): dequeuing [%d, %s]' % (listIndex, song)
+            logger.debug ('PL.queue(): dequeuing index [%d, %d]', listIndex, collectionIndex)
             self.songQueue.pop (listIndex)
             self.dequeued.emit (collectionIndex)
         except ValueError:
             # doesn't exist; append
-            print 'PL.queue(): queuing [%s]' % (song)
+            logger.debug ('PL.queue(): queuing [%d]', collectionIndex)
             self.songQueue.append (song)
             self.queued.emit (collectionIndex)
 

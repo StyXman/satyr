@@ -28,6 +28,14 @@ import dbus.service
 # std python
 import os, os.path
 
+# we needed before loggin to get the handler
+import satyr
+
+# logging
+import logging
+logger = logging.getLogger(__name__)
+logger.addHandler(satyr.loggingHandler)
+
 # local
 from satyr.common import SatyrObject, BUS_NAME
 from satyr.collection_indexer import CollectionIndexer
@@ -66,11 +74,11 @@ class Collection (SatyrObject):
             path= os.path.abspath (path)
             self.path= path
             self.forceScan= True
-            print "new path, forcing (re)scan"
+            logger.info ("new path, forcing (re)scan")
         else:
             self.forceScan= False
         self.relative= relative
-        print "Collection(): %s" % self.path
+        logger.debug ("Collection(): %s", self.path)
 
         self.watch= KDirWatch (self)
         self.watch.addDir (self.path,
@@ -91,7 +99,7 @@ class Collection (SatyrObject):
             self.scan ()
 
     def load (self):
-        print 'loading from', self.collectionFile
+        logger.info ('loading from', self.collectionFile)
         try:
             # we must remove the trailing newline
             # we could use strip(), but filenames ending with any other whitespace
@@ -103,8 +111,8 @@ class Collection (SatyrObject):
             self.add (fileinfos)
             ans= True
         except IOError, e:
-            print "no database!"
-            print 'FAILED!', e
+            logger.warning ("no database!")
+            logger.warning ('FAILED!', e)
             ans= False
 
         return ans
@@ -112,7 +120,7 @@ class Collection (SatyrObject):
     def save (self):
         if self.count>0:
             try:
-                print 'saving collection to', self.collectionFile
+                logger.debug ('saving collection to', self.collectionFile)
                 f= open (self.collectionFile, 'w+')
                 # we must add the trailing newline
                 for song in self.songs:
@@ -120,11 +128,11 @@ class Collection (SatyrObject):
                 f.close ()
             except Exception, e:
                 # any problem we kill the bastard
-                print e
-                print 'FAILED! nuking...'
+                logger.warning (e)
+                logger.warning ('FAILED! nuking...')
                 os.unlink (self.collectionFile)
         else:
-            print 'no collection to save!'
+            logger.warning ('no collection to save!')
 
     def saveConfig (self):
         # reimplement just to also save the collection
@@ -144,7 +152,7 @@ class Collection (SatyrObject):
         if path is None:
             path= self.path
 
-        # print "C.scan(%s)" % path
+        logger.debug ("C.scan(%s)", path)
 
         scanner= CollectionIndexer (path)
         scanner.scanning.connect (self.progress)
@@ -160,7 +168,7 @@ class Collection (SatyrObject):
         self.scanners.append (scanner)
 
     def scanFinished_ (self):
-        print "C.scanFinished()"
+        logger.debug ("C.scanFinished()")
         self.scanning= False
         self.scanFinished.emit ()
 
@@ -170,6 +178,7 @@ class Collection (SatyrObject):
         pass
 
     def add (self, filepaths):
+        # TODO: emit the list
         self.newSongs_= []
         # we get a QStringList; convert to a list so we can python-iterate it
         for id, filepath in list (filepaths):
@@ -201,7 +210,7 @@ class Collection (SatyrObject):
                     song.loadMetadata ()
                 self.newSongs_.append ((index, filepath))
 
-        print "C.add():", self.newSongs_
+        logger.debug ("C.add():", self.newSongs_)
         self.newSongs.emit ()
 
     def indexForSong (self, song):
@@ -220,7 +229,7 @@ class Collection (SatyrObject):
         return index
 
     def log (self, *args):
-        print "logging", args
+        log.debug ("logging", args)
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def rescan (self):

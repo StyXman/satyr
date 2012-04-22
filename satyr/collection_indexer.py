@@ -29,6 +29,14 @@ import dbus.service
 # std python
 import sys, os, os.path, time, stat, random
 
+# we needed before loggin to get the handler
+import satyr
+
+# logging
+import logging
+logger = logging.getLogger(__name__)
+logger.addHandler(satyr.loggingHandler)
+
 # local
 from satyr.common import SatyrObject, BUS_NAME
 from satyr import utils
@@ -45,7 +53,7 @@ def initMimetypes ():
 
     # print "initMimetypes()", mimetypes
     if mimetypes==[]:
-        print "No mimetypes! do you have any Phonon backend installed, configured and/or working?"
+        logger.warning ("No mimetypes! do you have any Phonon backend installed, configured and/or working?")
         # TODO: MessageBox and abort
 
 
@@ -106,7 +114,7 @@ class CollectionIndexer (QThread):
         initMimetypes ()
 
     def walk (self, root, subdir='', relative=False):
-        print "CI.walk():", root, subdir
+        logger.debug ("CI.walk():", root, subdir)
         # TODO: support single filenames
         # if not os.path.isdir (root):
         #     return root
@@ -123,7 +131,7 @@ class CollectionIndexer (QThread):
             path= root+'/'+subdir+'/'+name
 
             if os.path.isdir (path):
-                print "CI.walk(): [DIR] %s" % path
+                logger.debug ("CI.walk(): [DIR] %s", path)
                 dirs.append (name)
             else:
                 nondirs.append (name)
@@ -177,7 +185,7 @@ class CollectionIndexer (QThread):
                 # it's not a global
                 mimetype= getMimeType (self.path)
                 if mimetype in mimetypes:
-                    print "CI.run(): found", self.path
+                    logger.debug ("CI.run(): found", self.path)
                     self.foundSongs.emit ([ (None, self.path) ])
 
 # end

@@ -17,3 +17,11 @@
 # along with satyr.  If not, see <http://www.gnu.org/licenses/>.
 
 # **BOO**!
+
+# we needed before loggin to get the handler
+import satyr
+
+# logging
+import logging
+logger = logging.getLogger(__name__)
+logger.addHandler(satyr.loggingHandler)

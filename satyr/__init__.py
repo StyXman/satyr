@@ -23,6 +23,17 @@ from PyKDE4.kdecore import KCmdLineOptions
 # std python
 import sys
 
+# logging
+import logging
+loggingHandler = logging.StreamHandler(sys.stdout)
+formatter = logging.Formatter("%(asctime)s %(name)30s:%(lineno)-4d "
+                              "%(levelname)-8s %(message)s",
+                              '%Y-%m-%d %H:%M:%S')
+loggingHandler.setFormatter(formatter)
+
+logger = logging.getLogger(__name__)
+logger.addHandler(loggingHandler)
+
 # local
 from satyr.app import App
 

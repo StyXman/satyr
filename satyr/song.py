@@ -27,8 +27,16 @@ from md5 import md5
 # other libs
 import tagpy
 
+# we needed before loggin to get the handler
+import satyr
+
+# logging
+import logging
+logger = logging.getLogger(__name__)
+logger.addHandler(satyr.loggingHandler)
+
 # local
-import utils
+from satyr import utils
 
 class TagWriteError (Exception):
     pass
@@ -37,15 +45,14 @@ class TagWriteError (Exception):
 # update only when the date on disk is newer than the one in the db
 
 class Song (QObject):
-    # TODO: do not return int's for year or track?
-    # no, we need them as int's so we can %02d
-    # updated?
+    # TODO: metadata potentially updated in file if mtime is newer than stored one
+    # TODO: store mtime
     metadadaChanged= pyqtSignal ()
 
     def __init__ (self, collection, filepath, id=None, onDemand=True, va=False):
         QObject.__init__ (self)
         if not isinstance (filepath, str):
-            print filepath, "is a", type (filepath), "!"
+            logger.debug (filepath, "is a", type (filepath), "!")
             traceback.print_stack ()
         self.loaded= False
         self.dirty= False
@@ -57,7 +64,6 @@ class Song (QObject):
             self.id= id
 
         # artist, year, collection, diskno, album, trackno, title, length
-
         self.variousArtists= va
         if not self.variousArtists:
             self.cmpOrder= ('artist', 'year', 'collection', 'diskno', 'album', 'trackno', 'title', 'length')
@@ -103,9 +109,9 @@ class Song (QObject):
                 # grab the original tagset
                 info= f.xiphComment ()
         except Exception, e:
-            print '----- loadMetadata()'
-            print self.filepath
-            print type (e), e
+            logger.debug ('----- loadMetadata()')
+            logger.debug (self.filepath)
+            logger.debug (type (e), e)
             fr= None
             info= None
             f= None
@@ -169,18 +175,14 @@ class Song (QObject):
                     # if we convert to v2 above, there's no else :)
                     pass
             else:
-                print '**** loadMetadata(): file type not supported yet', type (f)
+                logger.warning ('**** loadMetadata(): file type not supported yet: %s', type (f))
 
         else:
-            print '**** loadMetadata(): tagset type not supported yet', type (info)
+            logger.warning ('**** loadMetadata(): tagset type not supported yet: %s', type (info))
 
         self.metadadaChanged.emit ()
         self.loaded= True
 
-        #Traceback (most recent call last):
-          #File "/home/mdione/src/projects/satyr/git/satyr/skins/complex.py", line 213, in updateTimes
-            #length= int (song.length)
-        #AttributeError: 'Song' object has no attribute 'length'
         return fr
 
     def sanitize (self, attr, value):
@@ -220,7 +222,7 @@ class Song (QObject):
 
         # these two must be int()s
         if key in ('diskno', 'trackno', 'year'):
-            print "converting from %s to int for %s" % (type (value), key)
+            logger.debug ("converting from %s to int for %s", type (value), key)
             try:
                 value= int (value)
             except ValueError:
@@ -229,7 +231,7 @@ class Song (QObject):
         # we cache; otherwise we could set loaded to False
         # and let other functions to resolve it.
         try:
-            print "__setitem__():", key, value
+            logger.debug ("__setitem__():", key, value)
             setattr (self, key, value)
         except AttributeError:
             raise TagWriteError
@@ -247,16 +249,16 @@ class Song (QObject):
             if not self.loaded:
                 # BUG: makes no fucking sense! what was I drinking?
                 # we loose all the changes we want to save!
-                print "*** ERROR: loadMetadata() while saveMetadata()!!!"
+                logger.warning ("*** ERROR: loadMetadata() while saveMetadata()!!!")
                 # fr= self.loadMetadata ()
             else:
                 try:
                     fr= tagpy.FileRef (self.filepath)
                     f= fr.file ()
                 except Exception, e:
-                    print '----- saveMetadata()'
-                    print self.filepath
-                    print type (e), e
+                    logger.debug ('----- saveMetadata()')
+                    logger.debug (self.filepath)
+                    logger.debug (type (e), e)
                     fr= None
 
             if fr is None:
@@ -285,14 +287,14 @@ class Song (QObject):
                     try:
                         setattr (info, tag, value)
                     except Exception, e:
-                        print type (e)
-                        print "ValueError: %s= (%s)%s" % (tag, type (value), value)
+                        logger.warning (type (e))
+                        logger.warning ("ValueError: %s= (%s)%s", tag, type (value), value)
 
                 # 'faked' tags; must be handled file type by file type
                 if type (info)==tagpy._tagpy.ogg_XiphComment:
                     # http://www.xiph.org/vorbis/doc/v-comment.html
                     # with Xiph comments we're free to set our own
-                    # TODO: make it a class attr
+                    # TODO: make it (what?!?) a class attr
                     for attr in ('collection', 'diskno'):
                         # names must(?) be uppercase
                         # «It is case insensitive, so artist and ARTIST are the same field»
@@ -345,10 +347,10 @@ class Song (QObject):
                             # TODO: else?
                             pass
                     else:
-                        print '**** saveMetadata(): file type not supportd yet', type (f)
+                        logger.warning ('**** saveMetadata(): file type not supportd yet', type (f))
 
                 else:
-                    print '**** saveMetadata(): file type not supportd yet', type (info)
+                    logger.warning ('**** saveMetadata(): file type not supportd yet', type (info))
 
                 if not fr.save ():
                     raise TagWriteError
@@ -374,10 +376,10 @@ class Song (QObject):
                     break
 
         except Exception, e:
-            print '----- cmp()'
-            print self.filepath
-            print e
-            print '----- cmp()'
+            logger.debug ('>>>>> cmp()')
+            logger.debug (self.filepath)
+            logger.debug (e)
+            logger.debug ('<<<<< cmp()')
             # any lie is good as any
             ans= -1
 

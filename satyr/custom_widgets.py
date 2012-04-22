@@ -21,6 +21,10 @@
 from PyKDE4.kdeui import KLineEdit
 from PyQt4.QtCore import Qt
 
+# logging
+import logging
+logger = logging.getLogger(__name__)
+
 class SearchEntry (KLineEdit):
 
     def keyPressEvent (self, event):
