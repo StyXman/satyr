@@ -100,7 +100,7 @@ class CollectionAggregator (SatyrObject):
         return song
 
     def indexForSong (self, song):
-        print "PLM.indexForSong", song
+        # print "PLM.indexForSong", song
         index= None
         if len (self.songs)>0:
             index= self.songs.index (song)
@@ -132,7 +132,7 @@ class CollectionAggregator (SatyrObject):
                 offset+= collection.count
                 self.count+= collection.count
 
-        print "PLM: count:", self.count
+        # print "PLM: count:", self.count
 
     def prev (self, song):
         # TODO: implement some other way?

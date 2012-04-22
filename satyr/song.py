@@ -33,6 +33,9 @@ import utils
 class TagWriteError (Exception):
     pass
 
+# TODO: create a database, store everything, including last modif date,
+# update only when the date on disk is newer than the one in the db
+
 class Song (QObject):
     # TODO: do not return int's for year or track?
     # no, we need them as int's so we can %02d

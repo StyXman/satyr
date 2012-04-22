@@ -95,8 +95,7 @@ class Renamer (ConfigurableObject):
             dstDir= os.path.dirname (dstPath)
             # TODO: QtDir is not net transp. try to make sub jobs creating the missing path
             if d.mkpath (dstDir):
-                # HINT: KUrl because KIO.* use KUrl
-                # src= KUrl (song.filepath)
+                # HINT: KUrl because KIO.* uses KUrl
                 src= KUrl (utils.path2qurl (song.filepath))
                 # BUG: Renamer.rename()
                 # PyQt4.QtCore.QUrl(u'file:///home/mdione/media/music/new/bandidos rurales/05 - uruguay, uruguay.mp3') ->

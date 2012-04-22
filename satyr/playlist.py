@@ -114,7 +114,8 @@ class PlayList (SatyrObject):
 
     def indexToSong (self, song=None):
         if song is not None:
-            print "playlist.indexToSong() -->", song
+            # print "playlist.indexToSong() -->", song
+            pass
         else:
             # take the current from saved status
             if self.current!='':
@@ -128,7 +129,7 @@ class PlayList (SatyrObject):
                     # there are no songs!
                     self.song= None
 
-        print "playlist.indexToSong()", self.current, song
+        # print "playlist.indexToSong()", self.current, song
         self.setCurrent (song)
 
     def setCurrent (self, song=None):
@@ -150,10 +151,10 @@ class PlayList (SatyrObject):
         self.indexToSong (song)
 
     def next (self):
-        print "next!",
+        # print "next!",
         song= None
         if len (self.songQueue)>0:
-            print 'from queue!',
+            # print 'from queue!',
             # BUG: this is destructive, so we can't go back properly
             # TODO: also, users want semi-ephemeral queues
             song= self.songQueue.pop (0)
