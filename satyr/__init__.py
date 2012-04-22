@@ -1,5 +1,5 @@
 # vim: set fileencoding=utf-8 :
-# (c) 2009 Marcos Dione <mdione@grulic.org.ar>
+# (c) 2009, 2012 Marcos Dione <mdione@grulic.org.ar>
 
 # This file is part of satyr.
 
@@ -34,25 +34,25 @@ def createApp (args=sys.argv):
     # see QDBusUtil::isValidCharacterNoDash()
     appName     = "satyr"
     catalog     = ""
-    programName = ki18n ("satyr")                 #ki18n required here
+    programName = ki18n ("satyr")
     version     = "0.5.0"
-    description = ki18n ("I need a media player that thinks about music the way I think about it. This is such a program.")         #ki18n required here
+    description = ki18n ("I need a media player that thinks about music the way I think about it. This is such a program.")
     license     = KAboutData.License_GPL
-    copyright   = ki18n ("(c) 2009, 2010 Marcos Dione")    #ki18n required here
-    text        = ki18n ("none")                    #ki18n required here
+    copyright   = ki18n ("(c) 2009, 2010, 2011, 2012 Marcos Dione")
+    text        = ki18n ("none")
     homePage    = "http://savannah.nongnu.org/projects/satyr/"
     bugEmail    = "mdione@grulic.org.ar"
 
     aboutData   = KAboutData (appName, catalog, programName, version, description,
                                 license, copyright, text, homePage, bugEmail)
 
-    # ki18n required for first two addAuthor () arguments
     aboutData.addAuthor (ki18n ("Marcos Dione"), ki18n ("design and implementation"))
     aboutData.addAuthor (ki18n ("Sebastián Álvarez"), ki18n ("features, bugfixes and testing"))
 
     KCmdLineArgs.init (args, aboutData)
     options= KCmdLineOptions ()
-    options.add ("s").add ("skin <skin-name>", ki18n ("skin"), "")
+    options.add ("s").add ("skin <skin-name>", ki18n ("set the skin to use"), "")
+    # options.add ("d").add ("debug", ki18n ("turn on debug"), "")
     options.add ("+path", ki18n ("paths to your music collections"))
     KCmdLineArgs.addCmdLineOptions (options)
 
