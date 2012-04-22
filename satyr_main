@@ -24,6 +24,7 @@ import dbus.service
 
 # std python
 import sys
+import os
 
 # local
 from satyr.common import BUS_NAME, ConfigurableObject
@@ -36,6 +37,11 @@ import satyr
 
 def main ():
     app, args= satyr.createApp ()
+
+    if False and args.getOption ("debug"):
+        os.environ["PHONON_VLC_DEBUG"]=  "1"
+        os.environ["PHONON_GST_DEBUG"]=  "1"
+        os.environ["PHONON_XINE_DEBUG"]= "1"
 
     dbus.mainloop.qt.DBusQtMainLoop (set_as_default=True)
     bus= dbus.SessionBus ()
@@ -70,6 +76,8 @@ def main ():
 
             collection= Collection (app, path, busName=busName, busPath="/collection_%04d" % index)
             collaggr.append (collection)
+            # TODO:
+            # collaggr.createCollection (path)
 
     for collection in collaggr.collections:
         collection.scanBegins.connect (mw.scanBegins)
