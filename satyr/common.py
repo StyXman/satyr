@@ -20,6 +20,10 @@
 from PyKDE4.kdecore import KSharedConfig
 from PyQt4.QtCore import QObject, QVariant, QStringList
 
+# logging
+import logging
+logger = logging.getLogger(__name__)
+
 # dbus
 import dbus.service
 
@@ -30,7 +34,7 @@ def configEntryToBool (s):
     return s!='false'
 
 def configEntryToIntList (s):
-    # print ">%s<" % s
+    logger.debug (">%s<", s)
     if s=='':
         ans= []
     else:

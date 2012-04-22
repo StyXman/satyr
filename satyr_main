@@ -25,6 +25,14 @@ import dbus.service
 # std python
 import sys
 
+# we needed before loggin to get the handler
+import satyr
+
+# logging
+import logging
+logger = logging.getLogger(__name__)
+logger.addHandler(satyr.loggingHandler)
+
 # local
 from satyr.common import BUS_NAME, ConfigurableObject
 from satyr.player import Player
@@ -32,7 +40,6 @@ from satyr.playlist import PlayList
 from satyr.collection import Collection
 from satyr.collaggr import CollectionAggregator
 from satyr import utils
-import satyr
 
 def main ():
     app, args= satyr.createApp ()
@@ -61,7 +68,7 @@ def main ():
 
     collaggr= CollectionAggregator (app, busName=busName, busPath='/collaggr')
     if collaggr.collsNo==0:
-        print "no collections, picking from args"
+        logging.info ("no collections, picking from args")
         for index in xrange (args.count ()):
             path= args.arg (index)
 

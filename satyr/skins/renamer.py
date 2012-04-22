@@ -23,6 +23,14 @@ from PyQt4.QtCore import QDir
 # std python
 import os.path
 
+# we needed before loggin to get the handler
+import satyr
+
+# logging
+import logging
+logger = logging.getLogger(__name__)
+logger.addHandler(satyr.loggingHandler)
+
 # local
 from satyr.common import ConfigurableObject
 from satyr import utils
@@ -74,14 +82,14 @@ class Renamer (ConfigurableObject):
         try:
             self.jobs.remove (job)
         except ValueError:
-            print "Renamer.jobFinished()", job, "not found!"
+            logger.warning ("Renamer.jobFinished()", job, "not found!")
 
         if job.error()==KJob.NoError:
             # TODO: update iface
-            print "Renamer.jobFinished(): success!"
+            logger.debug ("Renamer.jobFinished(): success!")
         else:
             # job.errorString () is a QString
-            print "Renamer.jobFinished(): ***** error! *****", unicode (job.errorString ())
+            logger.warning ("Renamer.jobFinished(): ***** error! *****", unicode (job.errorString ()))
             # TODO: Renamer.jobFinished(): ***** error! ***** A file named foo already exists.
 
     def rename (self, songs):
@@ -103,7 +111,7 @@ class Renamer (ConfigurableObject):
                 # PyQt4.QtCore.QUrl(u'file:///home/mdione/media/music/Le\xf3n Gieco/2001 - Bandidos rurales/05 - Uruguay, Uruguay.mp3')
                 #                                                       ^^^^
                 dst= KUrl (dstPath)
-                print "Renamer.rename()", src, "->", dst
+                logger.info ("Renamer.rename()", src, "->", dst)
 
                 # TODO: do not launch them all in parallel
                 job= KIO.file_move (src, dst)
@@ -115,7 +123,7 @@ class Renamer (ConfigurableObject):
                 self.jobs.append (job)
                 # print "Renamer.rename(): next!"
             else:
-                print "Renamer.rename(): failed to create", dstDir, ", skipping", dstPath
+                logger.info ("Renamer.rename(): failed to create", dstDir, ", skipping", dstPath)
 
         # print "Renamer.rename(): finished"
 
@@ -125,6 +133,6 @@ class Renamer (ConfigurableObject):
         base= trashColl.path
 
         for song in songs:
-            print "Renamer.delete()", song.filepath
+            logger.debug ("Renamer.delete()", song.filepath)
 
 # end

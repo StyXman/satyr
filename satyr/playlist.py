@@ -26,6 +26,10 @@ import dbus.service
 # std python
 import random, bisect
 
+# logging
+import logging
+logger = logging.getLogger(__name__)
+
 # local
 from satyr.common import SatyrObject, BUS_NAME, configEntryToBool, configEntryToIntList
 from satyr.primes import primes
@@ -100,15 +104,14 @@ class PlayList (SatyrObject):
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def toggleRandom (self):
         """toggle"""
-        print "toggle: random",
         self.random= not self.random
-        print self.random
+        logger.debug ("toggle: random", self.random)
         self.randomChanged.emit (self.random)
 
     def indexToSong (self, song=None):
         if song is None:
             try:
-                print "playlist.setCurrent()", self.index
+                logger.debug ("playlist.indexToSong()", self.index)
                 self.song= self.collaggr.songForIndex (self.index)
                 self.filepath= self.song.filepath
             # IndexError when we're out of bounds, TypeError when index is None
@@ -126,11 +129,11 @@ class PlayList (SatyrObject):
                     self.song= None
                     self.filepath= None
         else:
-            print "playlist.setCurrent()", song
+            logger.debug ("playlist.indexToSong()", song)
             self.song= song
             self.filepath= song.filepath
             self.index= self.collaggr.indexForSong (song)
-            print "playlist.setCurrent()", self.index
+            logger.debug ("playlist.indexToSong()", self.index)
 
     def setCurrent (self):
         # we cannot emit the song because Qt (and I don't mean PyQt4 here)
@@ -139,7 +142,7 @@ class PlayList (SatyrObject):
         self.songChanged.emit (self.index)
 
     def prev (self):
-        print "¡prev",
+        logger.debug ("¡prev")
         if self.random:
             random= self.seed
             self.index= (self.index-random) % self.collaggr.count
@@ -151,9 +154,9 @@ class PlayList (SatyrObject):
         self.indexToSong ()
 
     def next (self):
-        print "next!",
+        logger.debug ("next!")
         if len (self.indexQueue)>0:
-            print 'from queue!',
+            logger.debug ('from queue!')
             # BUG: this is destructive, so we can't go back properly
             # TODO: also, users want semi-ephemeral queues
             self.index= self.indexQueue.pop (0)
@@ -175,7 +178,7 @@ class PlayList (SatyrObject):
             # if you turn on random and hit next
             # you get the same song over and over again...
             self.prime= self.randomPrime ()
-            print "prime selected:", self.prime
+            logger.debug ("prime selected:", self.prime)
         else:
             # so instead we hadrcode it to 1
             self.prime= 1
@@ -196,12 +199,12 @@ class PlayList (SatyrObject):
         try:
             listIndex= self.indexQueue.index (collectionIndex)
             # exists; dequeue
-            print 'PL.queue(): dequeuing index [%d, %d]' % (listIndex, collectionIndex)
+            logger.debug ('PL.queue(): dequeuing index [%d, %d]', listIndex, collectionIndex)
             self.indexQueue.pop (listIndex)
             self.dequeued.emit (collectionIndex)
         except ValueError:
             # doesn't exist; append
-            print 'PL.queue(): queuing [%d]' % (collectionIndex)
+            logger.debug ('PL.queue(): queuing [%d]', collectionIndex)
             self.indexQueue.append (collectionIndex)
             self.queued.emit (collectionIndex)
 
@@ -233,11 +236,9 @@ class PlayList (SatyrObject):
 
     @dbus.service.method (BUS_NAME, in_signature='i', out_signature='')
     def jumpToIndex (self, index):
-        # print 'jU..'
-        print "playlist.jumpToIndex()", index
+        logger.debug ("playlist.jumpToIndex()", index)
         self.index= index
         self.indexToSong ()
-        # print 'Mp!'
 
     # we can't export this through dbus because it's a Song
     def jumpToSong (self, song):
