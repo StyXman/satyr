@@ -134,6 +134,7 @@ class Collection (SatyrObject):
     # @pyqtSlot ()
     def newFiles (self, path):
         path= utils.qstring2path (path)
+        print "C.newFiles(): %s" % path
         self.scan (path)
 
     def scan (self, path=None, loadMetadata=False):
@@ -143,7 +144,7 @@ class Collection (SatyrObject):
         if path is None:
             path= self.path
 
-        print "C.scan(%s)" % path
+        # print "C.scan(%s)" % path
 
         scanner= CollectionIndexer (path)
         scanner.scanning.connect (self.progress)
@@ -191,8 +192,8 @@ class Collection (SatyrObject):
             # print "C.add(): %d==0, %d==%d, %d" % (s, index, s-1, index)
             #  empty list or
             #          index is the last position or
-            #                        the new Song is not the same already in the position (to the left)
-            if s==0 or index==s-1 or self.songs[index-1]!=song:
+            #                        the new Song's filepath is not the same already in the position (to the left)
+            if s==0 or index==s-1 or self.songs[index-1].filepath!=song.filepath:
                 self.songs.insert (index, song)
                 self.songsById[song.id]= song
                 self.count+= 1
