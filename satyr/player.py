@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # vim: set fileencoding=utf-8 :
-# (c) 2009 Marcos Dione <mdione@grulic.org.ar>
+# (c) 2009-2012 Marcos Dione <mdione@grulic.org.ar>
 
 # This file is part of satyr.
 
@@ -59,20 +59,18 @@ class Player (SatyrObject):
         self.playlist= playlist
 
         self.media= Phonon.createPlayer (Phonon.MusicCategory)
-        # self.media.finished.connect (self.next)
-        # self.media.finished.connect ()
         self.media.aboutToFinish.connect (self.queueNext)
-        self.media.currentSourceChanged.connect (self.sourceChanged)
         self.media.stateChanged.connect (self.stateChanged)
 
     def stateChanged (self, new, old):
-        # print "state changed from %d to %d" % (old, new)
+        print "Player.stateChanged(): %s-> %s" % (old, new)
         if new==Phonon.ErrorState:
             print "ERROR: %d: %s" % (self.media.errorType (), self.media.errorString ())
             # just skip it
             self.next ()
-        else:
-            print "Player.stateChanged(): %s-> %s" % (old, new)
+        elif old==Phonon.StoppedState and new==Phonon.PlayingState:
+            self.sourceChanged (self.media.currentSource ())
+            pass
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def prev (self):
@@ -141,6 +139,17 @@ class Player (SatyrObject):
         self.media.stop ()
         self.state= Player.STOPPED
 
+    @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
+    def next (self):
+        try:
+            self.playlist.next ()
+            # FIXME: this should not be here
+            if self.state==Player.PLAYING:
+                self.play ()
+        except IndexError:
+            print "playlist empty"
+            self.stop ()
+
     def queueNext (self):
         print "queueing next!"
         self.playlist.next ()
@@ -169,17 +178,6 @@ class Player (SatyrObject):
         # TODO: move to state changed
         if self.state==Player.PLAYING:
             self.songChanged.emit (self.song)
-
-    @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
-    def next (self):
-        try:
-            self.playlist.next ()
-            # FIXME: this should not be here
-            if self.state==Player.PLAYING:
-                self.play ()
-        except IndexError:
-            print "playlist empty"
-            self.stop ()
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def toggleStopAfter (self):
