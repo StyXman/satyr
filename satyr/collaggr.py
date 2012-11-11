@@ -163,4 +163,8 @@ class CollectionAggregator (SatyrObject):
 
         return song
 
+    def move (self, song):
+        #
+        pass
+
 # end

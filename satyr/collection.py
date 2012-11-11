@@ -142,7 +142,7 @@ class Collection (SatyrObject):
     # @pyqtSlot ()
     def newFiles (self, path):
         path= utils.qstring2path (path)
-        print "C.newFiles(): %s" % path
+        logger.debug ("C.newFiles(): %s" % path)
         self.scan (path)
 
     def scan (self, path=None, loadMetadata=False):
