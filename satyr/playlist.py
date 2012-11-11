@@ -24,12 +24,16 @@ from PyQt4.QtCore import pyqtSignal, QModelIndex, QStringList
 import dbus.service
 
 # std python
-import random, bisect
+import random, collections
+
+# logging
+import logging
+logger = logging.getLogger(__name__)
 
 # local
 from satyr.common import SatyrObject, BUS_NAME, configEntryToBool, configEntryToIntList
-from satyr.primes import primes
 from satyr.collaggr import CollectionAggregator
+from satyr.song import Song
 
 class StopAfter (Exception):
     pass
@@ -38,7 +42,7 @@ class PlayList (SatyrObject):
     # TODO: get rid of primes, use normal random and a bounded list
     finished= pyqtSignal ()
     randomChanged= pyqtSignal (bool)
-    songChanged= pyqtSignal (int)
+    songChanged= pyqtSignal (Song)
     queued= pyqtSignal (int)
     dequeued= pyqtSignal (int)
 
@@ -50,7 +54,9 @@ class PlayList (SatyrObject):
         for collection in self.collections:
             collection.scanFinished.connect (self.filesAdded)
 
-        # self.indexQueue= []
+        self.songQueue= []
+        # TODO: save this?
+        # self.played= collections.deque (100)
         self.song= None
         self.filepath= None
 
@@ -58,10 +64,15 @@ class PlayList (SatyrObject):
             ('random', configEntryToBool, False),
             ('seed', int, 0),
             ('prime', int, -1),
-            ('index', int, 0),
-            ('indexQueue', configEntryToIntList, QStringList ())
+            # TODO: make the current song to be savable again
+            ('current', str, '')
+            # ('indexQueue', configEntryToIntList, QStringList ())
+            # TODO: make songQueue to be saved again
+            # ('songQueue', configEntryToIntList, QStringList ())
             )
         self.loadConfig ()
+        # BUG: current is not properly loaded, returns ''
+        print "PlayList():", repr (self.current)
 
         # TODO: config
         # TODO: optional parts
@@ -100,109 +111,81 @@ class PlayList (SatyrObject):
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def toggleRandom (self):
         """toggle"""
-        print "toggle: random",
         self.random= not self.random
-        print self.random
+        logger.debug ("toggle: random", self.random)
         self.randomChanged.emit (self.random)
 
     def indexToSong (self, song=None):
-        if song is None:
-            try:
-                print "playlist.setCurrent()", self.index
-                self.song= self.collaggr.songForIndex (self.index)
-                self.filepath= self.song.filepath
-            # IndexError when we're out of bounds, TypeError when index is None
-            except (IndexError, TypeError):
-                # the index saved in the config is bigger than the current collection
-                # fall back to 0
-                try:
-                    self.index= 0
-                    self.song= self.collaggr.songForIndex (self.index)
-                    self.filepath= self.song.filepath
-                except IndexError:
-                    # we cannot even select the first song
-                    # which means there are no songs
-                    self.index= None
-                    self.song= None
-                    self.filepath= None
+        if song is not None:
+            logger.debug ("playlist.indexToSong() --> %s", song )
+            pass
         else:
-            print "playlist.setCurrent()", song
-            self.song= song
-            self.filepath= song.filepath
-            self.index= self.collaggr.indexForSong (song)
-            print "playlist.setCurrent()", self.index
+            # take the current from saved status
+            if self.current!='':
+                song= self.collaggr.songForId (self.current)
 
-    def setCurrent (self):
-        # we cannot emit the song because Qt (and I don't mean PyQt4 here)
-        # knows nothing about it, so (with the help of, yes this time, PyQt4)
-        # it basically emits its id(), which is useless
-        self.songChanged.emit (self.index)
+            if song is None:
+                # sorry, we don't have that song anymore, use the first one
+                try:
+                    self.song= self.collaggr.songForIndex (0)
+                except IndexError:
+                    # there are no songs!
+                    self.song= None
+
+        logger.debug ("playlist.indexToSong(): %s, %s", self.current, song)
+        self.setCurrent (song)
+
+    def setCurrent (self, song=None):
+        if song is not None:
+            self.song= song
+            self.current= song.id
+
+        self.songChanged.emit (self.song)
 
     def prev (self):
-        print "¡prev",
+        logger.debug ("¡prev")
         if self.random:
-            random= self.seed
-            self.index= (self.index-random) % self.collaggr.count
-            random= (self.seed-self.prime) % self.collaggr.count
-            self.seed= random
+            # TODO: implement played
+            index= random.randint (0, self.collaggr.count)
+            song= self.collaggr.songForIndex (index)
         else:
-            self.index= (self.index-1) % self.collaggr.count
+            song= self.collaggr.prev (self.song)
 
-        self.indexToSong ()
+        self.indexToSong (song)
 
     def next (self):
-        print "next!",
-        if len (self.indexQueue)>0:
-            print 'from queue!',
+        logger.debug ("next!")
+        song= None
+        if len (self.songQueue)>0:
+            logger.debug ('from queue!')
             # BUG: this is destructive, so we can't go back properly
             # TODO: also, users want semi-ephemeral queues
-            self.index= self.indexQueue.pop (0)
+            song= self.songQueue.pop (0)
         else:
             if self.random:
-                random= (self.seed+self.prime) % self.collaggr.count
-                self.index= (self.index+random) % self.collaggr.count
-                self.seed= random
+                index= random.randint (0, self.collaggr.count)
+                song= self.collaggr.songForIndex (index)
             else:
-                self.index= (self.index+1) % self.collaggr.count
+                song= self.collaggr.next (self.song)
 
-        self.indexToSong ()
+        self.indexToSong (song)
 
     def filesAdded (self):
-        # we must recompute the prime
-        if self.collaggr.count>2:
-            # if count is 1, it make no sense to select a prime
-            # if it's 2, the prime selected would be 2
-            # if you turn on random and hit next
-            # you get the same song over and over again...
-            self.prime= self.randomPrime ()
-            print "prime selected:", self.prime
-        else:
-            # so instead we hadrcode it to 1
-            self.prime= 1
-
         self.indexToSong ()
 
-    def randomPrime (self):
-        # select a random prime based on the amount of songs in the playlist
-        top= bisect.bisect (primes, self.collaggr.count)
-        # select from the upper 2/3,
-        # so in large playlists the same artist is not picked consecutively
-        prime= random.choice (primes[top/3:top])
-
-        return prime
-
-    @dbus.service.method (BUS_NAME, in_signature='i', out_signature='')
-    def queue (self, collectionIndex):
+    # TODO: reenable this dbus method?
+    # @dbus.service.method (BUS_NAME, in_signature='i', out_signature='')
+    def queue (self, collectionIndex, song):
         try:
-            listIndex= self.indexQueue.index (collectionIndex)
+            listIndex= self.songQueue.index (song)
             # exists; dequeue
-            print 'PL.queue(): dequeuing index [%d, %d]' % (listIndex, collectionIndex)
-            self.indexQueue.pop (listIndex)
+            logger.debug ('PL.queue(): dequeuing index [%d, %d]', listIndex, collectionIndex)
+            self.songQueue.pop (listIndex)
             self.dequeued.emit (collectionIndex)
         except ValueError:
             # doesn't exist; append
-            print 'PL.queue(): queuing [%d]' % (collectionIndex)
-            self.indexQueue.append (collectionIndex)
+            logger.debug ('PL.queue(): queuing [%d]', collectionIndex)
+            self.songQueue.append (song)
             self.queued.emit (collectionIndex)
 
     @dbus.service.method (BUS_NAME, in_signature='s', out_signature='a(is)')
@@ -230,17 +213,5 @@ class PlayList (SatyrObject):
                     if predicate (song.filepath.lower ()) ]
 
         return songs
-
-    @dbus.service.method (BUS_NAME, in_signature='i', out_signature='')
-    def jumpToIndex (self, index):
-        # print 'jU..'
-        print "playlist.jumpToIndex()", index
-        self.index= index
-        self.indexToSong ()
-        # print 'Mp!'
-
-    # we can't export this through dbus because it's a Song
-    def jumpToSong (self, song):
-        self.indexToSong (song)
 
 # end

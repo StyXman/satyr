@@ -20,6 +20,14 @@
 from PyKDE4.kdeui import KAction, KShortcut
 from PyQt4.QtCore import Qt
 
+# we needed before loggin to get the handler
+import satyr
+
+# logging
+import logging
+logger = logging.getLogger(__name__)
+logger.addHandler(satyr.loggingHandler)
+
 def traverseObjects (root, fqn):
     components= fqn.split ('.')
     name= components.pop ()
@@ -44,10 +52,8 @@ def create (parent, ac):
         ('player.pause', KShortcut (Qt.Key_Pause),     True, "Toggle Pause"),
         ('player.play_pause', KShortcut (Qt.Key_MediaPlay), True, "Switch between Play and Pause"),
         ('player.next',  KShortcut (Qt.Key_MediaNext),      True, "Next song"),
-        # S+Stop == Eject
-        # ('player.toggleStopAfter', KShortcut (Qt.SHIFT+Qt.Key_MediaStop), True, "Stop after playing current song"),
         ('player.toggleStopAfter', KShortcut (Qt.Key_Eject), True, "Stop after playing current song"),
-        # TODO: S-P/P -> cycle random
+        # TODO: S-Play/Pause -> cycle random
         # TODO: S-|<</>>| -> beginning/prev album, next album
         )
 
@@ -55,7 +61,7 @@ def create (parent, ac):
         try:
             obj, name= traverseObjects (parent, fqn)
         except AttributeError, e:
-            print "actions.create(): %s, shortcut for %s not set" % (e.args[0], fqn)
+            logger.warning ("actions.create(): %s, shortcut for %s not set", e.args[0], fqn)
         else:
             fqn= "satyr."+fqn
             action= KAction (text, parent)
@@ -71,6 +77,6 @@ def create (parent, ac):
             if method is not None:
                 action.triggered.connect (method)
             else:
-                print "actions.create(): no method %s, shortcut for %s not set" % (name, fqn)
+                logger.warning ("actions.create(): no method %s, shortcut for %s not set", name, fqn)
 
 # end

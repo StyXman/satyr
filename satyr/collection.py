@@ -26,7 +26,15 @@ from PyQt4.QtCore import pyqtSignal, pyqtSlot, QString
 import dbus.service
 
 # std python
-import os, bisect, os.path
+import os, os.path
+
+# we needed before loggin to get the handler
+import satyr
+
+# logging
+import logging
+logger = logging.getLogger(__name__)
+logger.addHandler(satyr.loggingHandler)
 
 # local
 from satyr.common import SatyrObject, BUS_NAME
@@ -46,10 +54,9 @@ class Collection (SatyrObject):
     def __init__ (self, parent, path="", relative=False, busName=None, busPath=None):
         SatyrObject.__init__ (self, parent, busName, busPath)
 
-        path= os.path.abspath (path)
-        print "Collection(): %s" % path
 
         self.songs= []
+        self.songsById= {}
         self.count= 0
         # (re)defined by an aggregator if we're in one of those
         self.offset= 0
@@ -64,12 +71,14 @@ class Collection (SatyrObject):
 
         # if the user requests a new path, use it
         if self.path!=path and path!="":
+            path= os.path.abspath (path)
             self.path= path
             self.forceScan= True
-            print "new path, forcing (re)scan"
+            logger.info ("new path, forcing (re)scan")
         else:
             self.forceScan= False
         self.relative= relative
+        logger.debug ("Collection(): %s", self.path)
 
         self.watch= KDirWatch (self)
         self.watch.addDir (self.path,
@@ -90,7 +99,7 @@ class Collection (SatyrObject):
             self.scan ()
 
     def load (self):
-        print 'loading from', self.collectionFile
+        logger.info ('loading from', self.collectionFile)
         try:
             # we must remove the trailing newline
             # we could use strip(), but filenames ending with any other whitespace
@@ -98,12 +107,12 @@ class Collection (SatyrObject):
             # this oneliner seems to be the fastest against:
             # * fp= []; f= open(); for line in f.readlines(): fp.append (line)
             # * fp= []; f= open(); for line in f: fp.append (line)
-            filepaths= [ line[:-1] for line in open (self.collectionFile) ]
-            self.add (filepaths)
+            fileinfos= [ line[:-1].split (',', 1) for line in open (self.collectionFile) ]
+            self.add (fileinfos)
             ans= True
         except IOError, e:
-            print "no database!"
-            print 'FAILED!', e
+            logger.warning ("no database!")
+            logger.warning ('FAILED!', e)
             ans= False
 
         return ans
@@ -111,19 +120,19 @@ class Collection (SatyrObject):
     def save (self):
         if self.count>0:
             try:
-                print 'saving collection to', self.collectionFile
+                logger.debug ('saving collection to', self.collectionFile)
                 f= open (self.collectionFile, 'w+')
                 # we must add the trailing newline
                 for song in self.songs:
-                    f.write (song.filepath+'\n')
+                    f.write ("%s,%s\n" %(song.id, song.filepath))
                 f.close ()
             except Exception, e:
                 # any problem we kill the bastard
-                print e
-                print 'FAILED! nuking...'
+                logger.warning (e)
+                logger.warning ('FAILED! nuking...')
                 os.unlink (self.collectionFile)
         else:
-            print 'no collection to save!'
+            logger.warning ('no collection to save!')
 
     def saveConfig (self):
         # reimplement just to also save the collection
@@ -133,6 +142,7 @@ class Collection (SatyrObject):
     # @pyqtSlot ()
     def newFiles (self, path):
         path= utils.qstring2path (path)
+        logger.debug ("C.newFiles(): %s" % path)
         self.scan (path)
 
     def scan (self, path=None, loadMetadata=False):
@@ -142,7 +152,7 @@ class Collection (SatyrObject):
         if path is None:
             path= self.path
 
-        print "C.scan(%s)" % path
+        logger.debug ("C.scan(%s)", path)
 
         scanner= CollectionIndexer (path)
         scanner.scanning.connect (self.progress)
@@ -158,7 +168,7 @@ class Collection (SatyrObject):
         self.scanners.append (scanner)
 
     def scanFinished_ (self):
-        print "C.scanFinished()"
+        logger.debug ("C.scanFinished()")
         self.scanning= False
         self.scanFinished.emit ()
 
@@ -168,9 +178,10 @@ class Collection (SatyrObject):
         pass
 
     def add (self, filepaths):
+        # TODO: emit the list
         self.newSongs_= []
         # we get a QStringList; convert to a list so we can python-iterate it
-        for filepath in list (filepaths):
+        for id, filepath in list (filepaths):
             # filepath can be a QString because this method
             # is also connected to a signal and they get converted by ptqt4
             if isinstance (filepath, QString):
@@ -180,44 +191,45 @@ class Collection (SatyrObject):
             # normalize! this way we avoid this dupes (couldn't find where they're originated)
             # C.add(): [(4081, '/home/mdione/media/music/Poison/2000 - Crack a smile... and more!//01 - Best thing you ever had.ogg')]
             # C.add(): [(4082, '/home/mdione/media/music/Poison/2000 - Crack a smile... and more!/01 - Best thing you ever had.ogg')]
-            song= Song (self, os.path.normpath (filepath))
+            song= Song (self, os.path.normpath (filepath), id=id)
 
             # this works because Song.__cmp__() does not compare tags if one song
             # has not loaded them and Song does not do it automatically
             # so only paths are compared.
-            index= bisect.bisect (self.songs, song)
+            index= utils.bisect (self.songs, song)
             s= len (self.songs)
-            print "C.add(): %d==0, %d==%d, %d" % (s, index, s-1, index)
+            # print "C.add(): %d==0, %d==%d, %d" % (s, index, s-1, index)
             #  empty list or
             #          index is the last position or
-            #                        the new Song is not the same already in the position (to the left)
-            if s==0 or index==s-1 or self.songs[index-1]!=song:
+            #                        the new Song's filepath is not the same already in the position (to the left)
+            if s==0 or index==s-1 or self.songs[index-1].filepath!=song.filepath:
                 self.songs.insert (index, song)
+                self.songsById[song.id]= song
                 self.count+= 1
                 if self.loadMetadata:
                     song.loadMetadata ()
                 self.newSongs_.append ((index, filepath))
 
-        print "C.add():", self.newSongs_
+        logger.debug ("C.add():", self.newSongs_)
         self.newSongs.emit ()
 
     def indexForSong (self, song):
-        # BUG?: this is O(n)
+        # BUG: this is O(n)
         # HINT: we cannot use bisect now because if the metadata is loaded
         # (and if we're here it is pretty sure the case)
         # the order changes: when we Collection.loadOrScan() it's filepath based
         # and now it's metadata based.
-        # is the abobe no longer true?
+        # is the above no longer true?
         # somehow it is :(
-        index= self.songs.index (song)
-        # index= bisect.bisect (self.songs, song)
+        # index= self.songs.index (song)
+        index= utils.bisect (self.songs, song, Song.cmpByFilepath)
         # if index!=foo:
         #     print "WARN: bisect: %d, index:%d" % (foo, index)
 
         return index
 
     def log (self, *args):
-        print "logging", args
+        log.debug ("logging", args)
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def rescan (self):

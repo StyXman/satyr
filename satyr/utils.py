@@ -26,6 +26,10 @@ import types
 import os.path
 from datetime import time
 
+# logging
+import logging
+logger = logging.getLogger(__name__)
+
 def phononVersion ():
     return map (int, Phonon.phononVersion ().split ('.'))
 
@@ -62,7 +66,7 @@ expansion= re.compile ("(\{(.*?)\%([0-9]*)([a-z]+)([^a-z}]*)\})")
 def expandConditionally (format, values):
     expansions= expansion.findall (format)
     ans= format
-    print "xpandCond(): %s" % ans
+    logger.debug ("xpandCond(): %s", ans)
     for complete, pre, digits, var, post in expansions:
         try:
             value= values[var]
@@ -70,7 +74,7 @@ def expandConditionally (format, values):
             value= ''
 
         if value!='' and value!=0:
-            print "%s: >%s<" % (type (value), value)
+            logger.debug ("%s: >%s<", type (value), value)
             # year and trackno are int's
             if type (value)==types.IntType:
                 value= (u"%"+digits+"d") % value
@@ -78,7 +82,7 @@ def expandConditionally (format, values):
                 # / is not valid in filenames
                 # in our case it creates a subdir
                 value= value.replace ('/', '-')
-                print "%s: >%s<" % (type (value), value)
+                logger.debug ("%s: >%s<", type (value), value)
 
             ans= ans.replace (complete, pre+value+post)
         else:
@@ -88,7 +92,7 @@ def expandConditionally (format, values):
             else:
                 ans= ans.replace (complete, '')
 
-        print "xpandCond(): %s" % ans
+        logger.debug ("xpandCond(): %s" % ans)
 
     return ans
 
@@ -96,5 +100,21 @@ def secondsToTime (seconds):
     minutes= int (seconds/60.0)
     seconds= abs (seconds-minutes*60)
     return u"%02d:%02d" % (minutes, seconds)
+
+def bisect (a, x, f=cmp):
+    # shamelessly taken from python's bisect.py
+    # TODO: check license
+    lo= 0
+    hi= len (a)
+    
+    while lo < hi:
+        mid = (lo+hi)//2
+        # cmp (a, b)==-1 \eq a < b
+        if f (a[mid], x)==-1:
+            lo = mid+1
+        else:
+            hi = mid
+
+    return lo
 
 # end

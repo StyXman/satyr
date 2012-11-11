@@ -20,34 +20,50 @@
 # qt/kde related
 from PyQt4.QtCore import QObject, pyqtSignal
 
+# std python
+import types
+from md5 import md5
+
 # other libs
 import tagpy
-import types
+
+# we needed before loggin to get the handler
+import satyr
+
+# logging
+import logging
+logger = logging.getLogger(__name__)
+logger.addHandler(satyr.loggingHandler)
 
 # local
-import utils
+from satyr import utils
 
 class TagWriteError (Exception):
     pass
 
+# TODO: create a database, store everything, including last modif date,
+# update only when the date on disk is newer than the one in the db
+
 class Song (QObject):
-    # TODO: do not return int's for year or track?
-    # no, we need them as int's so we can %02d
-    # updated?
+    # TODO: metadata potentially updated in file if mtime is newer than stored one
+    # TODO: store mtime
     metadadaChanged= pyqtSignal ()
 
-    def __init__ (self, collection, filepath, onDemand=True, va=False):
+    def __init__ (self, collection, filepath, id=None, onDemand=True, va=False):
         QObject.__init__ (self)
         if not isinstance (filepath, str):
-            print filepath, "is a", type (filepath), "!"
+            logger.debug (filepath, "is a", type (filepath), "!")
             traceback.print_stack ()
         self.loaded= False
         self.dirty= False
         self.coll= collection
         self.filepath= filepath
+        if id is None:
+            self.id= md5 (filepath).hexdigest ()
+        else:
+            self.id= id
 
         # artist, year, collection, diskno, album, trackno, title, length
-
         self.variousArtists= va
         if not self.variousArtists:
             self.cmpOrder= ('artist', 'year', 'collection', 'diskno', 'album', 'trackno', 'title', 'length')
@@ -74,6 +90,7 @@ class Song (QObject):
             # tagpy doesn't handle unicode filepaths (somehow makes sense)
             # we cannot keep the FileRef or the Tag because the file stays open.
             fr= tagpy.FileRef (self.filepath)
+            f= fr.file ()
 
             props= fr.audioProperties ()
             # incredibly enough, tagpy also express length as a astring
@@ -86,12 +103,18 @@ class Song (QObject):
 
             # HINT: info has unicode attrs
             info= fr.tag ()
+
+            if type (info)==tagpy._tagpy.Tag and type (f)==tagpy._tagpy.flac_File:
+                # flac files use xiph comments
+                # grab the original tagset
+                info= f.xiphComment ()
         except Exception, e:
-            print '----- loadMetadata()'
-            print self.filepath
-            print type (e), e
+            logger.debug ('----- loadMetadata()')
+            logger.debug (self.filepath)
+            logger.debug (type (e), e)
             fr= None
             info= None
+            f= None
             self.length= 0
 
         for attr, tag in self.tagForAttr.items ():
@@ -105,13 +128,16 @@ class Song (QObject):
         for attr in ('collection', 'diskno'):
             setattr (self, attr, '')
 
+        # print "loadMetadata():", type (info), type (f)
         if type (info)==tagpy._tagpy.ogg_XiphComment:
+
             # with Xiph comments we're free to set our own
-            # names must(?) be uppercase
             d= info.fieldListMap ()
             # TODO: make it a class attr
             # print 'Song.loadMetadata():', self.filepath, info.fieldCount (), info.fieldListMap ().keys ()
             for attr in ('collection', 'diskno'):
+                # names must(?) be uppercase
+                # «It is case insensitive, so artist and ARTIST are the same field»
                 tag= attr.upper ()
                 try:
                     value= self.sanitize (attr, d[tag][0]) # TODO: support a real list
@@ -123,7 +149,6 @@ class Song (QObject):
         elif type (info)==tagpy._tagpy.Tag:
             # this is somewhat generic, so we try guessing different types
             # mpeg first
-            f= fr.file ()
             if type (f)==tagpy._tagpy.mpeg_File:
                 t1= f.ID3v1Tag ()
                 t2= f.ID3v2Tag ()
@@ -150,10 +175,10 @@ class Song (QObject):
                     # if we convert to v2 above, there's no else :)
                     pass
             else:
-                print '**** loadMetadata(): file type not supported yet', type (f)
+                logger.warning ('**** loadMetadata(): file type not supported yet: %s', type (f))
 
         else:
-            print '**** loadMetadata(): file type not supported yet', type (info)
+            logger.warning ('**** loadMetadata(): tagset type not supported yet: %s', type (info))
 
         self.metadadaChanged.emit ()
         self.loaded= True
@@ -197,7 +222,7 @@ class Song (QObject):
 
         # these two must be int()s
         if key in ('diskno', 'trackno', 'year'):
-            print "converting from %s to int for %s" % (type (value), key)
+            logger.debug ("converting from %s to int for %s", type (value), key)
             try:
                 value= int (value)
             except ValueError:
@@ -206,7 +231,7 @@ class Song (QObject):
         # we cache; otherwise we could set loaded to False
         # and let other functions to resolve it.
         try:
-            print "__setitem__():", key, value
+            logger.debug ("__setitem__():", key, value)
             setattr (self, key, value)
         except AttributeError:
             raise TagWriteError
@@ -224,21 +249,27 @@ class Song (QObject):
             if not self.loaded:
                 # BUG: makes no fucking sense! what was I drinking?
                 # we loose all the changes we want to save!
-                print "*** ERROR: loadMetadata() while saveMetadata()!!!"
-                fr= self.loadMetadata ()
+                logger.warning ("*** ERROR: loadMetadata() while saveMetadata()!!!")
+                # fr= self.loadMetadata ()
             else:
                 try:
                     fr= tagpy.FileRef (self.filepath)
+                    f= fr.file ()
                 except Exception, e:
-                    print '----- saveMetadata()'
-                    print self.filepath
-                    print type (e), e
+                    logger.debug ('----- saveMetadata()')
+                    logger.debug (self.filepath)
+                    logger.debug (type (e), e)
                     fr= None
 
             if fr is None:
                 raise TagWriteError
             else:
                 info= fr.tag ()
+
+                if type (info)==tagpy._tagpy.Tag and type (f)==tagpy._tagpy.flac_File:
+                    # flac files use xiph comments
+                    # grab the original tagset
+                    info= f.xiphComment ()
 
                 # BUG:
                 #Traceback (most recent call last):
@@ -256,16 +287,17 @@ class Song (QObject):
                     try:
                         setattr (info, tag, value)
                     except Exception, e:
-                        print type (e)
-                        print "ValueError: %s= (%s)%s" % (tag, type (value), value)
+                        logger.warning (type (e))
+                        logger.warning ("ValueError: %s= (%s)%s", tag, type (value), value)
 
                 # 'faked' tags; must be handled file type by file type
                 if type (info)==tagpy._tagpy.ogg_XiphComment:
                     # http://www.xiph.org/vorbis/doc/v-comment.html
                     # with Xiph comments we're free to set our own
-                    # names must(?) be uppercase
-                    # TODO: make it a class attr
+                    # TODO: make it (what?!?) a class attr
                     for attr in ('collection', 'diskno'):
+                        # names must(?) be uppercase
+                        # «It is case insensitive, so artist and ARTIST are the same field»
                         tag= attr.upper ()
                         value= getattr (self, attr)
                         if value!='' and value!=0:
@@ -279,7 +311,6 @@ class Song (QObject):
                 elif type (info)==tagpy._tagpy.Tag:
                     # this is somewhat generic, so we try guessing different types
                     # mpeg first
-                    f= fr.file ()
                     if type (f)==tagpy._tagpy.mpeg_File:
                         t1= f.ID3v1Tag ()
                         t2= f.ID3v2Tag ()
@@ -316,10 +347,10 @@ class Song (QObject):
                             # TODO: else?
                             pass
                     else:
-                        print '**** loadMetadata(): file type not supportd yet', type (f)
+                        logger.warning ('**** saveMetadata(): file type not supportd yet', type (f))
 
                 else:
-                    print '**** loadMetadata(): file type not supportd yet', type (info)
+                    logger.warning ('**** saveMetadata(): file type not supportd yet', type (info))
 
                 if not fr.save ():
                     raise TagWriteError
@@ -335,29 +366,37 @@ class Song (QObject):
         # so we see that indeed it reurns unicode. see comment in loadMetadata()
         return (self.title is not None and self.title!=u'')
 
+    def cmpByMetadata (self, other):
+        try:
+            for attr1, attr2 in zip (self.cmpOrder, other.cmpOrder):
+                val1= getattr (self, attr1)
+                val2= getattr (other, attr2)
+                ans= cmp (val1, val2)
+                if ans!=0:
+                    break
+
+        except Exception, e:
+            logger.debug ('>>>>> cmp()')
+            logger.debug (self.filepath)
+            logger.debug (e)
+            logger.debug ('<<<<< cmp()')
+            # any lie is good as any
+            ans= -1
+
+        return ans
+
+    def cmpByFilepath (self, other):
+        return cmp (self.filepath, other.filepath)
+
     def __cmp__ (self, other):
         # I don't want to implement the myriad of rich comparison
-        ans= cmp (self.filepath, other.filepath)
         # don't load metadata on any comparison
         # this would force it very soon at boot time
         # so use the only reasonable thing: the filepath
+        ans= self.cmpByFilepath (other)
         # and only do it if the paths are different
         if ans!=0 and self.loaded and other.loaded:
-            try:
-                for attr1, attr2 in zip (self.cmpOrder, other.cmpOrder):
-                    val1= getattr (self, attr1)
-                    val2= getattr (other, attr2)
-                    ans= cmp (val1, val2)
-                    if ans!=0:
-                        break
-
-            except Exception, e:
-                print '----- cmp()'
-                print self.filepath
-                print e
-                print '----- cmp()'
-                # any lie is good as any
-                ans= -1
+            self.cmpByMetadata (other)
 
         return ans
 

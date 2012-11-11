@@ -19,12 +19,16 @@
 # qt/kde related
 from PyKDE4.kdeui import KApplication
 
+# logging
+import logging
+logger = logging.getLogger(__name__)
+
 class App (KApplication):
     def __init__ (self):
         KApplication.__init__ (self)
-        print "KApp():", self.isSessionRestored (), self.sessionId ()
+        logger.debug ("KApp():", self.isSessionRestored (), self.sessionId ())
 
     def saveState (self, *more):
-        print "saveState():", more, self.sessionId ()
+        logger.debug ("saveState():", more, self.sessionId ())
 
 # end

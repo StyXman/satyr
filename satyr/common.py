@@ -20,6 +20,10 @@
 from PyKDE4.kdecore import KSharedConfig
 from PyQt4.QtCore import QObject, QVariant, QStringList
 
+# logging
+import logging
+logger = logging.getLogger(__name__)
+
 # dbus
 import dbus.service
 
@@ -30,7 +34,7 @@ def configEntryToBool (s):
     return s!='false'
 
 def configEntryToIntList (s):
-    # print ">%s<" % s
+    logger.debug (">%s<", s)
     if s=='':
         ans= []
     else:
@@ -59,8 +63,9 @@ class ConfigurableObject (object):
         # key, type, default
         for k, t, v in self.configValues:
             if not self.config is None:
-                # print 'reading config entry %s.%s [%s]' % (unicode (self.config.name ()), k, v),
+                # print 'reading config entry %s.%s [%s]' % (unicode (self.config.name ()), k, repr (v)),
                 a= self.config.readEntry (k, QVariant (v))
+                # print repr (a),
                 if type (v)==QStringList:
                     # print "QSL!"
                     s= a.toStringList ()
@@ -69,7 +74,7 @@ class ConfigurableObject (object):
                     s= a.toString ()
                 # print type (s),
                 v= t (s)
-                # print s, v
+                # print repr (s), repr (v)
 
             setattr (self, k, v)
 

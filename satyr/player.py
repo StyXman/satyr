@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # vim: set fileencoding=utf-8 :
-# (c) 2009 Marcos Dione <mdione@grulic.org.ar>
+# (c) 2009-2012 Marcos Dione <mdione@grulic.org.ar>
 
 # This file is part of satyr.
 
@@ -29,14 +29,23 @@ import dbus.service
 # std python
 import time
 
+# we needed before loggin to get the handler
+import satyr
+
+# logging
+import logging
+logger = logging.getLogger(__name__)
+logger.addHandler(satyr.loggingHandler)
+
 # local
 from satyr.common import SatyrObject, BUS_NAME, configEntryToBool
+from satyr.song import Song
 from satyr import utils
 
 class Player (SatyrObject):
     finished= pyqtSignal ()
     stopAfterChanged= pyqtSignal (bool)
-    nowPlaying= pyqtSignal (int)
+    songChanged= pyqtSignal (Song)
 
     # constants
     STOPPED= 0
@@ -58,20 +67,19 @@ class Player (SatyrObject):
         self.playlist= playlist
 
         self.media= Phonon.createPlayer (Phonon.MusicCategory)
-        # self.media.finished.connect (self.next)
-        # self.media.finished.connect ()
         self.media.aboutToFinish.connect (self.queueNext)
-        self.media.currentSourceChanged.connect (self.sourceChanged)
         self.media.stateChanged.connect (self.stateChanged)
 
     def stateChanged (self, new, old):
-        # print "state changed from %d to %d" % (old, new)
         if new==Phonon.ErrorState:
-            print "ERROR: %d: %s" % (self.media.errorType (), self.media.errorString ())
+            logger.warning ("ERROR: %d: %s", self.media.errorType (), self.media.errorString ())
             # just skip it
             self.next ()
+        elif old==Phonon.StoppedState and new==Phonon.PlayingState:
+            self.sourceChanged (self.media.currentSource ())
+            pass
         else:
-            print "Player.stateChanged(): %s-> %s" % (old, new)
+            logger.debug ("Player.stateChanged(): %s-> %s", old, new)
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def prev (self):
@@ -80,7 +88,7 @@ class Player (SatyrObject):
             if self.state==Player.PLAYING:
                 self.play ()
         except IndexError:
-            print "playlist empty"
+            logger.info ("playlist empty")
             self.stop ()
 
     @dbus.service.method (BUS_NAME, in_signature='i', out_signature='')
@@ -90,9 +98,6 @@ class Player (SatyrObject):
             self.pause ()
         else:
             self.state= Player.PLAYING
-            # FIXME? this should not be here, but right now seems to be needed
-            # BUG: and it is still not enough
-            # time.sleep (0.4)
 
             # the QPushButton.clicked() emits a bool,
             # and it's False on normal (non-checkable) buttons
@@ -100,16 +105,21 @@ class Player (SatyrObject):
             # also, 0!=False is False?
             # >>> 0!=False
             # False
+
+            # BUG: somethong's veeeeery wrong here...
             if song is not None:
-                print "player.play()", song
-                self.playlist.jumpToSong (song)
-
-            self.filepath= self.playlist.filepath
-
-            print "playing", self.filepath
-            url= utils.path2qurl (self.filepath)
+                self.song= song
+                logger.debug ("player.play()", song)
+                self.playlist.setCurrent (song)
+            else:
+                self.song= self.playlist.song
+                
+            logger.debug ("playing %s", self.song)
+            url= utils.path2qurl (self.song.filepath)
             self.media.setCurrentSource (Phonon.MediaSource (url))
             self.media.play ()
+
+            # self.songChanged.emit (song)
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def play_pause (self):
@@ -124,47 +134,19 @@ class Player (SatyrObject):
     def pause (self):
         """toggle"""
         if self.state==Player.PLAYING:
-            print "pa!..."
+            logger.debug ("pa!...")
             self.media.pause ()
             self.state= Player.PAUSED
         elif self.state==Player.PAUSED:
-            print "...use!"
+            logger.debug ("...use!")
             self.media.play ()
             self.state= Player.PLAYING
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def stop (self):
-        print "*screeeech*! stoping!"
+        logger.debug ("*screeeech*! stoping!")
         self.media.stop ()
         self.state= Player.STOPPED
-
-    def queueNext (self):
-        print "queueing next!"
-        self.playlist.next ()
-        self.filepath= self.playlist.filepath
-        print "--> queueing next!", self.filepath
-        url= utils.path2qurl (self.filepath)
-        source= Phonon.MediaSource (url)
-        self.media.enqueue (source)
-
-    def sourceChanged (self, source):
-        print "source changed!", source.fileName ().toLatin1 ()
-        self.playlist.setCurrent ()
-        if self.stopAfter:
-            print "stopping after!"
-            # stopAfter is one time only
-            # BUG: after switching to states, it stops in the wrong song
-            self.toggleStopAfter ()
-            self.stop ()
-
-        if self.quitAfter:
-            print "quiting after!"
-            # quitAfter is one time only
-            self.toggleQuitAfter ()
-            self.quit ()
-
-        if self.state==Player.PLAYING:
-            self.nowPlaying.emit (self.playlist.index)
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def next (self):
@@ -177,24 +159,51 @@ class Player (SatyrObject):
             print "playlist empty"
             self.stop ()
 
+    def queueNext (self):
+        logger.debug ("queueing next!")
+        self.playlist.next ()
+        self.song= self.playlist.song
+        logger.debug ("--> queueing next!", self.song)
+        url= utils.path2qurl (self.song.filepath)
+        source= Phonon.MediaSource (url)
+        self.media.enqueue (source)
+
+    def sourceChanged (self, source):
+        logger.debug ("source changed!", source.fileName ().toLatin1 ())
+        self.playlist.setCurrent ()
+        if self.stopAfter:
+            logger.debug ("stopping after!")
+            # stopAfter is one time only
+            # BUG: after switching to states, it stops in the wrong song
+            self.toggleStopAfter ()
+            self.stop ()
+
+        if self.quitAfter:
+            logger.debug ("quiting after!")
+            # quitAfter is one time only
+            self.toggleQuitAfter ()
+            self.quit ()
+
+        # TODO: move to state changed
+        if self.state==Player.PLAYING:
+            self.songChanged.emit (self.song)
+
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def toggleStopAfter (self):
         """toggle"""
-        print "toggle: stopAfter",
         self.stopAfter= not self.stopAfter
-        print self.stopAfter
+        logger.debug ("toggle: stopAfter", self.stopAfter)
         self.stopAfterChanged.emit (self.stopAfter)
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def toggleQuitAfter (self):
         """I need this for debugging"""
-        print "toggle: quitAfter",
         self.quitAfter= not self.quitAfter
-        print self.quitAfter
+        logger.debug ("toggle: quitAfter", self.quitAfter)
 
-    # @dbus.service.method (BUS_NAME, in_signature='', out_signature='s')
-    # def nowPlaying (self):
-    #     return self.playlist.formatSong (self.playlist.song)
+    @dbus.service.method (BUS_NAME, in_signature='', out_signature='s')
+    def nowPlaying (self):
+        return self.playlist.formatSong (self.playlist.song)
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def quit (self):
@@ -205,7 +214,7 @@ class Player (SatyrObject):
         self.playlist.collaggr.saveConfig ()
         for collection in self.playlist.collections:
             collection.saveConfig ()
-        print "bye!"
+        logger.info ("bye!")
         self.finished.emit ()
 
 # end

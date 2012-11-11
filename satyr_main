@@ -27,6 +27,15 @@ import dbus.service
 
 # std python
 import sys
+import os
+
+# we needed before loggin to get the handler
+import satyr
+
+# logging
+import logging
+logger = logging.getLogger(__name__)
+logger.addHandler(satyr.loggingHandler)
 
 # local
 from satyr.common import BUS_NAME, ConfigurableObject
@@ -43,6 +52,11 @@ def main ():
     options.add ("s").add ("skin <skin-name>", ki18n ("skin"), "")
     
     app, args= satyr.createApp (options=options)
+
+    if False and args.getOption ("debug"):
+        os.environ["PHONON_VLC_DEBUG"]=  "1"
+        os.environ["PHONON_GST_DEBUG"]=  "1"
+        os.environ["PHONON_XINE_DEBUG"]= "1"
 
     dbus.mainloop.qt.DBusQtMainLoop (set_as_default=True)
     bus= dbus.SessionBus ()
@@ -72,6 +86,20 @@ def main ():
         pass
     else:
         mw.backendReady (backend)
+
+    collaggr= CollectionAggregator (app, busName=busName, busPath='/collaggr')
+    if collaggr.collsNo==0:
+        logging.info ("no collections, picking from args")
+        for index in xrange (args.count ()):
+            path= args.arg (index)
+
+            # paths must be bytes, not ascii or utf-8
+            path= utils.qstring2path (path)
+
+            collection= Collection (app, path, busName=busName, busPath="/collection_%04d" % index)
+            collaggr.append (collection)
+            # TODO:
+            # collaggr.createCollection (path)
 
     # for collection in collaggr.collections:
     #     collection.scanBegins.connect (mw.scanBegins)

@@ -23,6 +23,14 @@ from PyQt4.QtCore import QDir
 # std python
 import os.path
 
+# we needed before loggin to get the handler
+import satyr
+
+# logging
+import logging
+logger = logging.getLogger(__name__)
+logger.addHandler(satyr.loggingHandler)
+
 # local
 from satyr.common import ConfigurableObject
 from satyr import utils
@@ -49,7 +57,11 @@ class Renamer (ConfigurableObject):
     # TODO: make this a method of Song called properPath()
     def songPath (self, base, song):
         # TODO: take ext from file format?
-        ext= song.filepath[-4:]
+        lastDot= song.filepath.rfind ('.')
+        if lastDot==-1:
+            ext= ''
+        else:
+            ext= song.filepath[lastDot:]
 
         if not song.variousArtists:
             if song.collection==u'':
@@ -70,14 +82,14 @@ class Renamer (ConfigurableObject):
         try:
             self.jobs.remove (job)
         except ValueError:
-            print "Renamer.jobFinished()", job, "not found!"
+            logger.warning ("Renamer.jobFinished()", job, "not found!")
 
         if job.error()==KJob.NoError:
             # TODO: update iface
-            print "Renamer.jobFinished(): success!"
+            logger.debug ("Renamer.jobFinished(): success!")
         else:
             # job.errorString () is a QString
-            print "Renamer.jobFinished(): ***** error! *****", unicode (job.errorString ())
+            logger.warning ("Renamer.jobFinished(): ***** error! *****", unicode (job.errorString ()))
             # TODO: Renamer.jobFinished(): ***** error! ***** A file named foo already exists.
 
     def rename (self, songs):
@@ -91,15 +103,14 @@ class Renamer (ConfigurableObject):
             dstDir= os.path.dirname (dstPath)
             # TODO: QtDir is not net transp. try to make sub jobs creating the missing path
             if d.mkpath (dstDir):
-                # HINT: KUrl because KIO.* use KUrl
-                # src= KUrl (song.filepath)
+                # HINT: KUrl because KIO.* uses KUrl
                 src= KUrl (utils.path2qurl (song.filepath))
                 # BUG: Renamer.rename()
                 # PyQt4.QtCore.QUrl(u'file:///home/mdione/media/music/new/bandidos rurales/05 - uruguay, uruguay.mp3') ->
                 # PyQt4.QtCore.QUrl(u'file:///home/mdione/media/music/Le\xf3n Gieco/2001 - Bandidos rurales/05 - Uruguay, Uruguay.mp3')
                 #                                                       ^^^^
                 dst= KUrl (dstPath)
-                print "Renamer.rename()", src, "->", dst
+                logger.info ("Renamer.rename()", src, "->", dst)
 
                 # TODO: do not launch them all in parallel
                 job= KIO.file_move (src, dst)
@@ -111,7 +122,7 @@ class Renamer (ConfigurableObject):
                 self.jobs.append (job)
                 # print "Renamer.rename(): next!"
             else:
-                print "Renamer.rename(): failed to create", dstDir, ", skipping", dstPath
+                logger.info ("Renamer.rename(): failed to create", dstDir, ", skipping", dstPath)
 
         # print "Renamer.rename(): finished"
 
@@ -121,6 +132,6 @@ class Renamer (ConfigurableObject):
         base= trashColl.path
 
         for song in songs:
-            print "Renamer.delete()", song.filepath
+            logger.debug ("Renamer.delete()", song.filepath)
 
 # end

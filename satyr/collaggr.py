@@ -19,9 +19,21 @@
 # qt/kde related
 from PyQt4.QtCore import QSignalMapper
 
+# std python
+import os.path
+
+# we needed before loggin to get the handler
+import satyr
+
+# logging
+import logging
+logger = logging.getLogger(__name__)
+logger.addHandler(satyr.loggingHandler)
+
 # local
 from satyr.common import SatyrObject, BUS_NAME
 from satyr.collection import Collection
+from satyr.song import Song
 
 class CollectionAggregator (SatyrObject):
     def __init__ (self, parent, collections=None, songs=None, busName=None, busPath=None):
@@ -44,7 +56,7 @@ class CollectionAggregator (SatyrObject):
 
         # if collections is not None we it means the may have changed
         if self.collsNo>0 and collections is None:
-            print "loading collections from config", self.collsNo
+            logger.info ("loading collections from config", self.collsNo)
             for index in xrange (self.collsNo):
                 collection= Collection (self, busName=busName, busPath="/collection_%04d" % index)
                 self.append (collection)
@@ -56,7 +68,7 @@ class CollectionAggregator (SatyrObject):
         self.signalMapper.mapped.connect (self.addSongs)
 
     def append (self, collection):
-        print "adding collection", collection
+        logger.debug ("adding collection", collection)
         collection.loadOrScan ()
         self.collections.append (collection)
         self.collsNo= len (self.collections)
@@ -96,7 +108,7 @@ class CollectionAggregator (SatyrObject):
         return song
 
     def indexForSong (self, song):
-        print "PLM.indexForSong", song
+        logger.debug ("PLM.indexForSong", song)
         index= None
         if len (self.songs)>0:
             index= self.songs.index (song)
@@ -128,6 +140,31 @@ class CollectionAggregator (SatyrObject):
                 offset+= collection.count
                 self.count+= collection.count
 
-        print "PLM: count:", self.count
+        logger.debug ("PLM: count:", self.count)
+
+    def prev (self, song):
+        # TODO: implement some other way?
+        index= self.indexForSong (song)
+        return self.songForIndex ((index-1) % self.count)
+
+    def next (self, song):
+        index= self.indexForSong (song)
+        return self.songForIndex ((index+1) % self.count)
+
+    def songForId (self, id):
+        coll= None
+        song= None
+
+        if id is not None:
+            for c in self.collections:
+                song= c.songsById.get (id, None)
+                if song is not None:
+                    break
+
+        return song
+
+    def move (self, song):
+        #
+        pass
 
 # end
