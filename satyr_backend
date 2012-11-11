@@ -32,7 +32,18 @@ from satyr.common import BUS_NAME
 from satyr.backend import Backend, getBackend
 import satyr
 
+# logging
+import logging
+logger = logging.getLogger(__name__)
+logger.addHandler(satyr.loggingHandler)
+
 def main ():
+    # options= KCmdLineOptions ()
+    # options.add ("s").add ("skin <skin-name>", ki18n ("set the skin to use"), "")
+    # options.add ("d").add ("debug", ki18n ("turn on debug"), "")
+    # options.add ("+path", ki18n ("paths to your music collections"))
+    # KCmdLineArgs.addCmdLineOptions (options)
+
     options= KCmdLineOptions ()
     options.add ("+path", ki18n ("paths to your music collections"))
     app, args= satyr.createApp (name="satyr-backend", options=options)
