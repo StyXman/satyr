@@ -28,10 +28,15 @@ from satyr.collection import Collection
 from satyr.collaggr import CollectionAggregator
 from satyr import utils
 
+# logging
+import logging
+logger = logging.getLogger(__name__)
+logger.addHandler(satyr.loggingHandler)
+
 def getBackend (bus):
     try:
         proxy= bus.get_object (BUS_NAME, '/backend')
-        proxy.ping ()
+        logger.debug ("backend.ping(): %s", proxy.ping ())
     except dbus.DBusException:
         proxy= None
 
@@ -65,8 +70,8 @@ class Backend (SatyrObject):
         player= Player (app, playlist, busName, '/player')
         player.finished.connect (app.quit)
 
-    @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
+    @dbus.service.method (BUS_NAME, in_signature='', out_signature='s')
     def ping (self):
-        pass
+        return 'pong'
 
 # end
