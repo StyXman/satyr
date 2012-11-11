@@ -72,7 +72,7 @@ class PlayList (SatyrObject):
             )
         self.loadConfig ()
         # BUG: current is not properly loaded, returns ''
-        print "PlayList():", repr (self.current)
+        logger.debug ("PlayList(): %s", repr (self.current))
 
         # TODO: config
         # TODO: optional parts
