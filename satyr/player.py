@@ -114,7 +114,7 @@ class Player (SatyrObject):
             else:
                 self.song= self.playlist.song
                 
-            logger.debug ("playing", self.filepath)
+            logger.debug ("playing %s", self.song)
             url= utils.path2qurl (self.song.filepath)
             self.media.setCurrentSource (Phonon.MediaSource (url))
             self.media.play ()
