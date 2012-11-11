@@ -84,7 +84,8 @@ class MainWindow (KXmlGuiWindow):
 
         self.ui.searchEntry.textChanged.connect (self.search)
         majV, minV, patchL= utils.phononVersion ()
-        if (majV>4) or (majV==4 and minV>3) or (majV==4 and minV==3 and patchL>1):
+        if ((majV>4) or (majV==4 and minV>3) or (majV==4 and minV==3 and patchL>1) and
+            not (majV==4 and minV==6 and patchL==0)):
             # each second
             self.player.media.setTickInterval (1000);
             self.player.media.tick.connect (self.updateTimes)
