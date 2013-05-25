@@ -1,6 +1,6 @@
 #! /usr/bin/python
 # vim: set fileencoding=utf-8 :
-# (c) 2009 Marcos Dione <mdione@grulic.org.ar>
+# (c) 2009, 2010, 2011, 2012 Marcos Dione <mdione@grulic.org.ar>
 
 # This file is part of satyr.
 
@@ -87,30 +87,6 @@ def main ():
     else:
         mw.backendReady (backend)
 
-    collaggr= CollectionAggregator (app, busName=busName, busPath='/collaggr')
-    if collaggr.collsNo==0:
-        logging.info ("no collections, picking from args")
-        for index in xrange (args.count ()):
-            path= args.arg (index)
-
-            # paths must be bytes, not ascii or utf-8
-            path= utils.qstring2path (path)
-
-            collection= Collection (app, path, busName=busName, busPath="/collection_%04d" % index)
-            collaggr.append (collection)
-            # TODO:
-            # collaggr.createCollection (path)
-
-    # for collection in collaggr.collections:
-    #     collection.scanBegins.connect (mw.scanBegins)
-    #     collection.scanFinished.connect (mw.scanFinished)
-        # they're loaded by the CollAggr
-        # collection.loadOrScan ()
-    #     mw.collectionAdded ()
-
-    # player.finished.connect (app.quit)
-
-    # mw.connectUi (player)
     mw.show ()
 
     return app.exec_ ()

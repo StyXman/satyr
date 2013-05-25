@@ -26,27 +26,43 @@ from satyr.player import Player
 from satyr.playlist import PlayList
 from satyr.collection import Collection
 from satyr.collaggr import CollectionAggregator
+from satyr.models.table_model import QPlayListModel
+from satyr.models.dbus_table_model import 
 from satyr import utils
+
+# we need it before loggin to get the handler
+import satyr
 
 # logging
 import logging
 logger = logging.getLogger(__name__)
 logger.addHandler(satyr.loggingHandler)
 
-def getBackend (bus):
+# TODO: we're mixing everything here. these functions should go somewhere else
+def getProxy (bus, path):
     try:
-        proxy= bus.get_object (BUS_NAME, '/backend')
-        logger.debug ("backend.ping(): %s", proxy.ping ())
+        proxy= bus.get_object (BUS_NAME, path)
     except dbus.DBusException:
         proxy= None
 
     return proxy
 
+def getBackend (bus):
+    proxy= getProxy (bus, '/backend')
+    if proxy is not None:
+        logger.debug ("backend.ping(): %s", proxy.ping ())
+
+    return proxy
+
+def getModel (bus):
+    return getProxy (bus, '/model')
+
 class Backend (SatyrObject):
+    """This object creates all the objects exported via dbus."""
     def __init__ (self, app, args, busName=None, busPath=None):
         SatyrObject.__init__ (self, app, busName, busPath)
         
-        collaggr= CollectionAggregator (app, busName=busName, busPath='/collaggr')
+        self.collaggr= CollectionAggregator (app, busName=busName, busPath='/collaggr')
         if collaggr.collsNo==0:
             print "no collections, picking from args"
             for index in xrange (args.count ()):
@@ -66,9 +82,11 @@ class Backend (SatyrObject):
             # mw.collectionAdded ()
             pass
 
-        playlist= PlayList (app, collaggr, busName=busName, busPath='/playlist')
-        player= Player (app, playlist, busName, '/player')
+        self.playlist= PlayList (app, collaggr, busName=busName, busPath='/playlist')
+        self.player= Player (app, playlist, busName, '/player')
         player.finished.connect (app.quit)
+
+        self.model= QPlaListModel (self, self.playlist, busName=busName, busPath='/model')
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='s')
     def ping (self):

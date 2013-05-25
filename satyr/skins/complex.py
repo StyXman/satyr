@@ -20,13 +20,12 @@
 from PyKDE4.kdeui import KXmlGuiWindow, KGlobalSettings, KActionCollection
 from PyKDE4.kdeui import KApplication
 from PyKDE4.kdeui import KNotification
-from PyQt4.QtCore import QAbstractTableModel, QModelIndex, QVariant, Qt
 from PyQt4.QtCore import QSignalMapper, QSize, QFile
 from PyQt4.QtGui import QItemSelectionModel, QAbstractItemView, QFontMetrics
 from PyQt4.QtGui import QHeaderView, QApplication
 from PyQt4 import uic
 
-# we needed before loggin to get the handler
+# we need it before loggin to get the handler
 import satyr
 
 # logging
@@ -35,12 +34,11 @@ logger = logging.getLogger(__name__)
 logger.addHandler(satyr.loggingHandler)
 
 # local
-from satyr.collaggr import CollectionAggregator
-from satyr.song import TagWriteError
 from satyr.skins import actions
 from satyr.common import BUS_NAME
 from satyr.skins.renamer import Renamer
 from satyr.backend import getBackend
+from satyr.models.dbus_table_model import QPlayListModel
 from satyr import utils
 
 class MainWindow (KXmlGuiWindow):
@@ -130,14 +128,13 @@ class MainWindow (KXmlGuiWindow):
         actions.create (self, self.actionCollection ())
 
     def backendReady (self, backend=None):
-        print "Complex.backendReady(): got a backend!"
+        logger.debug ("Complex.backendReady(): got a backend!")
         if backend is None:
             backend= getBackend (self.bus)
 
         # do I need to store it?
         self.backend= backend
-
-        
+        self.setModel (QPlayListModel (self, backend))
 
     def setModel (self, model):
         logger.debug ("complex.setModel():", model)
@@ -332,170 +329,5 @@ class MainWindow (KXmlGuiWindow):
         logger.debug ("queryExit():")
         # , KApplication.sessionSaving ()
         return True
-
-
-class QPlayListModel (QAbstractTableModel):
-    def __init__ (self, collaggr=None, songs=None, view=None):
-        QAbstractTableModel.__init__ (self, view)
-        # TODO: different delegate for editing tags: one with completion
-        self.view_= view
-        self.playlist= view.playlist
-        self.edited= False
-
-        if songs is None:
-            self.collaggr= collaggr
-            self.collections= self.collaggr.collections
-
-            self.signalMapper= QSignalMapper ()
-            for collNo, collection in enumerate (self.collections):
-                collection.newSongs.connect (self.signalMapper.map)
-                self.signalMapper.setMapping (collection, collNo)
-
-            self.signalMapper.mapped.connect (self.addRows)
-        else:
-            self.collaggr= CollectionAggregator (self, songs=songs)
-
-        self.attrNames= ('artist', 'year', 'collection', 'diskno', 'album', 'trackno', 'title', 'length', 'filepath')
-
-        self.headers= (u'Artist', u'Year', u'Collection', u'CD', u'Album', u'Track', u'Title', u'Length', u'Path')
-        # FIXME: kinda hacky
-        self.fontMetrics= QFontMetrics (KGlobalSettings.generalFont ())
-        # FIXME: (even more) hackish
-        self.columnWidths= ("M"*15, "M"*4, "M"*15, "M"*3, "M"*20, "M"*3, "M"*25, "M"*5, "M"*200)
-        logger.debug ("QPLM: ", self)
-
-    def data (self, modelIndex, role):
-        # TODO: allow to enter to edit mode in filepath but don't save any changes
-        # so we can copy the path, that is...
-        if modelIndex.isValid () and modelIndex.row ()<self.collaggr.count:
-            song= self.collaggr.songForIndex (modelIndex.row ())
-
-            if role==Qt.DisplayRole or role==Qt.EditRole:
-                attr= self.attrNames [modelIndex.column ()]
-                rawData= song[attr]
-                if attr=='filepath':
-                    # filenames as they are
-                    rawData= QFile.decodeName (rawData)
-                elif attr=='title' and role!=Qt.EditRole:
-                    # don't (even try to) add the [#] to the title
-                    try:
-                        queueIndex= self.playlist.songQueue.index (song)
-                        # make it show as starting in 1, otherwise it's confusing
-                        rawData= "[%d] %s" % (queueIndex+1, rawData)
-                    except ValueError:
-                        pass
-                    if song.variousArtists:
-                        rawData= '* '+rawData
-                data= QVariant (rawData)
-
-            elif role==Qt.SizeHintRole:
-                size= self.fontMetrics.size (Qt.TextSingleLine, self.columnWidths[modelIndex.column ()])
-                data= QVariant (size)
-
-            elif role==Qt.BackgroundRole and self.view_.modelIndex is not None:
-                if modelIndex.row ()==self.view_.modelIndex.row ():
-                    # highlight the current song
-                    # must return a QBrush
-                    data= QVariant (QApplication.palette ().dark ())
-                else:
-                    try:
-                        queueIndex= self.playlist.songQueue.index (song)
-                        data= QVariant (QApplication.palette ().mid ())
-                    except ValueError:
-                        data= QVariant ()
-
-            elif role==Qt.ForegroundRole and self.view_.modelIndex is not None:
-                if modelIndex.row ()==self.view_.modelIndex.row ():
-                    # highlight the current song
-                    # must return a QBrush
-                    data= QVariant (QApplication.palette ().brightText ())
-                else:
-                    data= QVariant ()
-
-            else:
-                data= QVariant ()
-        else:
-            data= QVariant ()
-
-        return data
-
-    def flags (self, modelIndex):
-        ans= QAbstractTableModel.flags (self, modelIndex)
-        if modelIndex.column ()<7: # length or filepath are not editable
-            ans= ans|Qt.ItemIsEditable|Qt.ItemIsEditable
-
-        return ans
-
-    def match (self, start, role, value, hits=1, flags=None):
-        # when you press a key on an uneditable cell, QTableView tries to search
-        # calling this function for matching. we already have a way for searching
-        # and it loads the metadata of all the songs anyways
-        # so we disable it by constantly returning an empty list
-        return []
-
-    def setData (self, modelIndex, variant, role=Qt.EditRole):
-        # not length or filepath and editing
-        if modelIndex.column ()<7 and role==Qt.EditRole:
-            logger.debug ("QPLM.setData()", modelIndex.row (), modelIndex.column(), role, ">%s<", unicode (variant.toString ()))
-            song= self.collaggr.songForIndex (modelIndex.row ())
-            attr= self.attrNames[modelIndex.column ()]
-            try:
-                song[attr]= unicode (variant.toString ())
-                # TODO: make a list of dirty songs and commit them later
-                song.saveMetadata ()
-            except TagWriteError:
-                # it failed
-                ans= False
-            else:
-                self.edited= True
-                self.dataChanged.emit (modelIndex, modelIndex)
-                ans= True
-        else:
-            ans= QAbstractTableModel.setData (self, modelIndex, variant, role)
-
-        logger.debug ("QPLM.setData():", modelIndex.row(), modelIndex.column (), role, ans)
-        return ans
-
-    def headerData (self, section, direction, role=Qt.DisplayRole):
-        if direction==Qt.Horizontal and role==Qt.DisplayRole:
-            data= QVariant (self.headers[section])
-        elif direction==Qt.Vertical:
-            if role==Qt.SizeHintRole:
-                # TODO: support bold fonts
-                # again, hacky. 5 for enough witdh for 5 digits
-                size= self.fontMetrics.size (Qt.TextSingleLine, "M"*5)
-                data= QVariant (size)
-            elif role==Qt.TextAlignmentRole:
-                data= QVariant (Qt.AlignRight|Qt.AlignVCenter)
-            else:
-                data= QAbstractTableModel.headerData (self, section, direction, role)
-        else:
-            data= QAbstractTableModel.headerData (self, section, direction, role)
-
-        return data
-
-    def addRows (self, collNo):
-        collection= self.collections[collNo]
-
-        for index, filepath in collection.newSongs_:
-            self.beginInsertRows (QModelIndex (), index, index)
-            self.endInsertRows ()
-
-            modelIndex= self.index (index, 0)
-            self.dataChanged.emit (modelIndex, modelIndex)
-
-    def dirtyRow (self, index):
-        logger.debug ("QLMP.dirtyRow():", index)
-        columns= self.columnCount ()
-        start= self.index (index, 0)
-        end=   self.index (index, columns)
-        self.edited= False
-        self.dataChanged.emit (start, end)
-
-    def rowCount (self, parent=None):
-        return self.collaggr.count
-
-    def columnCount (self, parent=None):
-        return len (self.attrNames)
 
 # end
