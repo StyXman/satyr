@@ -72,7 +72,7 @@ class PlayList (SatyrObject):
             )
         self.loadConfig ()
         # BUG: current is not properly loaded, returns ''
-        print "PlayList():", repr (self.current)
+        logger.debug ("PlayList(): %s", repr (self.current))
 
         # TODO: config
         # TODO: optional parts
@@ -100,7 +100,7 @@ class PlayList (SatyrObject):
             try:
                 s= (self.altFormat % song).decode ('latin1')
             except UnicodeDecodeError:
-                print song.filepath
+                logger.debug (song.filepath)
                 fp= song.filepath.decode ('iso-8859-1')
                 s= u"%s [%s]" % (fp, song.length)
 

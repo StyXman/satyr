@@ -83,7 +83,6 @@ class CollectionAggregator (SatyrObject):
         """Selects the collection that contains the index"""
         prevCollection= self.collections[0]
         for collection in self.collections[1:]:
-            # print index, collection.offset
             if index < collection.offset:
                 break
             prevCollection= collection

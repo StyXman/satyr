@@ -51,7 +51,6 @@ def initMimetypes ():
             for mimetype in available
                 if validMimetype (str (mimetype)) ]
 
-    # print "initMimetypes()", mimetypes
     if mimetypes==[]:
         logger.warning ("No mimetypes! do you have any Phonon backend installed, configured and/or working?")
         # TODO: MessageBox and abort
@@ -167,17 +166,12 @@ class CollectionIndexer (QThread):
                     filepaths= []
                     for filename in files:
                         filepath= root+'/'+filename
-                        # print root, filename
                         # detect mimetype and add only if it's suppourted
                         mimetype= getMimeType (filepath)
                         if mimetype in mimetypes:
                             filepaths.append ((None, filepath))
-                        else:
-                            # print mimetype, mimetypes
-                            pass
 
                     # pyqt4 doesn't do this automatically
-                    # print "CI.run(): found", filepaths
                     self.foundSongs.emit (filepaths)
 
             elif stat.S_ISREG (mode):

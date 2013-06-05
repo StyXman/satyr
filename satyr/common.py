@@ -55,7 +55,6 @@ class ConfigurableObject (object):
         if not self.config is None:
             for k, t, v in self.configValues:
                 v= getattr (self, k)
-                # print 'writing config entry %s= %s' % (k, v)
                 self.config.writeEntry (k, QVariant (v))
             self.config.config ().sync ()
 
@@ -63,18 +62,12 @@ class ConfigurableObject (object):
         # key, type, default
         for k, t, v in self.configValues:
             if not self.config is None:
-                # print 'reading config entry %s.%s [%s]' % (unicode (self.config.name ()), k, repr (v)),
                 a= self.config.readEntry (k, QVariant (v))
-                # print repr (a),
                 if type (v)==QStringList:
-                    # print "QSL!"
                     s= a.toStringList ()
                 else:
-                    # print "just a QS...", type (v)
                     s= a.toString ()
-                # print type (s),
                 v= t (s)
-                # print repr (s), repr (v)
 
             setattr (self, k, v)
 

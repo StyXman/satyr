@@ -156,7 +156,7 @@ class Player (SatyrObject):
             if self.state==Player.PLAYING:
                 self.play ()
         except IndexError:
-            print "playlist empty"
+            logger.info ("playlist empty")
             self.stop ()
 
     def queueNext (self):

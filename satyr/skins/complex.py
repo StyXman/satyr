@@ -133,7 +133,7 @@ class MainWindow (KXmlGuiWindow):
         self.ui.songsList.resizeRowsToContents ()
 
     def log (self, *args):
-        print args
+        logger.debug (args)
 
     def showSong (self, song):
         # save the old modelIndex so we can update that row and the new one
@@ -209,9 +209,6 @@ class MainWindow (KXmlGuiWindow):
             # ensure the current song is shown
             if self.modelIndex is not None:
                 self.showSong (self.modelIndex.row ())
-        else:
-            # print text, self.oldSearchText
-            pass
 
         self.oldSearchText= text
 
@@ -220,7 +217,6 @@ class MainWindow (KXmlGuiWindow):
         song= self.appModel.collaggr.songForIndex (self.modelIndex.row ())
         length= int (song.length)
         remaining= elapsed-length
-        # print "tick! %d [%d] / %d / %d" % (elapsed, tick, length, remaining)
         
         self.ui.elapsedTime.setText (utils.secondsToTime (elapsed))
         self.ui.remainingTime.setText (utils.secondsToTime (remaining))

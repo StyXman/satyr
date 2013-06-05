@@ -67,7 +67,6 @@ class Collection (SatyrObject):
             ('path', str, path),
             )
         self.loadConfig ()
-        # print busPath, self.path
 
         # if the user requests a new path, use it
         if self.path!=path and path!="":
@@ -173,7 +172,6 @@ class Collection (SatyrObject):
         self.scanFinished.emit ()
 
     def progress (self, path):
-        # print 'scanning', path
         # TODO: emit a signal?
         pass
 
@@ -198,7 +196,6 @@ class Collection (SatyrObject):
             # so only paths are compared.
             index= utils.bisect (self.songs, song)
             s= len (self.songs)
-            # print "C.add(): %d==0, %d==%d, %d" % (s, index, s-1, index)
             #  empty list or
             #          index is the last position or
             #                        the new Song's filepath is not the same already in the position (to the left)
@@ -215,16 +212,14 @@ class Collection (SatyrObject):
 
     def indexForSong (self, song):
         # BUG: this is O(n)
-        # HINT: we cannot use bisect now because if the metadata is loaded
+        # NOTE: we cannot use Python's bisect now because if the metadata is loaded
         # (and if we're here it is pretty sure the case)
         # the order changes: when we Collection.loadOrScan() it's filepath based
         # and now it's metadata based.
         # is the above no longer true?
         # somehow it is :(
-        # index= self.songs.index (song)
+        # NOTE: how does filepath-> id impact this?
         index= utils.bisect (self.songs, song, Song.cmpByFilepath)
-        # if index!=foo:
-        #     print "WARN: bisect: %d, index:%d" % (foo, index)
 
         return index
 
@@ -238,6 +233,6 @@ class Collection (SatyrObject):
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def dump (self):
         for song in self.songs:
-            print song.filepath
+            logger.info (song.filepath)
 
 # end

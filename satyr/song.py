@@ -128,13 +128,11 @@ class Song (QObject):
         for attr in ('collection', 'diskno'):
             setattr (self, attr, '')
 
-        # print "loadMetadata():", type (info), type (f)
         if type (info)==tagpy._tagpy.ogg_XiphComment:
 
             # with Xiph comments we're free to set our own
             d= info.fieldListMap ()
             # TODO: make it a class attr
-            # print 'Song.loadMetadata():', self.filepath, info.fieldCount (), info.fieldListMap ().keys ()
             for attr in ('collection', 'diskno'):
                 # names must(?) be uppercase
                 # «It is case insensitive, so artist and ARTIST are the same field»
@@ -162,7 +160,6 @@ class Song (QObject):
                     # 4.2.1   TOAL    [#TOAL Original album/movie/show title] <-- we (ab)use this one for collection
                     # 4.2.1   TPOS    [#TPOS Part of a set]
                     # ['TALB', 'TCON', 'TDRC', 'TIT2', 'TPE1', 'TRCK']
-                    # print "Song.loadMetadata():", d.keys ()
                     for attr, tag in dict (collection='TOAL', diskno='TPOS').items ():
                         try:
                             value= self.sanitize (attr, d[tag][0].toString ()) # TODO: support a real list
@@ -188,18 +185,15 @@ class Song (QObject):
     def sanitize (self, attr, value):
         value= value.strip ()
         if attr=='diskno':
-            # print "Song.sanitize():", value
             # sometimes it's stored as x/N
             pos= value.find ('/')
             if pos>-1:
                 value= value[:pos]
-            # print "Song.sanitize():", value
             if value!='':
                 value= int (value)
             else:
                 value= 0
 
-        # print "Song.sanitize():", value
         return value
 
     def __getitem__ (self, key):
@@ -283,7 +277,6 @@ class Song (QObject):
                     #None(TagLib::Tag {lvalue}, unsigned int)
                 for attr, tag in self.tagForAttr.items ():
                     value= getattr (self, attr, None)
-                    # print
                     try:
                         setattr (info, tag, value)
                     except Exception, e:
@@ -306,7 +299,6 @@ class Song (QObject):
                         else:
                             info.removeField (tag)
 
-                    # print 'Song.saveMetadata():', info.fieldCount (), info.fieldListMap ().keys ()
 
                 elif type (info)==tagpy._tagpy.Tag:
                     # this is somewhat generic, so we try guessing different types
@@ -324,7 +316,6 @@ class Song (QObject):
                             # 4.2.1   TPOS    [#TPOS Part of a set]
                             # ['TALB', 'TCON', 'TDRC', 'TIT2', 'TPE1', 'TRCK']
                             d= t2.frameListMap ()
-                            # print "Song.saveMetadata():", d.keys ()
                             for attr, tag in dict (collection='TOAL', diskno='TPOS').items ():
                                 # BUG? why
                                 value= unicode (getattr (self, attr))
