@@ -1,3 +1,5 @@
+* python3, byte for filepaths and no kde API for file manip (rename, delete)
+
 * ask the user if he wants to hear the songs just added.
 * convert UI into actions, then a toolbar
 * albums!
