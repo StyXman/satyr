@@ -136,36 +136,37 @@ class MainWindow (KXmlGuiWindow):
         logger.debug (args)
 
     def showSong (self, song):
-        # save the old modelIndex so we can update that row and the new one
-        oldModelIndex= self.modelIndex
-        if self.songIndexSelectedByUser is not None:
-            (song, modelIndex)= self.songIndexSelectedByUser
-            self.songIndexSelectedByUser= None
-        
-        index= self.playlist.collaggr.indexForSong (song)
-        logger.debug ("complex.showSong()", index)
-        # I also have to save it for the same reason
-        # but using the other model!
-        # BUG: this is getting ugly
-        modelIndex= self.modelIndex= self.appModel.index (index, 0)
+        if song is not None:
+            # save the old modelIndex so we can update that row and the new one
+            oldModelIndex= self.modelIndex
+            if self.songIndexSelectedByUser is not None:
+                (song, modelIndex)= self.songIndexSelectedByUser
+                self.songIndexSelectedByUser= None
 
-        # mark data in old song and new song as dirty
-        # and let the view update the hightlight
-        # FIXME? yes, this could be moved to the model (too many self.appModel's)
-        # FIXME: temporarily if'ed until I resolve the showSong() at boot time
-        if oldModelIndex is not None:
-            self.appModel.dirtyRow (oldModelIndex.row ())
-        self.appModel.dirtyRow (self.modelIndex.row ())
+            index= self.playlist.collaggr.indexForSong (song)
+            logger.debug ("complex.showSong()", index)
+            # I also have to save it for the same reason
+            # but using the other model!
+            # BUG: this is getting ugly
+            modelIndex= self.modelIndex= self.appModel.index (index, 0)
 
-        logger.debug ("default.showSong()", song)
-        # FIXME? QAbstractItemView.EnsureVisible config?
-        self.ui.songsList.scrollTo (modelIndex, QAbstractItemView.PositionAtCenter)
-        # move the selection cursor too
-        self.ui.songsList.setCurrentIndex (modelIndex)
+            # mark data in old song and new song as dirty
+            # and let the view update the hightlight
+            # FIXME? yes, this could be moved to the model (too many self.appModel's)
+            # FIXME: temporarily if'ed until I resolve the showSong() at boot time
+            if oldModelIndex is not None:
+                self.appModel.dirtyRow (oldModelIndex.row ())
+            self.appModel.dirtyRow (self.modelIndex.row ())
 
-        # set the window title
-        # TODO: also update on tag edition
-        self.setCaption (self.playlist.formatSong (song))
+            logger.debug ("default.showSong()", song)
+            # FIXME? QAbstractItemView.EnsureVisible config?
+            self.ui.songsList.scrollTo (modelIndex, QAbstractItemView.PositionAtCenter)
+            # move the selection cursor too
+            self.ui.songsList.setCurrentIndex (modelIndex)
+
+            # set the window title
+            # TODO: also update on tag edition
+            self.setCaption (self.playlist.formatSong (song))
 
     def changeSong (self, modelIndex):
         # FIXME: later we ask for the index... doesn't make sense!
