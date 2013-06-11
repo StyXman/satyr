@@ -260,34 +260,29 @@ class Song (QObject):
             else:
                 info= fr.tag ()
 
+                logger.debug ("%r", info)
+
                 if type (info)==tagpy._tagpy.Tag and type (f)==tagpy._tagpy.flac_File:
                     # flac files use xiph comments
                     # grab the original tagset
                     info= f.xiphComment ()
 
-                # BUG:
-                #Traceback (most recent call last):
-                #File "/home/mdione/src/projects/satyr/collection-agregator/satyr/skins/complex.py", line 327, in setData
-                    #song.saveMetadata ()
-                #File "/home/mdione/src/projects/satyr/collection-agregator/satyr/song.py", line 154, in saveMetadata
-                    #setattr (info, tag, value)
-                #Boost.Python.ArgumentError: Python argument types in
-                    #None.None(Tag, unicode)
-                #did not match C++ signature:
-                    #None(TagLib::Tag {lvalue}, unsigned int)
                 for attr, tag in self.tagForAttr.items ():
                     value= getattr (self, attr, None)
                     try:
+                        logger.debug ("%s-> %r", tag, value)
                         setattr (info, tag, value)
                     except Exception, e:
                         logger.warning (type (e))
                         logger.warning ("ValueError: %s= (%s)%s", tag, type (value), value)
 
+                logger.debug ("%r", info)
+                
                 # 'faked' tags; must be handled file type by file type
                 if type (info)==tagpy._tagpy.ogg_XiphComment:
                     # http://www.xiph.org/vorbis/doc/v-comment.html
                     # with Xiph comments we're free to set our own
-                    # TODO: make it (what?!?) a class attr
+                    # TODO: make the list a class attr
                     for attr in ('collection', 'diskno'):
                         # names must(?) be uppercase
                         # «It is case insensitive, so artist and ARTIST are the same field»
@@ -296,8 +291,10 @@ class Song (QObject):
                         if value!='' and value!=0:
                             # the conversion to unicode is because the values are int
                             info.addField (tag, unicode (value), True) # yes, replace
+                            logger.debug ("%s-> %r", tag, unicode (value))
                         else:
                             info.removeField (tag)
+                            logger.debug ("removed %s", tag)
 
 
                 elif type (info)==tagpy._tagpy.Tag:
@@ -319,24 +316,23 @@ class Song (QObject):
                             for attr, tag in dict (collection='TOAL', diskno='TPOS').items ():
                                 # BUG? why
                                 value= unicode (getattr (self, attr))
-                                # convert to ByteVector
-                                # value= value.encode ('utf-16')
 
-                                if value not in (u'', u'0'):
-                                    try:
-                                        frame= d[tag][0]
-                                        # frame= tagpy._tagpy.id3v2_TextIdentificationFrame (tag)
-                                        t2.removeFrame (frame, False)
-                                    except KeyError:
-                                        pass
-                                    finally:
+                                try:
+                                    frame= d[tag][0]
+                                    if value not in (u'', u'0'):
+                                        logger.debug ("%s-> %r", tag, unicode (value))
                                         frame= tagpy._tagpy.id3v2_TextIdentificationFrame (tag)
                                         frame.setText (value)
                                         t2.addFrame (frame)
+                                    else:
+                                        t2.removeFrame (frame, False)
+                                        logger.debug ("removed %s", tag)
+                                except KeyError:
+                                    logger.debug ("cannot find frame for %s", tag)
 
                         else:
                             # TODO: else?
-                            pass
+                            logger.debug ("else! %r, %r", t1, t2)
                     else:
                         logger.warning ('**** saveMetadata(): file type not supportd yet', type (f))
 
@@ -347,6 +343,8 @@ class Song (QObject):
                     raise TagWriteError
 
                 self.dirty= False
+        else:
+            logger.debug ('not dirty! %s', self)
 
     def metadataNotNull (self):
         if not self.loaded:
@@ -387,7 +385,7 @@ class Song (QObject):
         ans= self.cmpByFilepath (other)
         # and only do it if the paths are different
         if ans!=0 and self.loaded and other.loaded:
-            self.cmpByMetadata (other)
+            ans= self.cmpByMetadata (other)
 
         return ans
 
