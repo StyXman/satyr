@@ -45,7 +45,7 @@ from satyr import utils
 def main ():
     app, args= satyr.createApp ()
 
-    if False and args.getOption ("debug"):
+    if args.isSet ("debug"):
         os.environ["PHONON_VLC_DEBUG"]=  "1"
         os.environ["PHONON_GST_DEBUG"]=  "1"
         os.environ["PHONON_XINE_DEBUG"]= "1"
