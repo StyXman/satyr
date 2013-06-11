@@ -18,7 +18,7 @@
 
 # qt/kde related
 from PyKDE4.kdecore import KSharedConfig
-from PyQt4.QtCore import QObject, QVariant, QStringList
+from PyQt4.QtCore import QObject
 
 # logging
 import logging
@@ -55,15 +55,15 @@ class ConfigurableObject (object):
         if not self.config is None:
             for k, t, v in self.configValues:
                 v= getattr (self, k)
-                self.config.writeEntry (k, QVariant (v))
+                self.config.writeEntry (k, v)
             self.config.config ().sync ()
 
     def loadConfig (self):
         # key, type, default
         for k, t, v in self.configValues:
             if not self.config is None:
-                a= self.config.readEntry (k, QVariant (v))
-                if type (v)==QStringList:
+                a= self.config.readEntry (k, v)
+                if type (v)==list:
                     s= a.toStringList ()
                 else:
                     s= a.toString ()
@@ -85,10 +85,8 @@ class MetaObject (MetaQObject, MetaDBusObject, MetaCObject):
         MetaCObject.__init__ (cls, name, bases, dct)
 
 
-class SatyrObject (dbus.service.Object, QObject, ConfigurableObject):
+class SatyrObject (dbus.service.Object, QObject, ConfigurableObject, metaclass=MetaObject):
     """A QObject with a DBus interface and a section in the config file"""
-    __metaclass__= MetaObject
-
     def __init__ (self, parent, busName=None, busPath=None):
         # print busName, busPath
         dbus.service.Object.__init__ (self, busName, busPath)

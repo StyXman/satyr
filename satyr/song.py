@@ -22,7 +22,7 @@ from PyQt4.QtCore import QObject, pyqtSignal
 
 # std python
 import types
-from md5 import md5
+from hashlib import md5
 
 # other libs
 import tagpy
@@ -108,7 +108,7 @@ class Song (QObject):
                 # flac files use xiph comments
                 # grab the original tagset
                 info= f.xiphComment ()
-        except Exception, e:
+        except Exception as e:
             logger.debug ('----- loadMetadata()')
             logger.debug (self.filepath)
             logger.debug (type (e), e)
@@ -249,7 +249,7 @@ class Song (QObject):
                 try:
                     fr= tagpy.FileRef (self.filepath)
                     f= fr.file ()
-                except Exception, e:
+                except Exception as e:
                     logger.debug ('----- saveMetadata()')
                     logger.debug (self.filepath)
                     logger.debug (type (e), e)
@@ -279,7 +279,7 @@ class Song (QObject):
                     value= getattr (self, attr, None)
                     try:
                         setattr (info, tag, value)
-                    except Exception, e:
+                    except Exception as e:
                         logger.warning (type (e))
                         logger.warning ("ValueError: %s= (%s)%s", tag, type (value), value)
 
@@ -322,7 +322,7 @@ class Song (QObject):
                                 # convert to ByteVector
                                 # value= value.encode ('utf-16')
 
-                                if value not in (u'', u'0'):
+                                if value not in ('', '0'):
                                     try:
                                         frame= d[tag][0]
                                         # frame= tagpy._tagpy.id3v2_TextIdentificationFrame (tag)
@@ -355,7 +355,7 @@ class Song (QObject):
         # we could do it more complex, but I think this is enough
         # tagpy returns u'' or 0 instead of not defining the attr at all
         # so we see that indeed it reurns unicode. see comment in loadMetadata()
-        return (self.title is not None and self.title!=u'')
+        return (self.title is not None and self.title!='')
 
     def cmpByMetadata (self, other):
         try:
@@ -366,7 +366,7 @@ class Song (QObject):
                 if ans!=0:
                     break
 
-        except Exception, e:
+        except Exception as e:
             logger.debug ('>>>>> cmp()')
             logger.debug (self.filepath)
             logger.debug (e)
