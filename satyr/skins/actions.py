@@ -26,7 +26,6 @@ import satyr
 # logging
 import logging
 logger = logging.getLogger(__name__)
-logger.addHandler(satyr.loggingHandler)
 
 def traverseObjects (root, fqn):
     components= fqn.split ('.')

@@ -33,7 +33,7 @@ import satyr
 # logging
 import logging
 logger = logging.getLogger(__name__)
-logger.addHandler(satyr.loggingHandler)
+logger.setLevel (logging.DEBUG)
 
 # local
 from satyr import utils
@@ -225,7 +225,7 @@ class Song (QObject):
         # we cache; otherwise we could set loaded to False
         # and let other functions to resolve it.
         try:
-            logger.debug ("__setitem__():", key, value)
+            logger.debug ("__setitem__(): %s >%r<", key, value)
             setattr (self, key, value)
         except AttributeError:
             raise TagWriteError
@@ -252,7 +252,7 @@ class Song (QObject):
                 except Exception, e:
                     logger.debug ('----- saveMetadata()')
                     logger.debug (self.filepath)
-                    logger.debug (type (e), e)
+                    logger.debug ("%s: %s", type (e), e)
                     fr= None
 
             if fr is None:

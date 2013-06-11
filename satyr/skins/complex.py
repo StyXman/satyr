@@ -32,7 +32,7 @@ import satyr
 # logging
 import logging
 logger = logging.getLogger(__name__)
-logger.addHandler(satyr.loggingHandler)
+logger.setLevel (logging.DEBUG)
 
 # local
 from satyr.collaggr import CollectionAggregator
@@ -127,7 +127,7 @@ class MainWindow (KXmlGuiWindow):
         actions.create (self, self.actionCollection ())
 
     def setModel (self, model):
-        logger.debug ("complex.setModel():", model)
+        logger.debug ("complex.setModel(): %s", model)
         self.model= model
         self.ui.songsList.setModel (self.model)
         self.ui.songsList.resizeRowsToContents ()
@@ -144,7 +144,7 @@ class MainWindow (KXmlGuiWindow):
                 self.songIndexSelectedByUser= None
 
             index= self.playlist.collaggr.indexForSong (song)
-            logger.debug ("complex.showSong()", index)
+            logger.debug ("complex.showSong(): %s", index)
             # I also have to save it for the same reason
             # but using the other model!
             # BUG: this is getting ugly
@@ -158,7 +158,7 @@ class MainWindow (KXmlGuiWindow):
                 self.appModel.dirtyRow (oldModelIndex.row ())
             self.appModel.dirtyRow (self.modelIndex.row ())
 
-            logger.debug ("default.showSong()", song)
+            logger.debug ("default.showSong(): %s", song)
             # FIXME? QAbstractItemView.EnsureVisible config?
             self.ui.songsList.scrollTo (modelIndex, QAbstractItemView.PositionAtCenter)
             # move the selection cursor too
@@ -170,7 +170,7 @@ class MainWindow (KXmlGuiWindow):
 
     def changeSong (self, modelIndex):
         # FIXME: later we ask for the index... doesn't make sense!
-        logger.debug ("default.changeSong()", modelIndex.row ())
+        logger.debug ("default.changeSong(): %s", modelIndex.row ())
         song= self.model.collaggr.songForIndex (modelIndex.row ())
         self.songIndexSelectedByUser= (song, modelIndex)
         self.player.play (song)
@@ -230,12 +230,12 @@ class MainWindow (KXmlGuiWindow):
         if len (self.ui.songsList.selectedIndexes ())>1 and self.appModel.edited:
             # more than one cell selected
             # we copy was has just been edited tho the rest of selected cells
-            logger.debug ("complex.copyEditToSelection()", self.copying)
+            logger.debug ("complex.copyEditToSelection(): %s", self.copying)
             if not self.copying:
                 self.copying= True
                 # data() already returns QVariant
                 value= self.appModel.data (tl, Qt.DisplayRole)
-                logger.debug ("complex.copyEditToSelection()", value)
+                logger.debug ("complex.copyEditToSelection(): %s", value)
                 # just copy the column that has been edited...
                 column= tl.column ()
                 for modelIndex in self.ui.songsList.selectedIndexes ():
@@ -270,7 +270,7 @@ class MainWindow (KXmlGuiWindow):
         # so we don't keep (de)queuing if several cells of the same song are selected
         selectedSongs= []
         for modelIndex in self.ui.songsList.selectedIndexes ():
-            logger.debug ("complex.queue()", modelIndex.row ())
+            logger.debug ("complex.queue(): %s", modelIndex.row ())
             if modelIndex.row () not in selectedSongs:
                 song= self.model.collaggr.songForIndex (modelIndex.row ())
                 index= modelIndex.row ()
@@ -346,7 +346,7 @@ class QPlayListModel (QAbstractTableModel):
         self.fontMetrics= QFontMetrics (KGlobalSettings.generalFont ())
         # FIXME: (even more) hackish
         self.columnWidths= ("M"*15, "M"*4, "M"*15, "M"*3, "M"*20, "M"*3, "M"*25, "M"*5, "M"*200)
-        logger.debug ("QPLM: ", self)
+        logger.debug ("QPLM: %s", self)
 
     def data (self, modelIndex, role):
         # TODO: allow to enter to edit mode in filepath but don't save any changes
@@ -420,7 +420,7 @@ class QPlayListModel (QAbstractTableModel):
     def setData (self, modelIndex, variant, role=Qt.EditRole):
         # not length or filepath and editing
         if modelIndex.column ()<7 and role==Qt.EditRole:
-            logger.debug ("QPLM.setData()", modelIndex.row (), modelIndex.column(), role, ">%s<", unicode (variant.toString ()))
+            logger.debug ("QPLM.setData(): %d, %d, %s, >%s<", modelIndex.row (), modelIndex.column(), role, unicode (variant.toString ()))
             song= self.collaggr.songForIndex (modelIndex.row ())
             attr= self.attrNames[modelIndex.column ()]
             try:
@@ -437,7 +437,7 @@ class QPlayListModel (QAbstractTableModel):
         else:
             ans= QAbstractTableModel.setData (self, modelIndex, variant, role)
 
-        logger.debug ("QPLM.setData():", modelIndex.row(), modelIndex.column (), role, ans)
+        logger.debug ("QPLM.setData(): %d, %d, %s, >%s<", modelIndex.row(), modelIndex.column (), role, ans)
         return ans
 
     def headerData (self, section, direction, role=Qt.DisplayRole):
@@ -469,7 +469,7 @@ class QPlayListModel (QAbstractTableModel):
             self.dataChanged.emit (modelIndex, modelIndex)
 
     def dirtyRow (self, index):
-        logger.debug ("QLMP.dirtyRow():", index)
+        logger.debug ("QLMP.dirtyRow(): %s", index)
         columns= self.columnCount ()
         start= self.index (index, 0)
         end=   self.index (index, columns)
