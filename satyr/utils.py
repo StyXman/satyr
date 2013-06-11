@@ -26,6 +26,8 @@ import types
 import os.path
 from datetime import time
 
+from os import mkdir
+
 # logging
 import logging
 logger = logging.getLogger(__name__)
@@ -114,5 +116,23 @@ def bisect (a, x, f=cmp):
             hi = mid
 
     return lo
+
+def makedirs(_dirname):
+    """
+    Better replacement for os.makedirs():
+    it doesn't fails if some intermediate dir already exists.
+    """
+
+    dirs = _dirname.split('/')
+    i = ''
+    while len(dirs):
+        i += dirs.pop(0)+'/'
+        try:
+            mkdir(i)
+        except OSError, e:
+            # print "%s failed: %s" % (i, e)
+            pass
+        else:
+            logger.debug ('make dir %s' % i)
 
 # end
