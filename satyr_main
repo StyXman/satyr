@@ -33,6 +33,7 @@ import satyr
 import logging
 logger = logging.getLogger(__name__)
 logger.addHandler(satyr.loggingHandler)
+logger.setLevel (logging.INFO)
 
 # local
 from satyr.common import BUS_NAME, ConfigurableObject
@@ -49,6 +50,9 @@ def main ():
         os.environ["PHONON_VLC_DEBUG"]=  "1"
         os.environ["PHONON_GST_DEBUG"]=  "1"
         os.environ["PHONON_XINE_DEBUG"]= "1"
+        logger.setLevel (logging.DEBUG)
+
+    logger.debug ("test!")
 
     dbus.mainloop.qt.DBusQtMainLoop (set_as_default=True)
     bus= dbus.SessionBus ()
