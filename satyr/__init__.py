@@ -62,9 +62,9 @@ def createApp (args=sys.argv):
 
     KCmdLineArgs.init (args, aboutData)
     options= KCmdLineOptions ()
-    options.add ("s").add ("skin <skin-name>", ki18n ("set the skin to use"), "")
-    # options.add ("d").add ("debug", ki18n ("turn on debug"), "")
-    options.add ("+path", ki18n ("paths to your music collections"))
+    options.add ("s").add ("skin <skin-name>", ki18n ("Set the skin to use"), "default")
+    options.add ("d").add ("debug", ki18n ("Turn on debug"))
+    options.add ("+path", ki18n ("Paths to your music collections"))
     KCmdLineArgs.addCmdLineOptions (options)
 
     app= App ()
