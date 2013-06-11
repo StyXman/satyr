@@ -118,6 +118,7 @@ class Collection (SatyrObject):
 
     def save (self):
         if self.count>0:
+            utils.makedirs (os.path.dirname (self.collectionFile))
             try:
                 logger.debug ('saving collection to', self.collectionFile)
                 f= open (self.collectionFile, 'w+')
