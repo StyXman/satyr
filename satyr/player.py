@@ -163,7 +163,7 @@ class Player (SatyrObject):
         logger.debug ("queueing next!")
         self.playlist.next ()
         self.song= self.playlist.song
-        logger.debug ("--> queueing next!", self.song)
+        logger.debug ("--> queueing next!: %s", self.song)
         url= utils.path2qurl (self.song.filepath)
         source= Phonon.MediaSource (url)
         self.media.enqueue (source)
