@@ -110,7 +110,7 @@ class Collection (SatyrObject):
             ans= True
         except IOError, e:
             logger.warning ("no database!")
-            logger.warning ('FAILED!', e)
+            logger.warning ('FAILED! %s', e)
             ans= False
 
         return ans
