@@ -33,7 +33,7 @@ import satyr
 # logging
 import logging
 logger = logging.getLogger(__name__)
-logger.setLevel (logging.DEBUG)
+# logger.setLevel (logging.DEBUG)
 
 # local
 from satyr import utils
@@ -111,7 +111,7 @@ class Song (QObject):
         except Exception, e:
             logger.debug ('----- loadMetadata()')
             logger.debug (self.filepath)
-            logger.debug (type (e), e)
+            logger.debug ("%s: %s", type (e), e)
             fr= None
             info= None
             f= None
