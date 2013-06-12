@@ -35,6 +35,7 @@ import satyr
 # logging
 import logging
 logger = logging.getLogger(__name__)
+logger.setLevel (logging.DEBUG)
 
 # local
 from satyr.common import SatyrObject, BUS_NAME, configEntryToBool
@@ -108,7 +109,7 @@ class Player (SatyrObject):
             # BUG: somethong's veeeeery wrong here...
             if song is not None:
                 self.song= song
-                logger.debug ("player.play()", song)
+                logger.debug ("player.play(): %s", song)
                 self.playlist.setCurrent (song)
             else:
                 self.song= self.playlist.song
