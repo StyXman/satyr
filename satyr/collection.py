@@ -119,7 +119,7 @@ class Collection (SatyrObject):
         if self.count>0:
             utils.makedirs (os.path.dirname (self.collectionFile))
             try:
-                logger.debug ('saving collection to', self.collectionFile)
+                logger.debug ('saving collection to %s', self.collectionFile)
                 f= open (self.collectionFile, 'w+')
                 # we must add the trailing newline
                 for song in self.songs:
