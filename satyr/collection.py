@@ -58,7 +58,6 @@ class Collection (SatyrObject, ProcessEvent):
     def __init__ (self, parent, path="", relative=False, busName=None, busPath=None):
         SatyrObject.__init__ (self, parent, busName, busPath)
 
-
         self.songs= []
         self.songsById= {}
         self.count= 0
@@ -146,6 +145,9 @@ class Collection (SatyrObject, ProcessEvent):
         SatyrObject.saveConfig (self)
 
     def process_IN_CREATE (self, event):
+        # self.newFiles (event.name)
+        # this way I can see if when I rename a file
+        # the file was found by inotify or added properly to the collection
         self.newFiles (event.pathname)
         
     # @pyqtSlot ()
@@ -184,40 +186,48 @@ class Collection (SatyrObject, ProcessEvent):
         # TODO: emit a signal?
         pass
 
-    def add (self, filepaths):
+    def add (self, fds):
         # TODO: emit the list
         self.newSongs_= []
+
+        logger.debug ("%r", fds)
         # we get a QStringList; convert to a list so we can python-iterate it
-        for id, filepath in list (filepaths):
+        for id, song in list (fds):
             # filepath can be a QString because this method
             # is also connected to a signal and they get converted by ptqt4
-            if isinstance (filepath, QString):
+            if isinstance (song, QString):
                 # paths must be bytes, not ascii or utf-8
-                filepath= utils.qstring2path (filepath)
+                song= utils.qstring2path (song)
 
-            # normalize! this way we avoid this dupes (couldn't find where they're originated)
-            # C.add(): [(4081, '/home/mdione/media/music/Poison/2000 - Crack a smile... and more!//01 - Best thing you ever had.ogg')]
-            # C.add(): [(4082, '/home/mdione/media/music/Poison/2000 - Crack a smile... and more!/01 - Best thing you ever had.ogg')]
-            song= Song (self, os.path.normpath (filepath), id=id)
+            if isinstance (song, str):
+                # normalize! this way we avoid this dupes (couldn't find where they're originated)
+                # C.add(): [(4081, '/home/mdione/media/music/Poison/2000 - Crack a smile... and more!//01 - Best thing you ever had.ogg')]
+                # C.add(): [(4082, '/home/mdione/media/music/Poison/2000 - Crack a smile... and more!/01 - Best thing you ever had.ogg')]
+                song= Song (self, os.path.normpath (song), id=id)
 
-            # this works because Song.__cmp__() does not compare tags if one song
-            # has not loaded them and Song does not do it automatically
-            # so only paths are compared.
-            index= utils.bisect (self.songs, song)
-            s= len (self.songs)
-            #  empty list or
-            #          index is the last position or
-            #                        the new Song's filepath is not the same already in the position (to the left)
-            if s==0 or index==s-1 or self.songs[index-1].filepath!=song.filepath:
-                self.songs.insert (index, song)
-                self.songsById[song.id]= song
-                self.count+= 1
-                if self.loadMetadata:
-                    song.loadMetadata ()
-                self.newSongs_.append ((index, filepath))
+            if song.id not in self.songsById:
+                # this works because Song.__cmp__() does not compare tags if one song
+                # has not loaded them and Song does not do it automatically
+                # so only paths are compared.
+                index= utils.bisect (self.songs, song)
+                s= len (self.songs)
+                #  empty list or
+                #          index is the last position or
+                #                        the new Song's filepath is not the same already in the position (to the left)
+                if s==0 or index==s-1 or self.songs[index-1].filepath!=song.filepath:
+                    self.songs.insert (index, song)
+                    self.songsById[song.id]= song
+                    self.count+= 1
+                    if self.loadMetadata:
+                        song.loadMetadata ()
+                    self.newSongs_.append ((index, song.filepath))
+            else:
+                logger.debug ("song %r already known by its id %s", song.filepath, song.id)
+                # TODO: ugh
 
-        logger.debug ("C.add(): %r", self.newSongs_)
-        self.newSongs.emit ()
+        if len (self.newSongs_)>0:
+            logger.debug ("C.add(): %r", self.newSongs_)
+            self.newSongs.emit ()
 
     def indexForSong (self, song):
         # BUG: this is O(n)
