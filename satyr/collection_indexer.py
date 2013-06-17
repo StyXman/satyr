@@ -35,6 +35,7 @@ import satyr
 # logging
 import logging
 logger = logging.getLogger(__name__)
+logger.setLevel (logging.DEBUG)
 
 # local
 from satyr.common import SatyrObject, BUS_NAME
@@ -82,24 +83,6 @@ def getMimeType (filepath):
 
     return str (mimetype.name ())
 
-# BUG:
-#Renamer.rename() PyQt4.QtCore.QUrl(u'file:///home/mdione/media/music/Peter Gabriel/Secret world live/2/01-Digging in the dirt.mp3') -> PyQt4.QtCore.QUrl(u'file:///home/mdione/media/music/Peter Gabriel/1994 - Secret world live/Disk 02/01 - Digging in the dirt.mp3')
-#C.scan(/home/mdione/media/music/Peter Gabriel/1994 - Secret world live/Disk 02)
-#CI.walk(): /home/mdione/media/music/Peter Gabriel/1994 - Secret world live/Disk 02
-#C.scan(/home/mdione/media/music/Peter Gabriel/1994 - Secret world live/Disk 02/01 - Digging in the dirt.mp3)
-#CI.run(): found /home/mdione/media/music/Peter Gabriel/1994 - Secret world live/Disk 02/01 - Digging in the dirt.mp3
-#Renamer.jobFinished(): success!
-#C.add(): [(8129, '/home/mdione/media/music/Peter Gabriel/1994 - Secret world live/Disk 02//01 - Digging in the dirt.mp3')]
-#C.scanFinished()
-#PLM: count: 17943
-#prime selected: 1429
-#playlist.setCurrent() 8131
-#C.add(): [(8130, '/home/mdione/media/music/Peter Gabriel/1994 - Secret world live/Disk 02/01 - Digging in the dirt.mp3')]
-#C.scanFinished()
-#PLM: count: 17944
-#prime selected: 719
-#playlist.setCurrent() 8131
-
 class CollectionIndexer (QThread):
     # finished= pyqtSignal (QThread)
     scanning= pyqtSignal (unicode)
@@ -107,12 +90,15 @@ class CollectionIndexer (QThread):
 
     def __init__ (self, path, parent=None, relative=False):
         QThread.__init__ (self, parent)
+        if type (path)==unicode:
+            logger.debug ("%r -> %r", path, path.encode ('latin-1'))
+            path= path.encode ('latin-1')
         self.path= path
         self.relative= relative
         initMimetypes ()
 
     def walk (self, root, subdir='', relative=False):
-        logger.debug ("CI.walk():", root, subdir)
+        logger.debug ("CI.walk(): %r -> %r", root, subdir)
         # TODO: support single filenames
         # if not os.path.isdir (root):
         #     return root
@@ -129,7 +115,7 @@ class CollectionIndexer (QThread):
             path= root+'/'+subdir+'/'+name
 
             if os.path.isdir (path):
-                logger.debug ("CI.walk(): [DIR] %s", path)
+                logger.debug ("CI.walk(): [DIR] %r", path)
                 dirs.append (name)
             else:
                 nondirs.append (name)
@@ -155,7 +141,7 @@ class CollectionIndexer (QThread):
         try:
             mode= os.stat (self.path).st_mode
         except OSError, e:
-            print e
+            logger.exception ("%r", self.path)
         else:
             if stat.S_ISDIR (mode):
                 # os.path.join fails on non-ASCII UTF-8 filenames
@@ -174,11 +160,11 @@ class CollectionIndexer (QThread):
                     self.foundSongs.emit (filepaths)
 
             elif stat.S_ISREG (mode):
-                # HINT: collection_indexer.py:110: Local variable (mimetype) shadows global defined on line 37
+                # NOTE: collection_indexer.py:110: Local variable (mimetype) shadows global defined on line 37
                 # it's not a global
                 mimetype= getMimeType (self.path)
                 if mimetype in mimetypes:
-                    logger.debug ("CI.run(): found", self.path)
+                    logger.debug ("CI.run(): found %r", self.path)
                     self.foundSongs.emit ([ (None, self.path) ])
 
 # end
