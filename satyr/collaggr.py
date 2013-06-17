@@ -163,9 +163,11 @@ class CollectionAggregator (SatyrObject):
         return song
 
     def rename (self, renamer, songs):
-        # TODO: parametrize the main music colleciton
+        # TODO: parametrize the main music collection
         mainColl= self.collections[0]
         base= mainColl.path
+
+        renamed_songs= []
 
         for song in songs:
             dstPath= renamer.songPath (base, song)
@@ -178,5 +180,11 @@ class CollectionAggregator (SatyrObject):
             except IOError as e:
                 logger.warn ("exception raised: %s", e)
                 logger.exception ("%s", e)
+            else:
+                renamed_songs.append (song)
+
+        # TODO: remove from the old collection
+        # even if it's the same one
+        mainColl.add ([(song.id, song) for song in renamed_songs])
 
 # end
