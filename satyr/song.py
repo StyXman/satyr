@@ -177,10 +177,10 @@ class Song (QObject):
                     # TODO: else?
                     # if we convert to v2 above, there's no else :)
                     pass
-            else:
+            elif f is not None:
                 logger.warning ('**** loadMetadata(): file type not supported yet: %s', type (f))
 
-        else:
+        elif info is not None:
             logger.warning ('**** loadMetadata(): tagset type not supported yet: %s', type (info))
 
         self.metadadaChanged.emit ()
