@@ -15,20 +15,17 @@
 # You should have received a copy of the GNU General Public License
 # along with satyr.  If not, see <http://www.gnu.org/licenses/>.
 
-# qt/kde related
-from PyKDE4.kio import KIO
-from PyKDE4.kdecore import KUrl, KJob
-from PyQt4.QtCore import QDir
-
 # std python
 import os.path
+import os
 
 # we needed before loggin to get the handler
 import satyr
 
 # logging
 import logging
-logger = logging.getLogger(__name__)
+logger= logging.getLogger(__name__)
+logger.setLevel (logging.DEBUG)
 
 # local
 from satyr.common import ConfigurableObject
@@ -77,48 +74,22 @@ class Renamer (ConfigurableObject):
 
         return ans
 
-    def jobFinished (self, job):
-        try:
-            self.jobs.remove (job)
-        except ValueError:
-            logger.warning ("Renamer.jobFinished()", job, "not found!")
-
-        if job.error()==KJob.NoError:
-            # TODO: update iface
-            logger.debug ("Renamer.jobFinished(): success!")
-        else:
-            # job.errorString () is a QString
-            logger.warning ("Renamer.jobFinished(): ***** error! *****", unicode (job.errorString ()))
-            # TODO: Renamer.jobFinished(): ***** error! ***** A file named foo already exists.
-
     def rename (self, songs):
         # TODO: parametrize the main music colleciton
         mainColl= self.collaggr.collections[0]
         base= mainColl.path
-        d= QDir ()
 
         for song in songs:
             dstPath= self.songPath (base, song)
             dstDir= os.path.dirname (dstPath)
-            # TODO: QtDir is not net transp. try to make sub jobs creating the missing path
-            if d.mkpath (dstDir):
-                # HINT: KUrl because KIO.* uses KUrl
-                src= KUrl (utils.path2qurl (song.filepath))
-                # BUG: Renamer.rename()
-                # PyQt4.QtCore.QUrl(u'file:///home/mdione/media/music/new/bandidos rurales/05 - uruguay, uruguay.mp3') ->
-                # PyQt4.QtCore.QUrl(u'file:///home/mdione/media/music/Le\xf3n Gieco/2001 - Bandidos rurales/05 - Uruguay, Uruguay.mp3')
-                #                                                       ^^^^
-                dst= KUrl (dstPath)
-                logger.info ("Renamer.rename()", src, "->", dst)
 
-                # TODO: do not launch them all in parallel
-                job= KIO.file_move (src, dst)
-                # TODO: emit a finished.
-
-                job.result.connect (self.jobFinished)
-                self.jobs.append (job)
-            else:
-                logger.info ("Renamer.rename(): failed to create", dstDir, ", skipping", dstPath)
+            utils.makedirs (dstDir)
+            logger.debug ("Renamer.rename(): %r -> %r", song.filepath, dstPath.encode ('utf-8'))
+            try:
+                os.rename (song.filepath, dstPath)
+            except IOError as e:
+                logger.warn ("exception raised: %s", e)
+                logger.exception ("%s", e)
 
     def delete (self, songs):
         # TODO: parametrize the trash music collection
