@@ -19,7 +19,7 @@
 
 # qt/kde related
 from PyKDE4.kdecore import KStandardDirs
-from PyKDE4.kio import KDirWatch
+# from PyKDE4.kio import KDirWatch
 from PyQt4.QtCore import pyqtSignal, pyqtSlot, QString
 
 # dbus
@@ -27,13 +27,16 @@ import dbus.service
 
 # std python
 import os, os.path
+from pyinotify import WatchManager, ThreadedNotifier, ProcessEvent, IN_CREATE
+# from pyinotify.EventsCodes import IN_CREATE #TODO: , IN_DELETE, IN_DELETE_SELF,
 
-# we needed before loggin to get the handler
+# we needed before logging to get the handler
 import satyr
 
 # logging
 import logging
-logger = logging.getLogger(__name__)
+logger= logging.getLogger(__name__)
+logger.setLevel (logging.DEBUG)
 
 # local
 from satyr.common import SatyrObject, BUS_NAME
@@ -44,11 +47,13 @@ from satyr import utils
 class ErrorNoDatabase (Exception):
     pass
 
-class Collection (SatyrObject):
-    """A Collection of Albums"""
+class Collection (SatyrObject, ProcessEvent):
+    """A Collection of Songs"""
     newSongs= pyqtSignal ()
     scanBegins= pyqtSignal ()
     scanFinished= pyqtSignal ()
+
+    wm= WatchManager ()
 
     def __init__ (self, parent, path="", relative=False, busName=None, busPath=None):
         SatyrObject.__init__ (self, parent, busName, busPath)
@@ -76,12 +81,12 @@ class Collection (SatyrObject):
         else:
             self.forceScan= False
         self.relative= relative
-        logger.debug ("Collection(): %s", self.path)
+        logger.debug ("Collection(): %r", self.path)
 
-        self.watch= KDirWatch (self)
-        self.watch.addDir (self.path,
-            KDirWatch.WatchMode (KDirWatch.WatchFiles|KDirWatch.WatchSubDirs))
-        self.watch.created.connect (self.newFiles)
+        self.notifier= ThreadedNotifier (self.wm, self)
+        self.notifier.start ()
+        self.watch= self.wm.add_watch (self.path, IN_CREATE, rec=True)
+        logger.debug ("watch: %r", self.watch)
 
         self.scanners= []
         self.scanning= False
@@ -97,14 +102,11 @@ class Collection (SatyrObject):
             self.scan ()
 
     def load (self):
-        logger.info ('loading from', self.collectionFile)
+        logger.info ('loading from %s', self.collectionFile)
         try:
             # we must remove the trailing newline
             # we could use strip(), but filenames ending with any other whitespace
             # (think of the users!) would be loaded incorrectly
-            # this oneliner seems to be the fastest against:
-            # * fp= []; f= open(); for line in f.readlines(): fp.append (line)
-            # * fp= []; f= open(); for line in f: fp.append (line)
             fileinfos= [ line[:-1].split (',', 1) for line in open (self.collectionFile) ]
             self.add (fileinfos)
             ans= True
@@ -136,12 +138,19 @@ class Collection (SatyrObject):
     def saveConfig (self):
         # reimplement just to also save the collection
         self.save ()
+        # also, remove the watch
+        self.notifier.stop ()
+        for fd in self.watch.values ():
+            self.wm.del_watch (fd)
+        
         SatyrObject.saveConfig (self)
 
+    def process_IN_CREATE (self, event):
+        self.newFiles (event.pathname)
+        
     # @pyqtSlot ()
     def newFiles (self, path):
-        path= utils.qstring2path (path)
-        logger.debug ("C.newFiles(): %s" % path)
+        logger.debug ("C.newFiles(): %r" % path)
         self.scan (path)
 
     def scan (self, path=None, loadMetadata=False):
@@ -207,7 +216,7 @@ class Collection (SatyrObject):
                     song.loadMetadata ()
                 self.newSongs_.append ((index, filepath))
 
-        logger.debug ("C.add():", self.newSongs_)
+        logger.debug ("C.add(): %r", self.newSongs_)
         self.newSongs.emit ()
 
     def indexForSong (self, song):
