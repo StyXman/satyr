@@ -38,7 +38,7 @@ class Renamer (ConfigurableObject):
 
         self.collaggr= collaggr
 
-        # TODO: ***becareful!*** mixing unicode with paths!
+        # unicode is ok here because we're going to create the pathname in unicode and later encode it
         # artist, year, collection, diskno, album, trackno, title, length
         self.configValues= (
             # ('format', unicode, u"{%artist/}{%4year - }{%collection/}{%02diskno - }{%album/}{Disk %02disk/}{%02trackno - }{%title}"),
@@ -75,21 +75,7 @@ class Renamer (ConfigurableObject):
         return ans
 
     def rename (self, songs):
-        # TODO: parametrize the main music colleciton
-        mainColl= self.collaggr.collections[0]
-        base= mainColl.path
-
-        for song in songs:
-            dstPath= self.songPath (base, song)
-            dstDir= os.path.dirname (dstPath)
-
-            utils.makedirs (dstDir)
-            logger.debug ("Renamer.rename(): %r -> %r", song.filepath, dstPath.encode ('utf-8'))
-            try:
-                os.rename (song.filepath, dstPath)
-            except IOError as e:
-                logger.warn ("exception raised: %s", e)
-                logger.exception ("%s", e)
+        self.collaggr.rename (self, songs)
 
     def delete (self, songs):
         # TODO: parametrize the trash music collection

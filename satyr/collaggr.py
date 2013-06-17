@@ -33,6 +33,7 @@ logger = logging.getLogger(__name__)
 from satyr.common import SatyrObject, BUS_NAME
 from satyr.collection import Collection
 from satyr.song import Song
+from satyr import utils
 
 class CollectionAggregator (SatyrObject):
     def __init__ (self, parent, collections=None, songs=None, busName=None, busPath=None):
@@ -161,8 +162,21 @@ class CollectionAggregator (SatyrObject):
 
         return song
 
-    def move (self, song):
-        #
-        pass
+    def rename (self, renamer, songs):
+        # TODO: parametrize the main music colleciton
+        mainColl= self.collections[0]
+        base= mainColl.path
+
+        for song in songs:
+            dstPath= renamer.songPath (base, song)
+            dstDir= os.path.dirname (dstPath)
+
+            utils.makedirs (dstDir)
+            logger.debug ("Renamer.rename(): %r -> %r", song.filepath, dstPath.encode ('utf-8'))
+            try:
+                os.rename (song.filepath, dstPath)
+            except IOError as e:
+                logger.warn ("exception raised: %s", e)
+                logger.exception ("%s", e)
 
 # end
