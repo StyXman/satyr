@@ -31,6 +31,7 @@ from os import mkdir
 # logging
 import logging
 logger = logging.getLogger(__name__)
+logger.setLevel (logging.DEBUG)
 
 def phononVersion ():
     return map (int, Phonon.phononVersion ().split ('.'))
@@ -66,7 +67,7 @@ expansion= re.compile ("(\{(.*?)\%([0-9]*)([a-z]+)([^a-z}]*)\})")
 def expandConditionally (format, values):
     expansions= expansion.findall (format)
     ans= format
-    logger.debug ("xpandCond(): %s", ans)
+    logger.debug ("xpandCond(): %r", ans)
     for complete, pre, digits, var, post in expansions:
         try:
             value= values[var]
@@ -74,7 +75,7 @@ def expandConditionally (format, values):
             value= ''
 
         if value!='' and value!=0:
-            logger.debug ("%s: >%s<", type (value), value)
+            logger.debug ("%s: >%r<", type (value), value)
             # year and trackno are int's
             if type (value)==types.IntType:
                 value= (u"%"+digits+"d") % value
@@ -82,7 +83,7 @@ def expandConditionally (format, values):
                 # / is not valid in filenames
                 # in our case it creates a subdir
                 value= value.replace ('/', '-')
-                logger.debug ("%s: >%s<", type (value), value)
+                logger.debug ("%s: >%r<", type (value), value)
 
             ans= ans.replace (complete, pre+value+post)
         else:
@@ -92,7 +93,7 @@ def expandConditionally (format, values):
             else:
                 ans= ans.replace (complete, '')
 
-        logger.debug ("xpandCond(): %s" % ans)
+        logger.debug ("xpandCond(): %r" % ans)
 
     return ans
 
@@ -124,15 +125,15 @@ def makedirs(_dirname):
     """
 
     dirs = _dirname.split('/')
-    i = ''
+    i = u''
     while len(dirs):
         i += dirs.pop(0)+'/'
         try:
-            mkdir(i)
+            mkdir(i.encode ('utf-8'))
         except OSError, e:
             # print "%s failed: %s" % (i, e)
             pass
         else:
-            logger.debug ('make dir %s' % i)
+            logger.debug ('make dir %r' % i.encode ('utf-8'))
 
 # end
