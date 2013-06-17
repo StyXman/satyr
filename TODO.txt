@@ -1,5 +1,4 @@
 * fix bug that prevents emptying a tag
-* python3, byte for filepaths and no kde API for file manip (rename, delete)
 
 * ask the user if he wants to hear the songs just added.
 * convert UI into actions, then a toolbar
@@ -27,3 +26,5 @@ def addNewSongsToUI ():
     # add new songs
     if not scanner.finished:
         updateTimer.start (1000)
+
+* python3, byte for filepaths and no kde API for file manip (rename, delete)

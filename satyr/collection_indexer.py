@@ -35,7 +35,7 @@ import satyr
 # logging
 import logging
 logger = logging.getLogger(__name__)
-logger.setLevel (logging.DEBUG)
+# logger.setLevel (logging.DEBUG)
 
 # local
 from satyr.common import SatyrObject, BUS_NAME
@@ -84,7 +84,6 @@ def getMimeType (filepath):
     return str (mimetype.name ())
 
 class CollectionIndexer (QThread):
-    # finished= pyqtSignal (QThread)
     scanning= pyqtSignal (unicode)
     foundSongs= pyqtSignal (list)
 
@@ -98,7 +97,7 @@ class CollectionIndexer (QThread):
         initMimetypes ()
 
     def walk (self, root, subdir='', relative=False):
-        logger.debug ("CI.walk(): %r -> %r", root, subdir)
+        logger.debug ("CI.walk(): %r, %r", root, subdir)
         # TODO: support single filenames
         # if not os.path.isdir (root):
         #     return root
@@ -144,7 +143,7 @@ class CollectionIndexer (QThread):
             logger.exception ("%r", self.path)
         else:
             if stat.S_ISDIR (mode):
-                # os.path.join fails on non-ASCII UTF-8 filenames
+                # os.path.join() fails on non-ASCII UTF-8 filenames
                 # http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=481795
                 for root, dirs, files in self.walk (self.path, relative=self.relative):
                     self.scanning.emit (root)
@@ -156,7 +155,6 @@ class CollectionIndexer (QThread):
                         if mimetype in mimetypes:
                             filepaths.append ((None, filepath))
 
-                    # pyqt4 doesn't do this automatically
                     self.foundSongs.emit (filepaths)
 
             elif stat.S_ISREG (mode):
