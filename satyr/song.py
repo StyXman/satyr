@@ -23,6 +23,7 @@ from PyQt4.QtCore import QObject, pyqtSignal
 # std python
 import types
 from md5 import md5
+from os import stat
 
 # other libs
 import tagpy
@@ -86,36 +87,43 @@ class Song (QObject):
             return "???"
 
     def loadMetadata (self):
+        # do not even try if the file does not exist
+        # NOTE: this was added because at some point tagpy crashed horribly if the file didn't exist
+        fr= None
+        info= None
+        f= None
+        self.length= 0
         try:
-            # tagpy doesn't handle unicode filepaths (somehow makes sense)
-            # we cannot keep the FileRef or the Tag because the file stays open.
-            fr= tagpy.FileRef (self.filepath)
-            f= fr.file ()
+            stat (self.filepath)
+        except OSError as e:
+            logger.warning ("sta()'ing file %r failed: %s", self.filepath, e)
+        else:
+            try:
+                # tagpy doesn't handle unicode filepaths (somehow makes sense)
+                # we cannot keep the FileRef or the Tag because the file stays open.
+                fr= tagpy.FileRef (self.filepath)
+                f= fr.file ()
 
-            props= fr.audioProperties ()
-            # incredibly enough, tagpy also express length as a astring
-            # even when taglib uses an int (?!?)
-            # BUG: this is wrong, the internal repr should be in seconds
-            # and the visual part shoould ask for the visual repr
-            # no, we need it for % it to the pattern. see __getitem__()
-            # HINT: props has string attrs, not unicode
-            self.length= int (props.length)
+                props= fr.audioProperties ()
+                # incredibly enough, tagpy also express length as a astring
+                # even when taglib uses an int (?!?)
+                # BUG: this is wrong, the internal repr should be in seconds
+                # and the visual part shoould ask for the visual repr
+                # no, we need it for % it to the pattern. see __getitem__()
+                # HINT: props has string attrs, not unicode
+                self.length= int (props.length)
 
-            # HINT: info has unicode attrs
-            info= fr.tag ()
+                # HINT: info has unicode attrs
+                info= fr.tag ()
 
-            if type (info)==tagpy._tagpy.Tag and type (f)==tagpy._tagpy.flac_File:
-                # flac files use xiph comments
-                # grab the original tagset
-                info= f.xiphComment ()
-        except Exception, e:
-            logger.debug ('----- loadMetadata()')
-            logger.debug (self.filepath)
-            logger.debug ("%s: %s", type (e), e)
-            fr= None
-            info= None
-            f= None
-            self.length= 0
+                if type (info)==tagpy._tagpy.Tag and type (f)==tagpy._tagpy.flac_File:
+                    # flac files use xiph comments
+                    # grab the original tagset
+                    info= f.xiphComment ()
+            except Exception, e:
+                logger.debug ('----- loadMetadata()')
+                logger.debug (self.filepath)
+                logger.debug ("%s: %s", type (e), e)
 
         for attr, tag in self.tagForAttr.items ():
             value= getattr (info, tag, None)
@@ -123,13 +131,11 @@ class Song (QObject):
                 value= value.strip ()
             setattr (self, attr, value)
 
-
         # 'faked' tags; must be handled file type by file type
         for attr in ('collection', 'diskno'):
             setattr (self, attr, '')
 
         if type (info)==tagpy._tagpy.ogg_XiphComment:
-
             # with Xiph comments we're free to set our own
             d= info.fieldListMap ()
             # TODO: make it a class attr
