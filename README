@@ -80,6 +80,13 @@ Discover them using the Settings -> Configure shortcuts menu entry.
 Also, modify at will!
 
 
+REPORTING BUGS:
+==============
+
+I'm also toying wit a dstributed bug tracking system, `sd`. Try:
+    
+    git sd help
+
 ABOUT:
 =====
 
