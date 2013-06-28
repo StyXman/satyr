@@ -27,8 +27,7 @@ import dbus.service
 
 # std python
 import os, os.path
-from pyinotify import WatchManager, ThreadedNotifier, ProcessEvent, IN_CREATE
-# from pyinotify.EventsCodes import IN_CREATE #TODO: , IN_DELETE, IN_DELETE_SELF,
+from pyinotify import WatchManager, ThreadedNotifier, ProcessEvent, IN_CREATE #TODO: , IN_DELETE, IN_DELETE_SELF,
 
 # we needed before logging to get the handler
 import satyr
@@ -50,10 +49,9 @@ class ErrorNoDatabase (Exception):
 class Collection (SatyrObject, ProcessEvent):
     """A Collection of Songs"""
     newSongs= pyqtSignal ()
+    oldSongs= pyqtSignal (list)
     scanBegins= pyqtSignal ()
     scanFinished= pyqtSignal ()
-
-    wm= WatchManager ()
 
     def __init__ (self, parent, path="", relative=False, busName=None, busPath=None):
         SatyrObject.__init__ (self, parent, busName, busPath)
@@ -64,8 +62,6 @@ class Collection (SatyrObject, ProcessEvent):
         # (re)defined by an aggregator if we're in one of those
         self.offset= 0
 
-        # BUG: path is not reread from the config file!
-        # it breaks rescanning
         self.configValues= (
             ('path', str, path),
             )
@@ -98,6 +94,7 @@ class Collection (SatyrObject, ProcessEvent):
 
     def loadOrScan (self):
         if self.forceScan or not self.load ():
+            logger.info ("scanning...")
             self.scan ()
 
     def load (self):
@@ -140,20 +137,25 @@ class Collection (SatyrObject, ProcessEvent):
         # also, remove the watch
         self.notifier.stop ()
         for fd in self.watch.values ():
-            self.wm.del_watch (fd)
+            try:
+                self.wm.del_watch (fd)
+            except OSError as e:
+                # closes #12
+                if not e.errno==errno.EBADFD:
+                    raise e
         
         SatyrObject.saveConfig (self)
 
     def process_IN_CREATE (self, event):
-        # self.newFiles (event.name)
+        self.newFiles (event.name)
         # this way I can see if when I rename a file
         # the file was found by inotify or added properly to the collection
-        self.newFiles (event.pathname)
+        # self.newFiles (event.pathname)
         
     # @pyqtSlot ()
     def newFiles (self, path):
         logger.debug ("C.newFiles(): %r" % path)
-        self.scan (path)
+        self.scan (self.path+'/'+path)
 
     def scan (self, path=None, loadMetadata=False):
         self.scanning= True
@@ -226,24 +228,20 @@ class Collection (SatyrObject, ProcessEvent):
                 # TODO: ugh
 
         if len (self.newSongs_)>0:
-            logger.debug ("C.add(): %r", self.newSongs_)
+            logger.debug ("%r", self.newSongs_)
             self.newSongs.emit ()
 
+    def remove (self, song):
+        index= utils.bisect (self.songs, song)
+        del self.songs[index]
+        logger.debug ("%s removed @index %d", song, index)
+        self.oldSongs.emit ([(index, song)])
+
     def indexForSong (self, song):
-        # BUG: this is O(n)
-        # NOTE: we cannot use Python's bisect now because if the metadata is loaded
-        # (and if we're here it is pretty sure the case)
-        # the order changes: when we Collection.loadOrScan() it's filepath based
-        # and now it's metadata based.
-        # is the above no longer true?
-        # somehow it is :(
         # NOTE: how does filepath-> id impact this?
         index= utils.bisect (self.songs, song, Song.cmpByFilepath)
 
         return index
-
-    def log (self, *args):
-        log.debug ("logging", args)
 
     @dbus.service.method (BUS_NAME, in_signature='', out_signature='')
     def rescan (self):
@@ -253,5 +251,8 @@ class Collection (SatyrObject, ProcessEvent):
     def dump (self):
         for song in self.songs:
             logger.info (song.filepath)
+
+    def log (self, *args):
+        logger.debug ("logging", args)
 
 # end
