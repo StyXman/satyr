@@ -93,7 +93,7 @@ class MainWindow (KXmlGuiWindow):
         # TODO: self.ui.volumeSlider
 
         # TODO: better name?
-        self.appModel= QPlayListModel (collaggr=self.playlist.collaggr, view=self)
+        self.appModel= PlayListModel (collaggr=self.playlist.collaggr, view=self)
         # TODO: connect after the collection has been scanned/populated
         self.appModel.dataChanged.connect (self.copyEditToSelection)
         self.copying= False
@@ -204,7 +204,7 @@ class MainWindow (KXmlGuiWindow):
             songs= self.playlist.search (unicode (text))
             # we have to keep it
             # otherwise it pufs into inexistence after the function ends
-            self.setModel (QPlayListModel (songs=songs, view=self))
+            self.setModel (PlayListModel (songs=songs, view=self))
         elif len (text)==0 and len (self.oldSearchText)>=1:
             self.setModel (self.appModel)
             # ensure the current song is shown
@@ -318,7 +318,7 @@ class MainWindow (KXmlGuiWindow):
         return True
 
 
-class QPlayListModel (QAbstractTableModel):
+class PlayListModel (QAbstractTableModel):
     def __init__ (self, collaggr=None, songs=None, view=None):
         QAbstractTableModel.__init__ (self, view)
         # TODO: different delegate for editing tags: one with completion
