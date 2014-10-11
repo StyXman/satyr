@@ -21,13 +21,14 @@
 # qt/kde related
 # from PyKDE4.phonon import Phonon
 from PyQt4.phonon import Phonon
-from PyQt4.QtCore import pyqtSignal, QString
+from PyQt4.QtCore import pyqtSignal, QString, QUrl
 
 # dbus
 import dbus.service
 
 # std python
 import time
+from urllib import pathname2url
 
 # we needed before loggin to get the handler
 import satyr
@@ -113,9 +114,10 @@ class Player (SatyrObject):
                 self.playlist.setCurrent (song)
             else:
                 self.song= self.playlist.song
-                
+
             logger.debug ("playing %s", self.song)
-            url= utils.path2qurl (self.song.filepath)
+            # url= utils.path2qurl (self.song.filepath)
+            url= QUrl.fromEncoded (pathname2url (self.song.filepath))
             self.media.setCurrentSource (Phonon.MediaSource (url))
             self.media.play ()
 
