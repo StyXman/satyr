@@ -63,9 +63,9 @@ class TestCollectionIndexer (unittest.TestCase):
             copy ('tests/src/01-null.mp3', dst)
 
         self.col= CollectionIndexer (self.path)
-        QTimer.singleShot (1, copy_file)
+        QTimer.singleShot (0, copy_file)
         self.col.foundSongs.connect (self.count)
-        self.col.finished.connect (app.quit)
+        QTimer.singleShot (5000, app.quit)
         app.exec_ ()
 
         self.assertEqual (self.n, 1)
