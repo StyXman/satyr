@@ -25,13 +25,13 @@ import re
 import types
 import os.path
 from datetime import time
-
+from urllib import pathname2url
 from os import mkdir
 
 # logging
 import logging
 logger = logging.getLogger(__name__)
-logger.setLevel (logging.DEBUG)
+# logger.setLevel (logging.DEBUG)
 
 def phononVersion ():
     return map (int, Phonon.phononVersion ().split ('.'))
@@ -46,8 +46,8 @@ def qstring2path (qs):
 
 def path2qurl (path):
     # path= '/home/mdione/media/music/Patricio Rey Y Sus Redonditos De Ricota/\xc3\x9altimo bondi a Finisterre/07- La peque\xf1a novia del carioca.wav'
-    qba= QByteArray (path)
-    qu= QUrl.fromEncoded (qba.toPercentEncoding ("/ "))
+    # qba= QByteArray (path)
+    qu= QUrl.fromEncoded (pathname2url (path))
     # older versions need this, at least for the gstreamer backend
     if qu.scheme ()=='':
         qu.setScheme ('file')
@@ -107,7 +107,7 @@ def bisect (a, x, f=cmp):
     # TODO: check license
     lo= 0
     hi= len (a)
-    
+
     while lo < hi:
         mid = (lo+hi)//2
         # cmp (a, b)==-1 \eq a < b
@@ -131,9 +131,7 @@ def makedirs(_dirname):
         try:
             mkdir(i.encode ('utf-8'))
         except OSError, e:
-            # print "%s failed: %s" % (i, e)
-            pass
+            logger.debug ('make dir %r failed: %s' % (i.encode ('utf-8'), e))
         else:
             logger.debug ('make dir %r' % i.encode ('utf-8'))
-
 # end
