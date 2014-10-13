@@ -37,7 +37,8 @@ package[1]		version[2]
 python-qt4-phonon	4.6-1[5]
 python-kde4		4.3.1
 python-tagpy		0.94.7
-pyqt4-dev-tools[3]	4.5.4[4][5]
+pyqt4-dev-tools[3]	4.5.4[4][5][6]
+sox                     14.4.1[6][7]
 
 [1] The names are the ones used in Debian.
 [2] These are the versions used while developing
@@ -45,7 +46,8 @@ pyqt4-dev-tools[3]	4.5.4[4][5]
 [4] I think any 4.5.x is enough.
 [5] python-qt4-phonon was added after my system changed to
     python-qt4-4.6-1. if it's not working with 4.5.x, let me know.
-
+[6] Build/test time dependency.
+[7] Used to create the test files, I think almost any version should be fine.
 
 INSTALATION:
 ===========
@@ -84,7 +86,7 @@ REPORTING BUGS:
 ==============
 
 I'm also toying wit a dstributed bug tracking system, `sd`. Try:
-    
+
     git sd help
 
 ABOUT:
