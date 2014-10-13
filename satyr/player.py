@@ -28,7 +28,6 @@ import dbus.service
 
 # std python
 import time
-from urllib import pathname2url
 
 # we needed before loggin to get the handler
 import satyr
@@ -115,9 +114,8 @@ class Player (SatyrObject):
             else:
                 self.song= self.playlist.song
 
-            logger.debug ("playing %s", self.song)
-            # url= utils.path2qurl (self.song.filepath)
-            url= QUrl.fromEncoded (pathname2url (self.song.filepath))
+            url= utils.path2qurl (self.song.filepath)
+            logger.debug ("playing %s", url)
             self.media.setCurrentSource (Phonon.MediaSource (url))
             self.media.play ()
 
@@ -165,13 +163,13 @@ class Player (SatyrObject):
         logger.debug ("queueing next!")
         self.playlist.next ()
         self.song= self.playlist.song
-        logger.debug ("--> queueing next!: %s", self.song)
         url= utils.path2qurl (self.song.filepath)
+        logger.debug ("--> queueing next!: %s", url)
         source= Phonon.MediaSource (url)
         self.media.enqueue (source)
 
     def sourceChanged (self, source):
-        logger.debug ("source changed!", source.fileName ().toLatin1 ())
+        logger.debug ("source changed to: >%s<", source.fileName ().toLatin1 ())
         self.playlist.setCurrent ()
         if self.stopAfter:
             logger.debug ("stopping after!")
