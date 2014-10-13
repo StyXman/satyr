@@ -48,17 +48,16 @@ class TestCollectionIndexer (unittest.TestCase):
         dst= os.path.join (self.path, '01-null.mp3')
         copy ('tests/src/01-null.mp3', dst)
 
-        def end ():
-            # print "finished"
-            app.quit ()
-
         self.col= CollectionIndexer (self.path)
         QTimer.singleShot (1, self.col.start)
         self.col.foundSongs.connect (self.count)
-        self.col.finished.connect (end)
+        self.col.finished.connect (app.quit)
         app.exec_ ()
 
         self.assertEqual (self.n, 1)
+
+    def test_new_file (self):
+        dst= os.path.join (self.path, '01-null.mp3')
 
 if __name__=='__main__':
     unittest.main ()
