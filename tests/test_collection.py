@@ -29,17 +29,16 @@ from PyQt4.QtCore import QTimer
 from satyr.collection import Collection
 from satyr.song import Song
 
-from common import app
+from common import app, test_path
 
 class TestCollection (unittest.TestCase):
-    path= 'tests/data'
 
     def setUp (self):
         app.setApplicationName ("TestCollection")
-        makedirs (self.path)
+        makedirs (test_path)
 
     def tearDown (self):
-        rmtree (self.path)
+        rmtree (test_path)
 
     def common_tests (self, songs, songsById, offset):
         self.assertEqual (self.col.songs, songs)
@@ -52,18 +51,18 @@ class TestCollection (unittest.TestCase):
         self.common_tests ([], {}, 0)
 
     def test_creation_with_path (self):
-        self.col= Collection (None, self.path)
+        self.col= Collection (None, test_path)
         self.common_tests ([], {}, 0)
 
     def test_one_song (self):
-        dst= os.path.join (self.path, '01-null.mp3')
+        dst= os.path.join (test_path, '01-null.mp3')
         copy ('tests/src/01-null.mp3', dst)
 
         def end ():
             print "finished"
             app.quit ()
 
-        self.col= Collection (app, self.path)
+        self.col= Collection (app, test_path)
         QTimer.singleShot (1, self.col.scan)
         self.col.scanFinished.connect (end)
         app.exec_ ()

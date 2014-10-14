@@ -22,12 +22,11 @@ from PyKDE4.kdecore import KStandardDirs
 # from PyKDE4.kio import KDirWatch
 from PyQt4.QtCore import pyqtSignal, pyqtSlot, QString
 
-# dbus
+# misc utils
 import dbus.service
 
 # std python
 import os, os.path
-from pyinotify import WatchManager, ThreadedNotifier, ProcessEvent, IN_CREATE #TODO: , IN_DELETE, IN_DELETE_SELF,
 
 # we needed before logging to get the handler
 import satyr
@@ -46,7 +45,7 @@ from satyr import utils
 class ErrorNoDatabase (Exception):
     pass
 
-class Collection (SatyrObject, ProcessEvent):
+class Collection (SatyrObject):
     """A Collection of Songs"""
     newSongs= pyqtSignal ()
     oldSongs= pyqtSignal (list)
@@ -75,13 +74,9 @@ class Collection (SatyrObject, ProcessEvent):
             logger.info ("new path, forcing (re)scan")
         else:
             self.forceScan= False
+
         self.relative= relative
         logger.debug ("Collection(): %r", self.path)
-
-        self.notifier= ThreadedNotifier (self.wm, self)
-        self.notifier.start ()
-        self.watch= self.wm.add_watch (self.path, IN_CREATE, rec=True)
-        logger.debug ("watch: %r", self.watch)
 
         self.scanners= []
         self.scanning= False
@@ -102,7 +97,7 @@ class Collection (SatyrObject, ProcessEvent):
         try:
             # we must remove the trailing newline
             # we could use strip(), but filenames ending with any other whitespace
-            # (think of the users!) would be loaded incorrectly
+            # (somebody think of the users!) would be loaded incorrectly
             fileinfos= [ line[:-1].split (',', 1) for line in open (self.collectionFile) ]
             self.add (fileinfos)
             ans= True
@@ -134,24 +129,8 @@ class Collection (SatyrObject, ProcessEvent):
     def saveConfig (self):
         # reimplement just to also save the collection
         self.save ()
-        # also, remove the watch
-        self.notifier.stop ()
-        for fd in self.watch.values ():
-            try:
-                self.wm.del_watch (fd)
-            except OSError as e:
-                # closes #12
-                if not e.errno==errno.EBADFD:
-                    raise e
-        
         SatyrObject.saveConfig (self)
 
-    def process_IN_CREATE (self, event):
-        self.newFiles (event.name)
-        # this way I can see if when I rename a file
-        # the file was found by inotify or added properly to the collection
-        # self.newFiles (event.pathname)
-        
     # @pyqtSlot ()
     def newFiles (self, path):
         logger.debug ("C.newFiles(): %r" % path)
@@ -170,7 +149,6 @@ class Collection (SatyrObject, ProcessEvent):
         scanner.scanning.connect (self.progress)
         scanner.foundSongs.connect (self.add)
         scanner.terminated.connect (self.log)
-        # it's a signal
         scanner.finished.connect (self.scanFinished_)
 
         self.scanBegins.emit ()

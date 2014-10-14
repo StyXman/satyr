@@ -20,3 +20,4 @@
 from PyQt4.QtGui import QApplication
 
 app= QApplication ([])
+test_path= 'tests/data'

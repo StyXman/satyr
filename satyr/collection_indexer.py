@@ -23,7 +23,7 @@ from PyQt4.QtCore import pyqtSignal, QThread, QStringList
 from PyQt4.phonon import Phonon
 # from PyKDE4.phonon import Phonon
 
-# dbus
+# misc utils
 import dbus.service
 
 # std python

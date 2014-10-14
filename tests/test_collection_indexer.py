@@ -28,44 +28,29 @@ from PyQt4.QtCore import QTimer, QEventLoop
 
 from satyr.collection_indexer import CollectionIndexer
 
-from common import app
+from common import app, test_path
 
 class TestCollectionIndexer (unittest.TestCase):
-    path= 'tests/data'
 
     def setUp (self):
         app.setApplicationName ("TestCollectionIndexer")
-        makedirs (self.path)
+        makedirs (test_path)
         self.n= 0
 
     def tearDown (self):
-        rmtree (self.path)
+        rmtree (test_path)
 
     def count (self):
         self.n+= 1
 
     def test_scan (self):
-        dst= os.path.join (self.path, '01-null.mp3')
+        dst= os.path.join (test_path, '01-null.mp3')
         copy ('tests/src/01-null.mp3', dst)
 
-        self.col= CollectionIndexer (self.path)
+        self.col= CollectionIndexer (test_path)
         QTimer.singleShot (1, self.col.start)
         self.col.foundSongs.connect (self.count)
         self.col.finished.connect (app.quit)
-        app.exec_ ()
-
-        self.assertEqual (self.n, 1)
-
-    def test_new_file (self):
-        dst= os.path.join (self.path, '01-null.mp3')
-
-        def copy_file ():
-            copy ('tests/src/01-null.mp3', dst)
-
-        self.col= CollectionIndexer (self.path)
-        QTimer.singleShot (0, copy_file)
-        self.col.foundSongs.connect (self.count)
-        QTimer.singleShot (5000, app.quit)
         app.exec_ ()
 
         self.assertEqual (self.n, 1)
