@@ -40,14 +40,28 @@ class TestCollectionUpdater (unittest.TestCase):
         self.col.notifier.stop ()
         rmtree (test_path)
 
-    def count (self):
-        self.n+= 1
+    def count (self, l):
+        self.n+= len (l)
 
     def test_new_file (self):
         dst= os.path.join (test_path, '01-null.mp3')
 
         def copy_file ():
             copy ('tests/src/01-null.mp3', dst)
+
+        self.col= CollectionUpdater (test_path)
+        QTimer.singleShot (0, copy_file)
+        self.col.foundSongs.connect (self.count)
+        QTimer.singleShot (1000, app.quit)
+        app.exec_ ()
+
+        self.assertEqual (self.n, 1)
+
+    def test_new_wrong_file (self):
+        dst= os.path.join (test_path, '03-not_index.txt')
+
+        def copy_file ():
+            copy ('tests/src/03-not_index.txt', dst)
 
         self.col= CollectionUpdater (test_path)
         QTimer.singleShot (0, copy_file)
