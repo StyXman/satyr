@@ -36,11 +36,11 @@ logger= logging.getLogger(__name__)
 class CollectionUpdater (QObject, ProcessEvent):
     scanning= pyqtSignal (unicode)
     foundSongs= pyqtSignal (list)
-    wm= WatchManager ()
 
     def __init__ (self, path):
         QObject.__init__ (self)
         ProcessEvent.__init__ (self)
+        self.wm= WatchManager ()
         self.notifier= ThreadedNotifier (self.wm, self)
         self.notifier.start ()
         self.watch= self.wm.add_watch (path, IN_CREATE, rec=True)
