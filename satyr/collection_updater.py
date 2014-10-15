@@ -43,7 +43,7 @@ class CollectionUpdater (QObject, ProcessEvent):
         self.wm= WatchManager ()
         self.notifier= ThreadedNotifier (self.wm, self)
         self.notifier.start ()
-        self.watch= self.wm.add_watch (path, IN_CREATE, rec=True)
+        self.watch= self.wm.add_watch (path, IN_CREATE, rec=True, quiet=False)
         logger.debug ("watch: %r", self.watch)
 
     def __delete__ (self):
