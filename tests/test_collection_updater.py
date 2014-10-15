@@ -32,16 +32,21 @@ from common import app, test_path
 class TestCollectionUpdater (unittest.TestCase):
 
     def setUp (self):
-        app.setApplicationName ("TestCollectionIndexer")
+        app.setApplicationName ("TestCollectionUpdater")
         makedirs (test_path)
         self.n= 0
 
     def tearDown (self):
-        self.col.notifier.stop ()
+        self.col.stop ()
         rmtree (test_path)
 
     def count (self, l):
+        print l
         self.n+= len (l)
+
+    def gtest_two_updaters (self):
+        one= CollectionUpdater (test_path)
+        two= CollectionUpdater (test_path)
 
     def test_new_file (self):
         dst= os.path.join (test_path, '01-null.mp3')
@@ -69,7 +74,7 @@ class TestCollectionUpdater (unittest.TestCase):
         QTimer.singleShot (1000, app.quit)
         app.exec_ ()
 
-        self.assertEqual (self.n, 1)
+        self.assertEqual (self.n, 0)
 
 if __name__=='__main__':
     unittest.main ()
