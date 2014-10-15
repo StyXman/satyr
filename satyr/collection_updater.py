@@ -46,15 +46,9 @@ class CollectionUpdater (QObject, ProcessEvent):
         self.watch= self.wm.add_watch (path, IN_CREATE, rec=True, quiet=False)
         logger.debug ("watch: %r", self.watch)
 
-    def __delete__ (self):
+    def stop (self):
         self.notifier.stop ()
-        for fd in self.watch.values ():
-            try:
-                self.wm.del_watch (fd)
-            except OSError as e:
-                # closes #12
-                if not e.errno==errno.EBADFD:
-                    raise e
+        self.wm.close ()
 
     def process_IN_CREATE (self, event):
         logger.debug ("%s, %s", event, event.name)
