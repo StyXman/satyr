@@ -40,8 +40,8 @@ class TestCollectionIndexer (unittest.TestCase):
     def tearDown (self):
         rmtree (test_path)
 
-    def count (self):
-        self.n+= 1
+    def count (self, l):
+        self.n+= len (l)
 
     def test_scan (self):
         dst= os.path.join (test_path, '01-null.mp3')
@@ -54,6 +54,18 @@ class TestCollectionIndexer (unittest.TestCase):
         app.exec_ ()
 
         self.assertEqual (self.n, 1)
+
+    def test_scan_wrong_file (self):
+        dst= os.path.join (test_path, '03-not_index.txt')
+        copy ('tests/src/03-not_index.txt', dst)
+
+        self.col= CollectionIndexer (test_path)
+        QTimer.singleShot (1, self.col.start)
+        self.col.foundSongs.connect (self.count)
+        self.col.finished.connect (app.quit)
+        app.exec_ ()
+
+        self.assertEqual (self.n, 0)
 
 if __name__=='__main__':
     unittest.main ()
