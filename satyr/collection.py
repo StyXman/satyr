@@ -78,7 +78,11 @@ class Collection (SatyrObject):
         self.relative= relative
         logger.debug ("Collection(): %r", self.path)
 
-        self.scanners= []
+        self.scanner= CollectionIndexer (path)
+        self.scanner.scanning.connect (self.progress)
+        self.scanner.foundSongs.connect (self.add)
+        self.scanner.terminated.connect (self.log)
+        self.scanner.finished.connect (self.scanFinished_)
         self.scanning= False
         self.loadMetadata= False
 
@@ -145,17 +149,8 @@ class Collection (SatyrObject):
 
         logger.debug ("C.scan(%s)", path)
 
-        scanner= CollectionIndexer (path)
-        scanner.scanning.connect (self.progress)
-        scanner.foundSongs.connect (self.add)
-        scanner.terminated.connect (self.log)
-        scanner.finished.connect (self.scanFinished_)
-
         self.scanBegins.emit ()
-        scanner.start ()
-        # hold it or it gets destroyed before it finishes
-        # BUG: they're never destroyed!
-        self.scanners.append (scanner)
+        self.scanner.start ()
 
     def scanFinished_ (self):
         logger.debug ("C.scanFinished()")
