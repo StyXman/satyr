@@ -34,7 +34,7 @@ import satyr
 # logging
 import logging
 logger= logging.getLogger(__name__)
-logger.setLevel (logging.DEBUG)
+# logger.setLevel (logging.DEBUG)
 
 # local
 from satyr.common import SatyrObject, BUS_NAME
