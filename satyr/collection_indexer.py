@@ -18,10 +18,7 @@
 
 
 # qt/kde related
-from PyKDE4.kdecore import KMimeType, KUrl
 from PyQt4.QtCore import pyqtSignal, QThread, QStringList
-from PyQt4.phonon import Phonon
-# from PyKDE4.phonon import Phonon
 
 # misc utils
 import dbus.service
@@ -41,48 +38,6 @@ logger = logging.getLogger(__name__)
 from satyr.common import SatyrObject, BUS_NAME
 from satyr import utils
 
-mimetypes= None
-def initMimetypes ():
-    global mimetypes
-    # init the mimetypes the first time
-    if mimetypes is None:
-        available= Phonon.BackendCapabilities.availableMimeTypes ()
-        mimetypes= [ str (mimetype)
-            for mimetype in available
-                if validMimetype (str (mimetype)) ]
-
-    if mimetypes==[]:
-        logger.warning ("No mimetypes! do you have any Phonon backend installed, configured and/or working?")
-        # TODO: MessageBox and abort
-
-
-def validMimetype (mimetype):
-    """Phonon.BackendCapabilities.availableMimeTypes() returns a lot of nonsense,
-    like image/png or so.
-    Filter only interesting mimetypes."""
-
-    valid= False
-    valid= valid or mimetype.startswith ('audio')
-    # we can play the sound of video files :|
-    # also some wma files are detected as video :|
-    # skipping /home/mdione/media/music//N/Noir Desir/Album inconnu (13-07-2004 01:59:07)/10 - Piste 10.wma;
-    # mimetype video/x-ms-asf not supported
-    valid= valid or mimetype.startswith ('video')
-    valid= valid or mimetype=='application/ogg'
-    # TODO: filter out playlists (.m3u)
-
-    return valid
-
-def getMimeType (filepath):
-    mimetype, accuracy= KMimeType.findByFileContent (filepath)
-    if accuracy<50:
-        # try harder?
-        # BUG?: (in KMimeType) gets confused by filenames with #'s
-        # mimetype, accuracy= KMimeType.findByUrl (KUrl (utils.path2qurl (filepath)), 0, False, True)
-        mimetype, accuracy= KMimeType.findByUrl (KUrl (utils.path2qurl (filepath)))
-
-    return str (mimetype.name ())
-
 class CollectionIndexer (QThread):
     scanning= pyqtSignal (unicode)
     foundSongs= pyqtSignal (list)
@@ -94,7 +49,7 @@ class CollectionIndexer (QThread):
             path= path.encode ('latin-1')
         self.path= path
         self.relative= relative
-        initMimetypes ()
+        utils.initMimetypes ()
 
     def walk (self, root, subdir='', relative=False):
         logger.debug ("CI.walk(): %r, %r", root, subdir)
@@ -151,8 +106,8 @@ class CollectionIndexer (QThread):
                     for filename in files:
                         filepath= root+'/'+filename
                         # detect mimetype and add only if it's suppourted
-                        mimetype= getMimeType (filepath)
-                        if mimetype in mimetypes:
+                        mimetype= utils.getMimeType (filepath)
+                        if mimetype in utils.mimetypes:
                             filepaths.append ((None, filepath))
 
                     self.foundSongs.emit (filepaths)
@@ -160,8 +115,8 @@ class CollectionIndexer (QThread):
             elif stat.S_ISREG (mode):
                 # NOTE: collection_indexer.py:110: Local variable (mimetype) shadows global defined on line 37
                 # it's not a global
-                mimetype= getMimeType (self.path)
-                if mimetype in mimetypes:
+                mimetype= utils.getMimeType (self.path)
+                if mimetype in utils.mimetypes:
                     logger.debug ("CI.run(): found %r", self.path)
                     self.foundSongs.emit ([ (None, self.path) ])
 
