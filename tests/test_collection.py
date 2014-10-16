@@ -58,13 +58,9 @@ class TestCollection (unittest.TestCase):
         dst= os.path.join (test_path, '01-null.mp3')
         copy ('tests/src/01-null.mp3', dst)
 
-        def end ():
-            print "finished"
-            app.quit ()
-
         self.col= Collection (app, test_path)
         QTimer.singleShot (1, self.col.scan)
-        self.col.scanFinished.connect (end)
+        self.col.scanFinished.connect (app.quit)
         app.exec_ ()
 
         s= Song (None, dst)
