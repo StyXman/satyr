@@ -41,7 +41,6 @@ class TestCollectionUpdater (unittest.TestCase):
         rmtree (test_path)
 
     def count (self, l):
-        print l
         self.n+= len (l)
 
     def gtest_two_updaters (self):
