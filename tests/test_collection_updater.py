@@ -43,10 +43,6 @@ class TestCollectionUpdater (unittest.TestCase):
     def count (self, l):
         self.n+= len (l)
 
-    def gtest_two_updaters (self):
-        one= CollectionUpdater (test_path)
-        two= CollectionUpdater (test_path)
-
     def test_new_file (self):
         dst= os.path.join (test_path, '01-null.mp3')
 

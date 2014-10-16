@@ -54,7 +54,7 @@ class TestCollection (unittest.TestCase):
         self.col= Collection (None, test_path)
         self.common_tests ([], {}, 0)
 
-    def test_one_song (self):
+    def test_scan_one_song (self):
         dst= os.path.join (test_path, '01-null.mp3')
         copy ('tests/src/01-null.mp3', dst)
 
@@ -66,7 +66,7 @@ class TestCollection (unittest.TestCase):
         s= Song (None, dst)
         self.common_tests ([s], {'406206af9165009e8e423f1965d2b2c9': s}, 0)
 
-    def test_one_file (self):
+    def test_scan_one_file (self):
         dst= os.path.join (test_path, '03-not_index.txt')
         copy ('tests/src/03-not_index.txt', dst)
 
