@@ -33,6 +33,8 @@ import logging
 logger= logging.getLogger(__name__)
 # logger.setLevel (logging.DEBUG)
 
+from satyr import utils
+
 class CollectionUpdater (QObject, ProcessEvent):
     scanning= pyqtSignal (unicode)
     foundSongs= pyqtSignal (list)
@@ -45,6 +47,7 @@ class CollectionUpdater (QObject, ProcessEvent):
         self.notifier.start ()
         self.watch= self.wm.add_watch (path, IN_CREATE, rec=True, quiet=False)
         logger.debug ("watch: %r", self.watch)
+        utils.initMimetypes ()
 
     def stop (self):
         self.notifier.stop ()
@@ -52,4 +55,6 @@ class CollectionUpdater (QObject, ProcessEvent):
 
     def process_IN_CREATE (self, event):
         logger.debug ("%s, %s", event, event.name)
-        self.foundSongs.emit ([event.name])
+        mimetype= utils.getMimeType (event.pathname)
+        if mimetype in utils.mimetypes:
+            self.foundSongs.emit ([event.name])
