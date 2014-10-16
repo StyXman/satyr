@@ -51,7 +51,6 @@ class CollectionUpdater (QObject, ProcessEvent):
 
     def stop (self):
         self.notifier.stop ()
-        self.wm.close ()
 
     def process_IN_CREATE (self, event):
         logger.debug ("%s, %s", event, event.name)
