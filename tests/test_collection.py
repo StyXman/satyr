@@ -66,5 +66,17 @@ class TestCollection (unittest.TestCase):
         s= Song (None, dst)
         self.common_tests ([s], {'406206af9165009e8e423f1965d2b2c9': s}, 0)
 
+    def test_one_file (self):
+        dst= os.path.join (test_path, '03-not_index.txt')
+        copy ('tests/src/03-not_index.txt', dst)
+
+        self.col= Collection (app, test_path)
+        QTimer.singleShot (1, self.col.scan)
+        self.col.scanFinished.connect (app.quit)
+        app.exec_ ()
+
+        s= Song (None, dst)
+        self.common_tests ([], {}, 0)
+
 if __name__=='__main__':
     unittest.main ()
