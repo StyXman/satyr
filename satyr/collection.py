@@ -41,6 +41,7 @@ from satyr.common import SatyrObject, BUS_NAME
 from satyr.collection_indexer import CollectionIndexer
 from satyr.song import Song
 from satyr import utils
+from satyr.collection_updater import CollectionUpdater
 
 class ErrorNoDatabase (Exception):
     pass
@@ -78,7 +79,8 @@ class Collection (SatyrObject):
         self.relative= relative
         logger.debug ("Collection(): %r", self.path)
 
-        self.scanner= CollectionIndexer (path)
+        logger.debug ("C: CI")
+        self.scanner= CollectionIndexer (self.path)
         self.scanner.scanning.connect (self.progress)
         self.scanner.foundSongs.connect (self.add)
         self.scanner.terminated.connect (self.log)
@@ -86,10 +88,18 @@ class Collection (SatyrObject):
         self.scanning= False
         self.loadMetadata= False
 
+        logger.debug ("C: CU")
+        self.updater= CollectionUpdater (self.path)
+        self.updater.foundSongs.connect (self.add)
+
         if busPath is not None:
             self.collectionFile= str (KStandardDirs.locateLocal ('data', 'satyr/%s.tdb' % self.dbusName (busPath)))
         else:
             self.collectionFile= str (KStandardDirs.locateLocal ('data', 'satyr/collection.tdb'))
+
+    def __del__ (self):
+        logger.debug ("C: deleted")
+        self.updater.stop ()
 
     def loadOrScan (self):
         if self.forceScan or not self.load ():
