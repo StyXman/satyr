@@ -146,7 +146,7 @@ def initMimetypes ():
                 if validMimetype (str (mimetype)) ]
 
     if mimetypes==[]:
-        logger.warning ("No mimetypes! do you have any Phonon backend installed, configured and/or working?")
+        logger.warning ("No mimetypes! Do you have any Phonon backend installed, configured and/or working?")
         # TODO: MessageBox and abort
 
 def validMimetype (mimetype):
