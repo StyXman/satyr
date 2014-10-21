@@ -172,7 +172,7 @@ def getMimeType (filepath):
         # try harder?
         # BUG?: (in KMimeType) gets confused by filenames with #'s
         # mimetype, accuracy= KMimeType.findByUrl (KUrl (utils.path2qurl (filepath)), 0, False, True)
-        mimetype, accuracy= KMimeType.findByUrl (KUrl (utils.path2qurl (filepath)))
+        mimetype, accuracy= KMimeType.findByUrl (KUrl (path2qurl (filepath)))
 
     return str (mimetype.name ())
 

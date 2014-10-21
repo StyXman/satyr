@@ -19,7 +19,7 @@
 import unittest
 from shutil import rmtree, copy
 from satyr.utils import makedirs
-from os import getcwd
+from os import getcwd, unlink
 import os.path
 
 from PyQt4.QtGui import QApplication
@@ -34,14 +34,18 @@ class TestCollectionUpdater (unittest.TestCase):
     def setUp (self):
         app.setApplicationName ("TestCollectionUpdater")
         makedirs (test_path)
-        self.n= 0
+        self.n= []
 
     def tearDown (self):
         self.col.stop ()
         rmtree (test_path)
 
-    def count (self, l):
-        self.n+= len (l)
+    def inc (self, l):
+        self.n+= l
+
+    def dec (self, l):
+        for item in l:
+            self.n.remove (item)
 
     def test_new_file (self):
         dst= os.path.join (test_path, '01-null.mp3')
@@ -51,11 +55,11 @@ class TestCollectionUpdater (unittest.TestCase):
 
         self.col= CollectionUpdater (test_path)
         QTimer.singleShot (0, copy_file)
-        self.col.foundSongs.connect (self.count)
+        self.col.foundSongs.connect (self.inc)
         QTimer.singleShot (1000, app.quit)
         app.exec_ ()
 
-        self.assertEqual (self.n, 1)
+        self.assertEqual (len (self.n), 1)
 
     def test_new_wrong_file (self):
         dst= os.path.join (test_path, '03-do_not_index.txt')
@@ -65,11 +69,31 @@ class TestCollectionUpdater (unittest.TestCase):
 
         self.col= CollectionUpdater (test_path)
         QTimer.singleShot (0, copy_file)
-        self.col.foundSongs.connect (self.count)
+        self.col.foundSongs.connect (self.inc)
         QTimer.singleShot (1000, app.quit)
         app.exec_ ()
 
-        self.assertEqual (self.n, 0)
+        self.assertEqual (len (self.n), 0)
+
+    def test_new_del_file (self):
+        dst= os.path.join (test_path, '01-null.mp3')
+
+        def copy_file ():
+            copy ('tests/src/01-null.mp3', dst)
+            QTimer.singleShot (500, del_file)
+
+        def del_file ():
+            self.assertEqual (len (self.n), 1)
+            unlink (dst)
+
+        self.col= CollectionUpdater (test_path)
+        QTimer.singleShot (0, copy_file)
+        self.col.foundSongs.connect (self.inc)
+        self.col.deletedSongs.connect (self.dec)
+        QTimer.singleShot (1000, app.quit)
+        app.exec_ ()
+
+        self.assertEqual (len (self.n), 0)
 
 if __name__=='__main__':
     unittest.main ()
