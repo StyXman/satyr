@@ -56,8 +56,8 @@ class TestCollectionIndexer (unittest.TestCase):
         self.assertEqual (self.n, 1)
 
     def test_scan_wrong_file (self):
-        dst= os.path.join (test_path, '03-not_index.txt')
-        copy ('tests/src/03-not_index.txt', dst)
+        dst= os.path.join (test_path, '03-do_not_index.txt')
+        copy ('tests/src/03-do_not_index.txt', dst)
 
         self.col= CollectionIndexer (test_path)
         QTimer.singleShot (1, self.col.start)

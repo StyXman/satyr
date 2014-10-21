@@ -58,10 +58,10 @@ class TestCollectionUpdater (unittest.TestCase):
         self.assertEqual (self.n, 1)
 
     def test_new_wrong_file (self):
-        dst= os.path.join (test_path, '03-not_index.txt')
+        dst= os.path.join (test_path, '03-do_not_index.txt')
 
         def copy_file ():
-            copy ('tests/src/03-not_index.txt', dst)
+            copy ('tests/src/03-do_not_index.txt', dst)
 
         self.col= CollectionUpdater (test_path)
         QTimer.singleShot (0, copy_file)
