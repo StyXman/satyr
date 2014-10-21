@@ -108,7 +108,7 @@ class CollectionIndexer (QThread):
                         # detect mimetype and add only if it's suppourted
                         mimetype= utils.getMimeType (filepath)
                         if mimetype in utils.mimetypes:
-                            filepaths.append ((None, filepath))
+                            filepaths.append ((None, os.path.abspath (filepath)))
 
                     self.foundSongs.emit (filepaths)
 
@@ -119,5 +119,7 @@ class CollectionIndexer (QThread):
                 if mimetype in utils.mimetypes:
                     logger.debug ("CI.run(): found %r", self.path)
                     self.foundSongs.emit ([ (None, self.path) ])
+
+        logger.debug ("CI: out")
 
 # end
