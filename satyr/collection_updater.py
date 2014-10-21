@@ -17,8 +17,10 @@
 # along with satyr.  If not, see <http://www.gnu.org/licenses/>.
 
 
+import os.path
+
 # qt/kde related
-from PyQt4.QtCore import pyqtSignal, QThread, QObject
+from PyQt4.QtCore import pyqtSignal, QObject
 
 # misc utils
 import dbus.service
@@ -42,6 +44,7 @@ class CollectionUpdater (QObject, ProcessEvent):
     def __init__ (self, path):
         QObject.__init__ (self)
         ProcessEvent.__init__ (self)
+        self.path= path
         self.wm= WatchManager ()
         self.notifier= ThreadedNotifier (self.wm, self)
         self.notifier.start ()
@@ -50,10 +53,12 @@ class CollectionUpdater (QObject, ProcessEvent):
         utils.initMimetypes ()
 
     def stop (self):
-        self.notifier.stop ()
+        if not self.notifier._stop_event.isSet():
+            logger.debug ("CU: stopping")
+            self.notifier.stop ()
 
     def process_IN_CREATE (self, event):
         logger.debug ("%s, %s", event, event.name)
         mimetype= utils.getMimeType (event.pathname)
         if mimetype in utils.mimetypes:
-            self.foundSongs.emit ([event.name])
+            self.foundSongs.emit ([(None, os.path.abspath (event.pathname))])
