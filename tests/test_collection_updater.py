@@ -116,11 +116,11 @@ class TestCollectionUpdater (unittest.TestCase):
         self.assertEqual (len (self.n), 0)
 
     def test_move_in_song (self):
-        dst= os.path.join (test_path, '01-null.mp3')
+        dst= os.path.join (test_path, '04-null-copy.mp3')
 
         def move_file ():
-            copy ('tests/src/01-null.mp3', 'tests/src/04-null_copy.mp3')
-            rename ('tests/src/04-null_copy.mp3', dst)
+            copy ('tests/src/01-null.mp3', 'tests/src/04-null-copy.mp3')
+            rename ('tests/src/04-null-copy.mp3', dst)
 
         self.col= CollectionUpdater (test_path)
         QTimer.singleShot (0, move_file)
@@ -129,6 +129,21 @@ class TestCollectionUpdater (unittest.TestCase):
         app.exec_ ()
 
         self.assertEqual (len (self.n), 1)
+
+    def test_move_in_file (self):
+        dst= os.path.join (test_path, '05-do_not_index-copy.txt')
+
+        def move_file ():
+            copy ('tests/src/03-do_not_index.txt', 'tests/src/05-do_not_index-copy.txt')
+            rename ('tests/src/05-do_not_index-copy.txt', dst)
+
+        self.col= CollectionUpdater (test_path)
+        QTimer.singleShot (0, move_file)
+        self.col.foundSongs.connect (self.inc)
+        QTimer.singleShot (1000, app.quit)
+        app.exec_ ()
+
+        self.assertEqual (len (self.n), 0)
 
 if __name__=='__main__':
     unittest.main ()
