@@ -19,7 +19,7 @@
 import unittest
 from shutil import rmtree, copy
 from satyr.utils import makedirs
-from os import getcwd, unlink
+from os import getcwd, unlink, rename
 import os.path
 
 from PyQt4.QtGui import QApplication
@@ -114,6 +114,21 @@ class TestCollectionUpdater (unittest.TestCase):
         app.exec_ ()
 
         self.assertEqual (len (self.n), 0)
+
+    def test_move_in_song (self):
+        dst= os.path.join (test_path, '01-null.mp3')
+
+        def move_file ():
+            copy ('tests/src/01-null.mp3', 'tests/src/04-null_copy.mp3')
+            rename ('tests/src/04-null_copy.mp3', dst)
+
+        self.col= CollectionUpdater (test_path)
+        QTimer.singleShot (0, move_file)
+        self.col.foundSongs.connect (self.inc)
+        QTimer.singleShot (1000, app.quit)
+        app.exec_ ()
+
+        self.assertEqual (len (self.n), 1)
 
 if __name__=='__main__':
     unittest.main ()

@@ -24,9 +24,9 @@ from PyQt4.QtCore import pyqtSignal, QObject
 
 # misc utils
 import dbus.service
-# TODO: IN_DELETE, IN_DELETE_SELF,
+# TODO: IN_DELETE_SELF,
 from pyinotify import WatchManager, ThreadedNotifier, ProcessEvent, IN_CREATE
-from pyinotify import IN_DELETE
+from pyinotify import IN_DELETE, IN_MOVED_TO
 
 # we needed before logging to get the handler
 import satyr
@@ -50,7 +50,8 @@ class CollectionUpdater (QObject, ProcessEvent):
         self.wm= WatchManager ()
         self.notifier= ThreadedNotifier (self.wm, self)
         self.notifier.start ()
-        self.watch= self.wm.add_watch (path, IN_CREATE|IN_DELETE, rec=True, quiet=False)
+        self.watch= self.wm.add_watch (path, IN_CREATE|IN_DELETE|IN_MOVED_TO,
+                                       rec=True, quiet=False)
         logger.debug ("watch: %r", self.watch)
         utils.initMimetypes ()
 
@@ -61,6 +62,12 @@ class CollectionUpdater (QObject, ProcessEvent):
 
     def process_IN_CREATE (self, event):
         logger.debug ("new: %s, %s", event, event.name)
+        mimetype= utils.getMimeType (event.pathname)
+        if mimetype in utils.mimetypes:
+            self.foundSongs.emit ([(None, os.path.abspath (event.pathname))])
+
+    def process_IN_MOVED_TO (self, event):
+        logger.debug ("moved in: %s, %s", event, event.name)
         mimetype= utils.getMimeType (event.pathname)
         if mimetype in utils.mimetypes:
             self.foundSongs.emit ([(None, os.path.abspath (event.pathname))])
