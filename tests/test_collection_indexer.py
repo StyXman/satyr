@@ -43,7 +43,7 @@ class TestCollectionIndexer (unittest.TestCase):
     def count (self, l):
         self.n+= len (l)
 
-    def test_scan (self):
+    def test_scan_song (self):
         dst= os.path.join (test_path, '01-null.mp3')
         copy ('tests/src/01-null.mp3', dst)
 
@@ -55,7 +55,7 @@ class TestCollectionIndexer (unittest.TestCase):
 
         self.assertEqual (self.n, 1)
 
-    def test_scan_wrong_file (self):
+    def test_scan_file (self):
         dst= os.path.join (test_path, '03-do_not_index.txt')
         copy ('tests/src/03-do_not_index.txt', dst)
 
