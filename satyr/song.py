@@ -210,7 +210,7 @@ class Song (QObject):
 
         if key=='length':
             val= self.formatSeconds (val)
-        
+
         # if it's, then a) it's either year or trackno; b) leave it empty
         if val==0:
             val= ''
@@ -283,7 +283,7 @@ class Song (QObject):
                         logger.warning ("ValueError: %s= (%s)%s", tag, type (value), value)
 
                 logger.debug ("%r", info)
-                
+
                 # 'faked' tags; must be handled file type by file type
                 if type (info)==tagpy._tagpy.ogg_XiphComment:
                     # http://www.xiph.org/vorbis/doc/v-comment.html

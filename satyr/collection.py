@@ -91,6 +91,7 @@ class Collection (SatyrObject):
         logger.debug ("C: CU")
         self.updater= CollectionUpdater (self.path)
         self.updater.foundSongs.connect (self.add)
+        self.updater.deletedSongs.connect (self.delete)
 
         if busPath is not None:
             self.collectionFile= str (KStandardDirs.locateLocal ('data', 'satyr/%s.tdb' % self.dbusName (busPath)))
@@ -145,11 +146,6 @@ class Collection (SatyrObject):
         self.save ()
         SatyrObject.saveConfig (self)
 
-    # @pyqtSlot ()
-    def newFiles (self, path):
-        logger.debug ("C.newFiles(): %r" % path)
-        self.scan (self.path+'/'+path)
-
     def scan (self, path=None, loadMetadata=False):
         self.scanning= True
         self.loadMetadata= loadMetadata
@@ -171,6 +167,21 @@ class Collection (SatyrObject):
         # TODO: emit a signal?
         pass
 
+    def song (self, song, id):
+        # filepath can be a QString because this method
+        # is also connected to a signal and they get converted by PyQt4
+        if isinstance (song, QString):
+            # paths must be bytes, not ascii or utf-8
+            song= utils.qstring2path (song)
+
+        if isinstance (song, str):
+            # normalize! this way we avoid this dupes (couldn't find where they're originated)
+            # C.add(): [(4081, '/home/mdione/media/music/Poison/2000 - Crack a smile... and more!//01 - Best thing you ever had.ogg')]
+            # C.add(): [(4082, '/home/mdione/media/music/Poison/2000 - Crack a smile... and more!/01 - Best thing you ever had.ogg')]
+            song= Song (self, os.path.normpath (song), id=id)
+
+        return song
+
     def add (self, fds):
         # TODO: emit the list
         self.newSongs_= []
@@ -178,18 +189,7 @@ class Collection (SatyrObject):
         logger.debug ("%r", fds)
         # we get a QStringList; convert to a list so we can python-iterate it
         for id, song in list (fds):
-            # filepath can be a QString because this method
-            # is also connected to a signal and they get converted by ptqt4
-            if isinstance (song, QString):
-                # paths must be bytes, not ascii or utf-8
-                song= utils.qstring2path (song)
-
-            if isinstance (song, str):
-                # normalize! this way we avoid this dupes (couldn't find where they're originated)
-                # C.add(): [(4081, '/home/mdione/media/music/Poison/2000 - Crack a smile... and more!//01 - Best thing you ever had.ogg')]
-                # C.add(): [(4082, '/home/mdione/media/music/Poison/2000 - Crack a smile... and more!/01 - Best thing you ever had.ogg')]
-                song= Song (self, os.path.normpath (song), id=id)
-
+            song= self.song (song, id)
             if song.id not in self.songsById:
                 # this works because Song.__cmp__() does not compare tags if one song
                 # has not loaded them and Song does not do it automatically
@@ -213,6 +213,16 @@ class Collection (SatyrObject):
         if len (self.newSongs_)>0:
             logger.debug ("%r", self.newSongs_)
             self.newSongs.emit ()
+
+    def delete (self, fds):
+        logger.debug ("%r", fds)
+        for id, song in fds:
+            song= self.song (song, id)
+            if song.id in self.songsById:
+                index= utils.bisect (self.songs, song)
+                del self.songs[index]
+                del self.songsById[song.id]
+                self.count-= 1
 
     def remove (self, song):
         index= utils.bisect (self.songs, song)
